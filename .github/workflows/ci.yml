@@ -25,7 +25,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: rustfmt, clippy
       - name: cargo fmt --check
@@ -61,7 +61,7 @@ jobs:
             librsvg2-dev \
             libwebkit2gtk-4.1-dev \
             libasound2-dev
-      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: clippy
       - name: cargo check
@@ -93,7 +93,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: dtolnay/rust-toolchain@1.100.0
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v6
         with:
