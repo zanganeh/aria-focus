@@ -1,6 +1,9 @@
 name: Signed public beta
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       release_tag:
@@ -9,7 +12,7 @@ on:
         type: string
 
 concurrency:
-  group: public-release-${{ inputs.release_tag }}
+  group: public-release-${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
   cancel-in-progress: false
 
 permissions:
@@ -24,11 +27,13 @@ jobs:
     permissions:
       actions: read
       contents: write
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ inputs.release_tag }}
+          ref: ${{ env.RELEASE_TAG }}
       - uses: dtolnay/rust-toolchain@1.92.0
         with:
           components: rustfmt, clippy
@@ -43,11 +48,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Verify tag and pinned release identity
         shell: pwsh
-        env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           if ($env:GITHUB_REF -ne "refs/tags/$env:RELEASE_TAG") {
-            throw "Dispatch this workflow from the same tag supplied as release_tag."
+            throw "The workflow trigger tag differs from the requested release tag."
           }
           $exact = git describe --tags --exact-match HEAD
           if ($LASTEXITCODE -ne 0 -or $exact -ne $env:RELEASE_TAG) {
@@ -96,7 +99,7 @@ jobs:
         id: upload-unsigned
         uses: actions/upload-artifact@v7
         with:
-          name: aria-focus-unsigned-${{ inputs.release_tag }}
+          name: aria-focus-unsigned-${{ env.RELEASE_TAG }}
           path: unsigned/*
           if-no-files-found: error
           retention-days: 14
@@ -135,7 +138,6 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           gh release view $env:RELEASE_TAG --json isDraft,isPrerelease | Set-Content release-state.json
           if ($LASTEXITCODE -eq 0) {

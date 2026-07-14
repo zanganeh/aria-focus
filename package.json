@@ -19,6 +19,9 @@
     "tauri": "pnpm -C apps/desktop tauri",
     "tauri:local-library": "pnpm -C apps/desktop tauri build --features bundled-listening-test --config src-tauri/tauri.listening-test.conf.json",
     "tauri:opus-library": "powershell -ExecutionPolicy Bypass -File scripts/build-opus-listening-test.ps1",
+    "music:pipeline": "python tools/music-generation/music_pipeline.py",
+    "music:admin": "cargo run -p music-admin",
+    "music:admin:build": "cargo build --release -p music-admin",
     "verify": "pnpm fmt:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {

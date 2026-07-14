@@ -65,3 +65,39 @@ python tools/music-generation/convert_library_to_opus.py --source apps/desktop/s
 The resulting `manifest.json` is regenerated deterministically from the source
 manifest and conversion results. `opus-library-candidate.conversion-report.json`
 records source and output hashes plus the exact local encoder/prober versions.
+
+## One internal end-to-end command
+
+`music_pipeline.py` is the supported internal orchestration layer. It composes
+the pinned generator and the converter above; it does not reimplement them. The
+stages are intentionally explicit:
+
+- `preflight` verifies the plan, local model snapshots, FFmpeg, and ffprobe;
+- `generate` creates FLAC masters and immediately runs analysis and candidate-ledger evidence;
+- `package` builds a draft, closed-world FLAC candidate pack from one completed run, then creates a separate 112 kbps Ogg Opus pack;
+- `all` performs `generate` followed by `package`.
+
+It never downloads models, approves tracks, publishes content, overwrites an
+output, writes into a generation run, or writes into the desktop private-beta
+pack. Run the bootstrap explicitly before using it.
+
+```powershell
+pnpm music:pipeline preflight `
+  --plan content/plans/deep-work-calibration-v1.json
+
+pnpm music:pipeline all `
+  --plan content/plans/deep-work-calibration-v1.json `
+  --run-id deep-work-internal-v1 `
+  --flac-output .local/pipeline/deep-work-flac-v1 `
+  --opus-output .local/pipeline/deep-work-opus-v1 `
+  --pack-id internal.deep-work.v1 `
+  --pack-title "Internal Deep Work V1" `
+  --flac-version 1.0.0-flac.1 `
+  --opus-version 1.0.0-opus.1 `
+  --app-version-requirement ">=0.2.1-beta.1, <0.3.0"
+```
+
+If generation has already completed, use the same arguments with `package`
+instead of `all`. The FLAC pack remains the lossless internal master; the Opus
+pack and adjacent conversion/pipeline reports are distribution candidates. A
+conversion failure preserves the verified FLAC pack for diagnosis and retry.

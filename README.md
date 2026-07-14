@@ -149,8 +149,8 @@ Start with [`docs/architecture.md`](docs/architecture.md) for system boundaries 
 
 ## Releases
 
-GitHub Actions performs ordinary CI on every pull request. Public installers use
-a separate, manually approved workflow that:
+GitHub Actions performs ordinary CI on every pull request. Pushing a version tag
+automatically starts a separate, protected release workflow that:
 
 1. checks out an existing version tag;
 2. downloads the exact pinned reviewed-library archive;
@@ -164,10 +164,10 @@ The release remains a draft until a maintainer completes the Windows install and
 upgrade matrix. See [`docs/releases.md`](docs/releases.md) and
 [`docs/content-pack-upgrades.md`](docs/content-pack-upgrades.md).
 
-Releases are intentionally not automatic. Every push runs CI automatically, but
-creating a public release requires a version tag, protected-environment approval,
-and an explicit maintainer publication decision. The current unsigned preview was
-published manually as a clearly labelled exception to the signed release channel.
+Signed draft creation is automatic after a version tag is pushed and the protected
+environment is approved. Publishing that draft remains an explicit maintainer
+decision. The current unsigned preview was published manually as a clearly labelled
+exception to the signed release channel.
 
 ## Contributing
 

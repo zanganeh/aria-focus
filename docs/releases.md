@@ -4,8 +4,9 @@ Aria Focus uses two separate GitHub Actions paths:
 
 - `.github/workflows/ci.yml` builds and tests source changes and produces
   unsigned source-only Windows artifacts for inspection.
-- `.github/workflows/public-beta.yml` is a manually dispatched, protected release
-  workflow for reviewed content and signed public installers.
+- `.github/workflows/public-beta.yml` is a tag-triggered, protected release workflow
+  for reviewed content and signed public installers. Manual dispatch remains available
+  as a recovery path.
 
 CI artifacts are never official releases.
 
@@ -17,10 +18,9 @@ is not produced by the signed workflow and must not be promoted to a signed or
 reviewed build in place. Any corrected, reviewed, or signed installer must use a
 new version and immutable release assets.
 
-Release publication is not automatic. Pushes and pull requests run CI, while a
-public release always requires an explicit tag and maintainer action. The signed
-workflow additionally requires protected-environment approval and creates a draft
-that must be published manually after installed-app testing.
+Pushing a version tag automatically starts signed draft creation. The workflow still
+requires protected-environment approval and creates a draft that must be published
+manually after installed-app testing. Ordinary branch pushes never create releases.
 
 ## One-time repository setup
 
@@ -88,18 +88,23 @@ git tag -s v0.2.1-beta.1 -m "Aria Focus 0.2.1 beta 1"
 git push origin v0.2.1-beta.1
 ```
 
-## Run the protected workflow
+## Automatic protected workflow
 
-Dispatch the workflow from the same tag and pass the tag as its input:
+Pushing the reviewed version tag automatically starts `public-beta.yml`. Watch it with:
+
+```powershell
+gh run watch
+```
+
+If GitHub did not enqueue the tag event, manually dispatch the same immutable tag:
 
 ```powershell
 gh workflow run public-beta.yml `
   --ref v0.2.1-beta.1 `
   -f release_tag=v0.2.1-beta.1
-gh run watch
 ```
 
-The workflow fails closed if the dispatch ref, input tag, project versions,
+The workflow fails closed if the trigger tag, optional manual input, project versions,
 reviewed-library pin, content manifest, tests, or signatures differ.
 
 After approval, it:
