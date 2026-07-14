@@ -11,6 +11,7 @@ members = [
     "tools/audio-analyzer",
     "tools/candidate-ledger",
     "tools/content-ingest",
+    "tools/music-admin",
     "apps/desktop/src-tauri",
 ]
 default-members = ["crates/domain", "crates/audio-engine", "crates/catalogue", "crates/persistence"]

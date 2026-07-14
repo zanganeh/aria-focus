@@ -1522,7 +1522,7 @@ body {
 
 .activity-tile {
   position: relative;
-  min-height: 164px;
+  min-height: 184px;
   overflow: hidden;
   border: 1px solid rgba(242, 205, 255, 0.22);
   border-radius: 20px;
@@ -1538,7 +1538,7 @@ body {
   z-index: -1;
   inset: 0;
   content: "";
-  background: linear-gradient(180deg, transparent 25%, rgba(12, 10, 20, 0.86));
+  background: rgba(10, 8, 17, 0.34);
 }
 
 .activity-tile-art {
@@ -1547,7 +1547,9 @@ body {
   inset: 0;
   display: block;
   background-repeat: no-repeat;
-  background-size: 500% 100%;
+  /* The source is a five-panel sprite. Width-based sizing crops each panel
+     without changing its natural aspect ratio. */
+  background-size: 500% auto;
   transition: transform 180ms ease;
 }
 
@@ -1569,14 +1571,18 @@ body {
 
 .activity-tile-label {
   position: absolute;
-  right: 14px;
-  bottom: 13px;
-  left: 14px;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
   color: #fff;
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  text-align: left;
+  font-size: clamp(1.25rem, 3.2vw, 1.65rem);
+  font-weight: 850;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 0 2px 14px rgba(5, 3, 10, 0.9);
 }
 
 .activity-tile:not(:disabled):hover .activity-tile-art,
@@ -1699,7 +1705,7 @@ button:focus-visible,
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .activity-tile {
-    min-height: 142px;
+    min-height: 164px;
   }
   .activity-options {
     grid-template-columns: 1fr;
