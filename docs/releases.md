@@ -9,6 +9,19 @@ Aria Focus uses two separate GitHub Actions paths:
 
 CI artifacts are never official releases.
 
+## Current unsigned preview
+
+`v0.2.1-beta.1` was explicitly published as an unsigned prerelease so early users
+can test the complete offline app before final music review and code signing. It
+is not produced by the signed workflow and must not be promoted to a signed or
+reviewed build in place. Any corrected, reviewed, or signed installer must use a
+new version and immutable release assets.
+
+Release publication is not automatic. Pushes and pull requests run CI, while a
+public release always requires an explicit tag and maintainer action. The signed
+workflow additionally requires protected-environment approval and creates a draft
+that must be published manually after installed-app testing.
+
 ## One-time repository setup
 
 1. Create the public GitHub repository `zanganeh/aria-focus` and make `main` the

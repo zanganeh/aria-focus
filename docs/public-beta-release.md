@@ -1,7 +1,8 @@
 # Aria Focus public beta release
 
-The first public release candidate is `v0.2.1-beta.1`. It is blocked until every gate in
-this document passes.
+`v0.2.1-beta.1` is an explicitly unsigned listening-test preview and does not
+satisfy this release gate. The first reviewed and signed public candidate must use
+a newer version and is blocked until every gate in this document passes.
 
 Windows installer metadata uses numeric version `0.2.1` because MSI does not
 accept text prerelease identifiers; the app, packages, About panel, and Git tag
@@ -57,5 +58,6 @@ from the exact version tag through the protected `public-release` environment an
 needs the documented SignPath secret/variables configured in GitHub. Follow
 [`releases.md`](releases.md) for setup, dispatch, and final publication.
 
-The NSIS installer is the primary customer download. Do not publish unsigned
-installers or the unreviewed local listening-test pack.
+The NSIS installer is the primary customer download. Do not publish another
+unsigned installer or replace the immutable `v0.2.1-beta.1` preview assets. All
+later public builds must use a new version and follow the signed workflow.
