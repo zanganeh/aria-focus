@@ -700,13 +700,13 @@ fn ensure_plain_existing_directory(path: &Path) -> Result<(), PersistenceError> 
             path.display()
         ))
     })?;
-    let mut linked = metadata.file_type().is_symlink();
+    let linked = metadata.file_type().is_symlink();
     #[cfg(windows)]
-    {
+    let linked = {
         use std::os::windows::fs::MetadataExt;
         const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
-        linked |= metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0;
-    }
+        linked || metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0
+    };
     if linked || !metadata.is_dir() {
         return Err(PersistenceError::Storage(format!(
             "installed pack path {} is linked or not a directory",
