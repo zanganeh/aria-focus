@@ -644,13 +644,15 @@ impl AdminApp {
                     ui.label(format!("{} tracks", plan.candidates));
                 });
                 ui.label(RichText::new(plan.activities.join(", ")).color(Color32::GRAY));
-                ui.collapsing("Choose a track to update", |ui| {
-                    for track in &plan.tracks {
-                        if ui.button(format!("Edit {track}")).clicked() {
-                            self.load_candidate_from_plan(index, track);
+                egui::CollapsingHeader::new("Choose a track to update")
+                    .id_salt(&plan.file)
+                    .show(ui, |ui| {
+                        for track in &plan.tracks {
+                            if ui.button(format!("Edit {track}")).clicked() {
+                                self.load_candidate_from_plan(index, track);
+                            }
                         }
-                    }
-                });
+                    });
             });
             ui.add_space(6.0);
         }
