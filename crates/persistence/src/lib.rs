@@ -3714,10 +3714,18 @@ mod tests {
             ));
         }
         repository.upsert_studio_job_artifact(&valid).unwrap();
-        repository.connection.execute(
-            "UPDATE music_studio_job_artifacts SET output_relative_path='C:/escape.flac' WHERE job_id=?1",
-            [job.job_id.as_str()],
-        ).unwrap();
+        let absolute_escape = if cfg!(windows) {
+            "C:/escape.flac"
+        } else {
+            "/escape.flac"
+        };
+        repository
+            .connection
+            .execute(
+                "UPDATE music_studio_job_artifacts SET output_relative_path=?1 WHERE job_id=?2",
+                rusqlite::params![absolute_escape, job.job_id.as_str()],
+            )
+            .unwrap();
         assert!(matches!(
             repository.load_studio_job_artifact(&job.job_id),
             Err(PersistenceError::InvalidStudioJob)

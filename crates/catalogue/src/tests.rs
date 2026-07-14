@@ -935,23 +935,29 @@ fn installed_root_is_closed_world_and_rejects_root_links() {
 
     #[cfg(not(windows))]
     {
-        let manifest_alias = install_fixture(temp.path(), "manifest-alias");
-        fs::copy(
-            manifest_alias.directory.join(MANIFEST_PATH),
-            manifest_alias.directory.join("Manifest.json"),
-        )
-        .unwrap();
-        assert!(matches!(
-            verify_installed_pack(&manifest_alias.directory, &manifest_alias.manifest_sha256),
-            Err(PackImportError::InstalledPackCorrupt(_))
-        ));
+        let lower_probe = temp.path().join("case-probe");
+        fs::write(&lower_probe, b"probe").unwrap();
+        let case_sensitive = !temp.path().join("CASE-PROBE").exists();
+        fs::remove_file(lower_probe).unwrap();
+        if case_sensitive {
+            let manifest_alias = install_fixture(temp.path(), "manifest-alias");
+            fs::copy(
+                manifest_alias.directory.join(MANIFEST_PATH),
+                manifest_alias.directory.join("Manifest.json"),
+            )
+            .unwrap();
+            assert!(matches!(
+                verify_installed_pack(&manifest_alias.directory, &manifest_alias.manifest_sha256),
+                Err(PackImportError::InstalledPackCorrupt(_))
+            ));
 
-        let assets_alias = install_fixture(temp.path(), "assets-alias");
-        fs::create_dir(assets_alias.directory.join("Assets")).unwrap();
-        assert!(matches!(
-            verify_installed_pack(&assets_alias.directory, &assets_alias.manifest_sha256),
-            Err(PackImportError::InstalledPackCorrupt(_))
-        ));
+            let assets_alias = install_fixture(temp.path(), "assets-alias");
+            fs::create_dir(assets_alias.directory.join("Assets")).unwrap();
+            assert!(matches!(
+                verify_installed_pack(&assets_alias.directory, &assets_alias.manifest_sha256),
+                Err(PackImportError::InstalledPackCorrupt(_))
+            ));
+        }
     }
 
     let linked_root = install_fixture(temp.path(), "linked-root");
