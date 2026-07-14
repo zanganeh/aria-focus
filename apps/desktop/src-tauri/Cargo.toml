@@ -24,7 +24,7 @@ path = "src/main.rs"
 [build-dependencies]
 tauri-build = { version = "2.0.3", features = [] }
 catalogue = { workspace = true }
-tempfile = "=3.14.0"
+tempfile = "=3.27.0"
 ed25519-dalek = { version = "2.1.1", features = ["std"] }
 base64 = "0.22.1"
 sha2 = "0.10.8"
@@ -32,7 +32,7 @@ serde_json = "1.0.134"
 
 [dependencies]
 tauri = { version = "2.1.1", features = [] }
-tauri-plugin-dialog = "=2.2.0"
+tauri-plugin-dialog = "=2.7.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.134"
 thiserror = "2.0.11"
@@ -41,14 +41,14 @@ music-studio-domain = { workspace = true }
 audio-engine = { workspace = true }
 persistence = { workspace = true }
 catalogue = { workspace = true }
-tempfile = "=3.14.0"
+tempfile = "=3.27.0"
 ed25519-dalek = { version = "2.1.1", features = ["std"] }
 base64 = "0.22.1"
 sha2 = "0.10.8"
 audio-analyzer = { workspace = true }
 getrandom = "0.3.4"
-reqwest = { version = "=0.12.12", default-features = false, features = ["blocking", "rustls-tls"] }
-tar = "=0.4.43"
+reqwest = { version = "=0.12.28", default-features = false, features = ["blocking", "rustls-tls"] }
+tar = "=0.4.46"
 fs2 = "=0.4.3"
 
 [target.'cfg(windows)'.dependencies]
