@@ -49,7 +49,7 @@ It is an independent project and is not affiliated with Brain.fm.
 
 ## Download the beta preview
 
-[**Download Aria Focus 0.2.1 Beta 1 for Windows x64**](https://github.com/zanganeh/aria-focus/releases/download/v0.2.1-beta.1/Aria%20Focus_0.2.1_x64-setup.exe)
+[**Download Aria Focus 0.2.1 Beta 1 for Windows x64**](https://github.com/zanganeh/aria-focus/releases/download/v0.2.1-beta.1/Aria-Focus_0.2.1-beta.1_unsigned-preview_x64-setup.exe)
 
 This 251 MB prerelease is **not code-signed**, so Windows SmartScreen may warn
 before installation. Its 100 bundled Opus tracks are listening-test content and
