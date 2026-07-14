@@ -13,7 +13,7 @@
   <a href="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml"><img src="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue" alt="MIT OR Apache-2.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows-0078D4" alt="Windows">
-  <img src="https://img.shields.io/badge/status-public%20beta%20preparation-orange" alt="Public beta preparation">
+  <a href="https://github.com/zanganeh/aria-focus/releases/tag/v0.2.1-beta.1"><img src="https://img.shields.io/badge/status-unsigned%20beta%20preview-orange" alt="Unsigned beta preview"></a>
 </p>
 
 Aria Focus is a standalone desktop app for deep work, motivation, creativity,
@@ -21,9 +21,9 @@ learning, and light work. It plays integrity-checked music from local storage,
 keeps preferences and session history on the device, and presents a deliberately
 small activity-first interface.
 
-The project is open for source review and contribution. The first signed public
-beta is still being prepared; current locally generated listening-test music is
-not a public release asset.
+The project is open for source review and contribution. An unsigned beta preview
+is available now with listening-test music. The first reviewed and signed public
+build is still being prepared.
 
 ## What it includes
 
@@ -47,6 +47,17 @@ human-review gates before it can become a public release.
 Aria Focus is not medical treatment and does not claim to diagnose or treat ADHD.
 It is an independent project and is not affiliated with Brain.fm.
 
+## Download the beta preview
+
+[**Download Aria Focus 0.2.1 Beta 1 for Windows x64**](https://github.com/zanganeh/aria-focus/releases/download/v0.2.1-beta.1/Aria-Focus_0.2.1-beta.1_unsigned-preview_x64-setup.exe)
+
+This 251 MB prerelease is **not code-signed**, so Windows SmartScreen may warn
+before installation. Its 100 bundled Opus tracks are listening-test content and
+have not completed final public human review. Check the accompanying
+[`SHA256SUMS`](https://github.com/zanganeh/aria-focus/releases/download/v0.2.1-beta.1/SHA256SUMS)
+before running it. Use the signed release channel when it becomes available if
+you do not want to install an unsigned preview.
+
 ## Project status
 
 Windows x64 is the supported packaged target. The application, playback engine,
@@ -58,9 +69,8 @@ workflow are implemented and tested. Public distribution remains gated on:
 - configured Windows code signing; and
 - a clean-install and real upgrade test of the signed candidate.
 
-Follow [Releases](https://github.com/zanganeh/aria-focus/releases) for signed public
-builds once those gates are complete. Do not download installers offered through
-unofficial mirrors.
+Follow [Releases](https://github.com/zanganeh/aria-focus/releases) for later signed
+builds. Do not download installers offered through unofficial mirrors.
 
 ## Build from source
 
@@ -153,6 +163,11 @@ a separate, manually approved workflow that:
 The release remains a draft until a maintainer completes the Windows install and
 upgrade matrix. See [`docs/releases.md`](docs/releases.md) and
 [`docs/content-pack-upgrades.md`](docs/content-pack-upgrades.md).
+
+Releases are intentionally not automatic. Every push runs CI automatically, but
+creating a public release requires a version tag, protected-environment approval,
+and an explicit maintainer publication decision. The current unsigned preview was
+published manually as a clearly labelled exception to the signed release channel.
 
 ## Contributing
 
