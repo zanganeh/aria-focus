@@ -1,0 +1,42 @@
+# Root Cargo workspace. Domain, audio, catalogue, and persistence remain
+# separate crates so the desktop shell can stay thin and portable.
+[workspace]
+resolver = "2"
+members = [
+    "crates/domain",
+    "crates/music-studio-domain",
+    "crates/audio-engine",
+    "crates/catalogue",
+    "crates/persistence",
+    "tools/audio-analyzer",
+    "tools/candidate-ledger",
+    "tools/content-ingest",
+    "apps/desktop/src-tauri",
+]
+default-members = ["crates/domain", "crates/audio-engine", "crates/catalogue", "crates/persistence"]
+
+[workspace.package]
+version = "0.2.1-beta.1"
+edition = "2021"
+rust-version = "1.92.0"
+license = "MIT OR Apache-2.0"
+authors = ["Aria Zanganeh and Aria Focus contributors"]
+publish = false
+
+[workspace.dependencies]
+domain = { path = "crates/domain" }
+music-studio-domain = { path = "crates/music-studio-domain" }
+audio-engine = { path = "crates/audio-engine" }
+catalogue = { path = "crates/catalogue" }
+persistence = { path = "crates/persistence" }
+audio-analyzer = { path = "tools/audio-analyzer" }
+
+[profile.dev]
+opt-level = 0
+debug = 1
+
+[profile.release]
+opt-level = 2
+lto = "thin"
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,360 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "creativity-multigenre-calibration-v1",
+    "created_at": "2026-07-11T00:00:00Z",
+    "notes": "Four quarantined 90-second Creativity candidates spanning selectable genres. They permit gentle novelty and motion while suppressing hooks, solos, speech, abrupt events, and attention-capturing foregrounds; none is approved content.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["creativity"],
+    "genres": [
+      {
+        "id": "ambient-electronic",
+        "label": "Ambient Electronic"
+      },
+      {
+        "id": "downtempo",
+        "label": "Downtempo"
+      },
+      {
+        "id": "minimal-jazz",
+        "label": "Minimal Jazz"
+      },
+      {
+        "id": "neo-classical",
+        "label": "Neo-Classical"
+      }
+    ],
+    "moods": [
+      {
+        "id": "curious",
+        "label": "Curious"
+      },
+      {
+        "id": "flowing",
+        "label": "Flowing"
+      },
+      {
+        "id": "optimistic",
+        "label": "Optimistic"
+      },
+      {
+        "id": "warm",
+        "label": "Warm"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "creativity-prismfield-ambient-078",
+      "seed": 73178031,
+      "activity": "creativity",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["curious", "flowing"],
+      "duration_seconds": 90,
+      "bpm": 78,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] gently generative ambient electronic field for creative ideation, nominal 78 BPM in D major; layered soft synth textures, slow color shifts, subtle stereo motion, occasional low-salience harmonic variation, rounded envelopes, stable energy, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, drums, sharp percussion, arpeggiator, sequencer pattern, plucks, bright sparkles,  catchy hook, memorable lead melody, solo, virtuoso passage, fills, drops, breakdowns, risers, impacts, dramatic build, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-softmotion-downtempo-086",
+      "seed": 73186032,
+      "activity": "creativity",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["flowing", "optimistic"],
+      "duration_seconds": 90,
+      "bpm": 86,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] restrained downtempo instrumental bed for making and brainstorming, nominal 86 BPM in A minor; soft muted pulse, brushed low-impact percussion, warm pad chords, understated bass foundation, gradual textural evolution, even dynamics, rhythm felt but never foregrounded",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, hard kick, snare crack, hi-hat chatter, syncopated fills, bass riff, dance groove,  catchy hook, memorable lead melody, solo, virtuoso passage, fills, drops, breakdowns, risers, impacts, dramatic build, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-inkroom-jazz-074",
+      "seed": 73174033,
+      "activity": "creativity",
+      "genre_ids": ["minimal-jazz"],
+      "mood_ids": ["warm", "curious"],
+      "duration_seconds": 90,
+      "bpm": 74,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] minimal jazz-adjacent background texture for creative work, nominal 74 BPM in C major; diffuse electric-piano chord colors, soft upright-bass sustains, extremely sparse brushed texture, unresolved gentle harmony, no improvising lead, stable quiet dynamics",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, saxophone, trumpet, exposed piano line, walking bass, swing accents, improvisation, cymbal accents,  catchy hook, memorable lead melody, solo, virtuoso passage, fills, drops, breakdowns, risers, impacts, dramatic build, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-threadlight-classical-068",
+      "seed": 73168034,
+      "activity": "creativity",
+      "genre_ids": ["neo-classical"],
+      "mood_ids": ["optimistic", "warm"],
+      "duration_seconds": 90,
+      "bpm": 68,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] neo-classical ambient bed for writing and design, nominal 68 BPM in E minor; blended felt-piano chord mist and long soft strings, slow harmonic redirection, blurred attacks, restrained emotional contour, sparse note density, continuous room-like texture",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, piano motif, ostinato, staccato strings, sweeping crescendo, cinematic climax, fast notes,  catchy hook, memorable lead melody, solo, virtuoso passage, fills, drops, breakdowns, risers, impacts, dramatic build, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  ]
+}

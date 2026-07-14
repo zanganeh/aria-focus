@@ -1,0 +1,19 @@
+{
+  "productName": "Aria Focus Learning Review",
+  "identifier": "com.ariazanganeh.ariafocus.learning-review",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Aria Focus — LEARNING QUARANTINED REVIEW",
+        "width": 720,
+        "height": 780,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  },
+  "bundle": {
+    "resources": ["learning-review-candidates"]
+  }
+}

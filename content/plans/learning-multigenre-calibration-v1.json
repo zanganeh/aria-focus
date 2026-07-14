@@ -1,0 +1,360 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "learning-multigenre-calibration-v1",
+    "created_at": "2026-07-11T00:00:00Z",
+    "notes": "Four quarantined 90-second Learning candidates spanning selectable genres. Designed for low salience, stable energy, no speech, and moderate motion; none is approved content.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["learning"],
+    "genres": [
+      {
+        "id": "ambient-electronic",
+        "label": "Ambient Electronic"
+      },
+      {
+        "id": "lofi",
+        "label": "Lo-fi"
+      },
+      {
+        "id": "minimal-classical",
+        "label": "Minimal Classical"
+      },
+      {
+        "id": "organic-ambient",
+        "label": "Organic Ambient"
+      }
+    ],
+    "moods": [
+      {
+        "id": "calm",
+        "label": "Calm"
+      },
+      {
+        "id": "clear",
+        "label": "Clear"
+      },
+      {
+        "id": "curious",
+        "label": "Curious"
+      },
+      {
+        "id": "warm",
+        "label": "Warm"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "learning-clearfield-ambient-068",
+      "seed": 62168021,
+      "activity": "learning",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "clear"],
+      "duration_seconds": 90,
+      "bpm": 68,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] slowly evolving ambient electronic bed for reading and learning, nominal 68 BPM in D major; soft sustained pads, very gentle harmonic motion, diffuse stereo depth, rounded envelopes, stable low-mid energy, sparse non-melodic texture, continuous background presence without foreground events",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, drums, percussion, pulse, arpeggio, sequencer, plucks, piano attacks,  hooks, catchy melody, lead solo, dramatic chord changes, fills, drops, breakdowns, risers, impacts, abrupt transitions, sudden silence, bright bells, alarms, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-softgrain-lofi-076",
+      "seed": 62176022,
+      "activity": "learning",
+      "genre_ids": ["lofi"],
+      "mood_ids": ["warm", "clear"],
+      "duration_seconds": 90,
+      "bpm": 76,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] restrained lo-fi instrumental texture for studying, nominal 76 BPM in A minor; soft brushed noise bed, muted low-detail chord haze, extremely subdued rounded kick-like pulse with no snare accents, stable dynamics, narrow pitch range, no foreground motif, gentle continuous tape warmth",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, crackles that pop, vinyl clicks, sharp drums, snare, hi-hat, syncopation, bass fills,  hooks, catchy melody, lead solo, dramatic chord changes, fills, drops, breakdowns, risers, impacts, abrupt transitions, sudden silence, bright bells, alarms, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-paperlight-classical-064",
+      "seed": 62164023,
+      "activity": "learning",
+      "genre_ids": ["minimal-classical"],
+      "mood_ids": ["calm", "curious"],
+      "duration_seconds": 90,
+      "bpm": 64,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] minimal classical study bed, nominal 64 BPM in C major; very soft felt-piano chord clouds blended into sustained strings, long rests filled by room tone, few notes, no repeating motif, no cadential pull, even quiet dynamics, blurred attacks, unobtrusive harmonic continuity",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, virtuoso piano, exposed piano melody, staccato, ostinato, fast notes, string swells,  hooks, catchy melody, lead solo, dramatic chord changes, fills, drops, breakdowns, risers, impacts, abrupt transitions, sudden silence, bright bells, alarms, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-mossair-organic-072",
+      "seed": 62172024,
+      "activity": "learning",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["warm", "curious"],
+      "duration_seconds": 90,
+      "bpm": 72,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] organic ambient sound bed for comprehension and memory work, nominal 72 BPM in E minor; breathy wood-like drones, soft filtered field texture, distant sustained harmonics, slow natural timbral drift, stable density, no identifiable nature calls, no rhythm, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, birds, insects, water splashes, thunder, footsteps, percussion, pulse, plucks,  hooks, catchy melody, lead solo, dramatic chord changes, fills, drops, breakdowns, risers, impacts, abrupt transitions, sudden silence, bright bells, alarms, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  ]
+}

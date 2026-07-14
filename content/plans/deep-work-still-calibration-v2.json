@@ -1,0 +1,190 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "deep-work-still-calibration-v2",
+    "created_at": "2026-07-11T00:00:00Z",
+    "notes": "Four quarantined 90-second Deep Work candidates testing continuous, low-onset, beatless textures after every v1 candidate exceeded the provisional onset-density range; none is approved starter content.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["deep_work"],
+    "genres": [
+      { "id": "ambient-electronic", "label": "Ambient Electronic" },
+      { "id": "drone", "label": "Drone" }
+    ],
+    "moods": [
+      { "id": "calm", "label": "Calm" },
+      { "id": "spacious", "label": "Spacious" },
+      { "id": "warm", "label": "Warm" },
+      { "id": "neutral", "label": "Neutral" }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "deep-work-still-dusk-068",
+      "seed": 52068011,
+      "activity": "deep_work",
+      "genre_ids": ["ambient-electronic", "drone"],
+      "mood_ids": ["calm", "warm"],
+      "duration_seconds": 90.0,
+      "bpm": 68,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] beatless continuous ambient drone for deep concentration, nominal 68 BPM in D minor; warm sustained low-mid pads with extremely slow overlapping crossfades, seamless legato harmonic breathing, blurred edges, narrow pitch range, almost motionless texture, gradual timbral evolution, uniform restrained energy, no foreground instrument and no audible beat",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, drums, percussion, kick, snare, hi-hat, cymbals, pulse, beat, groove, rhythm, ostinato, arpeggio, plucks, piano attacks, mallets, bells, sharp transients, note repetitions, lead melody, hooks, solos, fills, drops, breakdowns, dramatic builds, sudden silence, abrupt transitions, bright sparkles, alarms, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "D minor" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-still-cloud-070",
+      "seed": 52070012,
+      "activity": "deep_work",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["spacious", "neutral"],
+      "duration_seconds": 90.0,
+      "bpm": 70,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] continuous beatless ambient electronic sound field for sustained attention, nominal 70 BPM in C major; diffuse soft pad layers, long held voicings dissolving into one another, slow spectral shading and gentle stereo drift, low melodic information, smooth rounded envelope, stable density and loudness, neutral seamless continuity without events",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, drums, percussion, pulse, beat, bass rhythm, ostinato, arpeggio, sequencer, plucks, piano, guitar picking, mallets, bells, clicks, sharp attacks, lead line, memorable melody, hooks, solos, fills, drops, breakdowns, risers, impacts, sudden silence, abrupt transitions, bright sparkles, alarms, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "C major" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-still-ember-072",
+      "seed": 52072013,
+      "activity": "deep_work",
+      "genre_ids": ["drone"],
+      "mood_ids": ["warm", "neutral"],
+      "duration_seconds": 90.0,
+      "bpm": 72,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm continuous harmonic drone for undistracted work, nominal 72 BPM in A minor; soft low register foundation, sustained velvety overtones, very slow filter breathing, overlapping attackless layers, restrained consonant harmony held for long spans, minimal change without stasis, even energy and seamless background presence",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, drums, percussion, pulse, beat, groove, rhythmic modulation, tremolo, ostinato, arpeggio, plucks, piano strikes, mallets, bells, ticking, clicks, sharp transients, melody, hooks, solos, fills, drops, breakdowns, cadences, dramatic swells, sudden silence, abrupt transitions, alarms, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "A minor" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-still-tide-074",
+      "seed": 52074014,
+      "activity": "deep_work",
+      "genre_ids": ["ambient-electronic", "drone"],
+      "mood_ids": ["calm", "spacious"],
+      "duration_seconds": 90.0,
+      "bpm": 74,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] flowing but beatless ambient wash for deep work, nominal 74 BPM in E minor; continuous dark-soft pads, long attack and release, gently interleaved harmonic layers, ultra-slow wave-like timbral movement without rhythmic amplitude modulation, subdued high frequencies, narrow tonal palette, smooth constant density, no salient events",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, drums, percussion, pulse, beat, groove, sidechain pumping, rhythmic modulation, ostinato, arpeggio, sequencer, plucks, piano attacks, mallets, bells, clicks, sharp transients, lead melody, hooks, solos, fills, drops, breakdowns, impacts, dramatic builds, sudden silence, abrupt transitions, alarms, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "E minor" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    }
+  ]
+}

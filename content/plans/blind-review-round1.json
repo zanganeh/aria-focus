@@ -1,0 +1,29 @@
+{
+  "schema": "adhd-music.blind-review-round",
+  "schema_version": 1,
+  "round": 1,
+  "status": "pending_human_review",
+  "minimum_minutes_per_candidate": 10,
+  "candidates": [
+    { "activity": "learning", "blind_label": "I" },
+    { "activity": "learning", "blind_label": "J" },
+    { "activity": "creativity", "blind_label": "O" },
+    { "activity": "creativity", "blind_label": "N" },
+    { "activity": "motivation", "blind_label": "Q" },
+    { "activity": "motivation", "blind_label": "R" },
+    { "activity": "light_work", "blind_label": "U" },
+    { "activity": "light_work", "blind_label": "X" }
+  ],
+  "held_back": [
+    { "activity": "learning", "blind_labels": ["K", "L"] },
+    { "activity": "creativity", "blind_labels": ["M", "P"] },
+    { "activity": "motivation", "blind_labels": ["S", "T"] },
+    { "activity": "light_work", "blind_labels": ["V", "W"] }
+  ],
+  "ratings": {
+    "distraction": ["none", "noticeable_but_workable", "task_breaking"],
+    "activity_fit": ["poor", "acceptable", "strong"],
+    "repeat_willingness": ["no", "maybe", "yes"]
+  },
+  "publication_approval": false
+}

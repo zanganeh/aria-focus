@@ -1,0 +1,24 @@
+{
+  "productName": "Aria Focus Blind Review",
+  "identifier": "com.ariazanganeh.ariafocus.blind-review",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Aria Focus — BLINDED LOCAL REVIEW",
+        "width": 720,
+        "height": 780,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  },
+  "bundle": {
+    "resources": [
+      "private-beta-pack",
+      "review-candidates",
+      "learning-review-candidates",
+      "activity-review-candidates"
+    ]
+  }
+}

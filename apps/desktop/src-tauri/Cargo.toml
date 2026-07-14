@@ -1,0 +1,58 @@
+[package]
+name = "aria-focus-desktop"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+publish.workspace = true
+default-run = "aria-focus"
+
+[features]
+default = []
+bundled-library = []
+bundled-listening-test = []
+
+[lib]
+name = "aria_focus_desktop_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "aria-focus"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2.0.3", features = [] }
+catalogue = { workspace = true }
+tempfile = "=3.14.0"
+ed25519-dalek = { version = "2.1.1", features = ["std"] }
+base64 = "0.22.1"
+sha2 = "0.10.8"
+serde_json = "1.0.134"
+
+[dependencies]
+tauri = { version = "2.1.1", features = [] }
+tauri-plugin-dialog = "=2.2.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.134"
+thiserror = "2.0.11"
+domain = { workspace = true }
+music-studio-domain = { workspace = true }
+audio-engine = { workspace = true }
+persistence = { workspace = true }
+catalogue = { workspace = true }
+tempfile = "=3.14.0"
+ed25519-dalek = { version = "2.1.1", features = ["std"] }
+base64 = "0.22.1"
+sha2 = "0.10.8"
+audio-analyzer = { workspace = true }
+getrandom = "0.3.4"
+reqwest = { version = "=0.12.12", default-features = false, features = ["blocking", "rustls-tls"] }
+tar = "=0.4.43"
+fs2 = "=0.4.3"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading"] }
+
+[dev-dependencies]
+zip = { version = "=2.4.2", default-features = false, features = ["deflate"] }

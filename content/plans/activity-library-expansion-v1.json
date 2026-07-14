@@ -1,0 +1,231 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "activity-library-expansion-v1",
+    "created_at": "2026-07-12T00:00:00Z",
+    "notes": "One additional local-only instrumental candidate for each focus activity. These tracks expand each existing four-track activity calibration set to five listening candidates; human listening review remains required before approval or publication.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["deep_work", "motivation", "creativity", "learning", "light_work"],
+    "genres": [
+      { "id": "ambient-electronic", "label": "Ambient Electronic" },
+      { "id": "minimal-synthwave", "label": "Minimal Synthwave" },
+      { "id": "downtempo", "label": "Downtempo" },
+      { "id": "organic-ambient", "label": "Organic Ambient" },
+      { "id": "soft-electronic", "label": "Soft Electronic" }
+    ],
+    "moods": [
+      { "id": "calm", "label": "Calm" },
+      { "id": "steady", "label": "Steady" },
+      { "id": "curious", "label": "Curious" },
+      { "id": "clear", "label": "Clear" },
+      { "id": "warm", "label": "Warm" }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "deep-work-quietspectrum-072",
+      "seed": 72012001,
+      "activity": "deep_work",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 90,
+      "bpm": 72,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] quiet ambient electronic concentration bed at 72 BPM in C minor, diffuse pads, a very soft low pulse, gentle long chord holds, slow tonal shading, stable low density and even loudness, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, vocal samples, chanting, hooks, lead melody, solos, fills, drops, breakdowns, stingers, dramatic builds, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, alarms, bells, ringtones"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "C minor" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    },
+    {
+      "id": "motivation-horizonpulse-100",
+      "seed": 10012002,
+      "activity": "motivation",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["steady", "warm"],
+      "duration_seconds": 90,
+      "bpm": 100,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm minimal synthwave work bed at 100 BPM in A minor, soft analog bass pulse, subdued electronic drums, wide sustained pads, predictable two chord cycle, constant moderate energy, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken samples, hooks, bright lead synth, arpeggio spotlight, solos, fills, drops, breakdowns, dramatic build, abrupt transition, sudden silence, hard kick, sharp snare, alarms, ringtones"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "A minor" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    },
+    {
+      "id": "creativity-colourdrift-082",
+      "seed": 82012003,
+      "activity": "creativity",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["curious", "warm"],
+      "duration_seconds": 90,
+      "bpm": 82,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] soft downtempo creative work bed at 82 BPM in D major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, stable relaxed energy, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken samples, hooks, solos, fills, drops, breakdowns, loud drums, cymbal crashes, sharp transients, sudden silence, abrupt changes, alarms, ringtones"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "D major" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    },
+    {
+      "id": "learning-clearfield-068",
+      "seed": 68012004,
+      "activity": "learning",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["clear", "calm"],
+      "duration_seconds": 90,
+      "bpm": 68,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear organic ambient study bed at 68 BPM in G major, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, slow spacious changes, stable low density, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken samples, hooks, piano solo, rhythm fills, drops, dramatic builds, sudden silence, sharp transients, alarms, bells, ringtones"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "G major" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    },
+    {
+      "id": "lightwork-dayglow-086",
+      "seed": 86012005,
+      "activity": "light_work",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["warm", "steady"],
+      "duration_seconds": 90,
+      "bpm": 86,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] bright but gentle soft electronic light work bed at 86 BPM in E major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, relaxed consistent energy, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken samples, hooks, lead melody, solos, fills, drops, breakdowns, dramatic build, abrupt transition, sudden silence, sharp percussion, alarms, bells, ringtones"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "E major" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    }
+  ]
+}

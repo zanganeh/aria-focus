@@ -1,0 +1,27 @@
+{
+  "name": "aria-focus",
+  "version": "0.2.1-beta.1",
+  "private": true,
+  "description": "Free, open-source, offline focus music.",
+  "packageManager": "pnpm@10.10.0",
+  "engines": {
+    "node": ">=24.11.1",
+    "pnpm": ">=10.10.0"
+  },
+  "scripts": {
+    "fmt": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css,yml,yaml}\"",
+    "fmt:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css,yml,yaml}\"",
+    "lint": "pnpm -C apps/desktop lint",
+    "typecheck": "pnpm -C apps/desktop typecheck",
+    "test": "pnpm -C apps/desktop test",
+    "build": "pnpm -C apps/desktop build",
+    "dev": "pnpm -C apps/desktop dev",
+    "tauri": "pnpm -C apps/desktop tauri",
+    "tauri:local-library": "pnpm -C apps/desktop tauri build --features bundled-listening-test --config src-tauri/tauri.listening-test.conf.json",
+    "tauri:opus-library": "powershell -ExecutionPolicy Bypass -File scripts/build-opus-listening-test.ps1",
+    "verify": "pnpm fmt:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}

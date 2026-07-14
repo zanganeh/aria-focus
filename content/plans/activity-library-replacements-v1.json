@@ -1,0 +1,120 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "activity-library-replacements-v1",
+    "created_at": "2026-07-13T06:00:00Z",
+    "notes": "Two deterministic 180-second replacements for v2 library candidates rejected by the discontinuity gate. Instrumental only; no lyrics or speech.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["deep_work", "motivation", "creativity", "learning", "light_work"],
+    "genres": [
+      { "id": "ambient-electronic", "label": "Ambient Electronic" },
+      { "id": "minimal-synthwave", "label": "Minimal Synthwave" },
+      { "id": "downtempo", "label": "Downtempo" },
+      { "id": "organic-ambient", "label": "Organic Ambient" },
+      { "id": "soft-electronic", "label": "Soft Electronic" }
+    ],
+    "moods": [
+      { "id": "calm", "label": "Calm" },
+      { "id": "steady", "label": "Steady" },
+      { "id": "curious", "label": "Curious" },
+      { "id": "clear", "label": "Clear" },
+      { "id": "warm", "label": "Warm" }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "deep-work-downtempo-replacement-01",
+      "seed": 1801103,
+      "activity": "deep_work",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 64,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo deep work bed at 64 BPM in D major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "D major" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    },
+    {
+      "id": "light-work-soft-electronic-replacement-01",
+      "seed": 1805105,
+      "activity": "light_work",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 88,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic light work bed at 88 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "G major" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    }
+  ]
+}

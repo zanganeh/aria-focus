@@ -1,0 +1,15 @@
+# Preserve the research/specification documents and generated artifacts.
+docs/
+.codebase-memory/
+.codex/
+target/
+node_modules/
+dist/
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/icons/
+apps/desktop/src-tauri/music-studio-runtime/
+content/opus-release/
+pnpm-lock.yaml
+Cargo.lock
+*.msi
+*.exe

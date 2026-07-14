@@ -1,0 +1,44 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Aria Focus",
+  "version": "0.2.1",
+  "identifier": "com.ariazanganeh.ariafocus",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Aria Focus",
+        "width": 720,
+        "height": 780,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "publisher": "Aria Zanganeh",
+    "copyright": "Copyright © 2026 Aria Zanganeh",
+    "shortDescription": "Free, open-source, offline focus music.",
+    "homepage": "https://github.com/zanganeh/aria-focus",
+    "licenseFile": "../../../LICENSE-MIT",
+    "resources": [],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "productName": "Aria Focus Activity Review",
+  "identifier": "com.ariazanganeh.ariafocus.activity-review",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Aria Focus — ACTIVITY QUARANTINED REVIEW",
+        "width": 720,
+        "height": 780,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  },
+  "bundle": {
+    "resources": ["activity-review-candidates"]
+  }
+}

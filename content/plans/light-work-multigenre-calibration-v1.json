@@ -1,0 +1,360 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "light-work-multigenre-calibration-v1",
+    "created_at": "2026-07-11T00:00:00Z",
+    "notes": "Four quarantined 90-second Light Work candidates spanning selectable genres. Light Work permits modest melodic and rhythmic detail while excluding vocals, salient hooks, solos, abrupt changes, and notification-like events; none is approved content.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["light_work"],
+    "genres": [
+      {
+        "id": "acoustic-chill",
+        "label": "Acoustic Chill"
+      },
+      {
+        "id": "cafe-jazz",
+        "label": "Café Jazz"
+      },
+      {
+        "id": "downtempo",
+        "label": "Downtempo"
+      },
+      {
+        "id": "soft-electronic",
+        "label": "Soft Electronic"
+      }
+    ],
+    "moods": [
+      {
+        "id": "easygoing",
+        "label": "Easygoing"
+      },
+      {
+        "id": "light",
+        "label": "Light"
+      },
+      {
+        "id": "pleasant",
+        "label": "Pleasant"
+      },
+      {
+        "id": "warm",
+        "label": "Warm"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "lightwork-sunpaper-acoustic-082",
+      "seed": 95282051,
+      "activity": "light_work",
+      "genre_ids": ["acoustic-chill"],
+      "mood_ids": ["easygoing", "warm"],
+      "duration_seconds": 90,
+      "bpm": 82,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] soft acoustic-chill background for email and routine tasks, nominal 82 BPM in D major; muted fingerstyle guitar texture blended with warm sustained pad, simple slow chord cycle, blurred string attacks, even dynamics, no exposed tune",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, guitar picking spotlight, fret squeak, percussive strum, bright pluck, folk riff,  catchy hook, singable melody, lead solo, virtuoso passage, fills, drop, breakdown, riser, impact, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lightwork-windowtable-jazz-078",
+      "seed": 95278052,
+      "activity": "light_work",
+      "genre_ids": ["cafe-jazz"],
+      "mood_ids": ["pleasant", "warm"],
+      "duration_seconds": 90,
+      "bpm": 78,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] restrained cafe-jazz background for light administrative work, nominal 78 BPM in C major; soft electric-piano chord voicings, sustained upright bass, faint brushed rhythm, stable relaxed harmony, no improvising lead, no room chatter",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, saxophone, trumpet, walking bass, swing accents, piano runs, cymbal accents, crowd noise,  catchy hook, singable melody, lead solo, virtuoso passage, fills, drop, breakdown, riser, impact, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lightwork-easystep-downtempo-090",
+      "seed": 95290053,
+      "activity": "light_work",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["easygoing", "light"],
+      "duration_seconds": 90,
+      "bpm": 90,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] gentle downtempo work bed, nominal 90 BPM in A minor; rounded soft beat, muted percussion, hazy chord layers, restrained bass, modest textural motion, predictable loop-like structure, stable loudness",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, hard kick, snare crack, hi-hat rolls, syncopation, bass fill, dance groove,  catchy hook, singable melody, lead solo, virtuoso passage, fills, drop, breakdown, riser, impact, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lightwork-glassair-electronic-086",
+      "seed": 95286054,
+      "activity": "light_work",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["light", "pleasant"],
+      "duration_seconds": 90,
+      "bpm": 86,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] soft electronic background for routine work, nominal 86 BPM in E major; airy pads, quiet rounded pulse, small diffuse tonal details, slow filter movement, gentle optimism, steady density, no foreground synth line",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, bright bells, sparkles, arpeggio spotlight, sharp plucks, lead synth, notification-like tones,  catchy hook, singable melody, lead solo, virtuoso passage, fills, drop, breakdown, riser, impact, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  ]
+}

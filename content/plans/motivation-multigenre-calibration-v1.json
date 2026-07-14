@@ -1,0 +1,360 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "motivation-multigenre-calibration-v1",
+    "created_at": "2026-07-11T00:00:00Z",
+    "notes": "Four quarantined 90-second Motivation candidates spanning selectable genres. They permit steady drive and stronger pulse while excluding vocals, hooks, drops, solos, abrupt changes, and foreground spectacle; none is approved content.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["motivation"],
+    "genres": [
+      {
+        "id": "driving-electronic",
+        "label": "Driving Electronic"
+      },
+      {
+        "id": "minimal-synthwave",
+        "label": "Minimal Synthwave"
+      },
+      {
+        "id": "orchestral-electronic",
+        "label": "Orchestral Electronic"
+      },
+      {
+        "id": "instrumental-hiphop",
+        "label": "Instrumental Hip-hop"
+      }
+    ],
+    "moods": [
+      {
+        "id": "confident",
+        "label": "Confident"
+      },
+      {
+        "id": "energized",
+        "label": "Energized"
+      },
+      {
+        "id": "optimistic",
+        "label": "Optimistic"
+      },
+      {
+        "id": "steady",
+        "label": "Steady"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "motivation-forwardgrid-electronic-104",
+      "seed": 84204041,
+      "activity": "motivation",
+      "genre_ids": ["driving-electronic"],
+      "mood_ids": ["energized", "steady"],
+      "duration_seconds": 90,
+      "bpm": 104,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady driving electronic work bed, nominal 104 BPM in D minor; rounded four-on-floor low pulse, muted percussion, warm sustained synth layers, subtle repeating harmonic cells, constant restrained energy, predictable texture, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, hard kick, snare crack, hi-hat rolls, syncopated fills, club loudness, sidechain pumping,  catchy hook, anthem melody, lead solo, fills, drop, breakdown, riser, impact, dramatic build, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-neonsteady-synthwave-096",
+      "seed": 84196042,
+      "activity": "motivation",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["confident", "optimistic"],
+      "duration_seconds": 90,
+      "bpm": 96,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] minimal synthwave background for task initiation, nominal 96 BPM in A minor; soft analog bass pulse, broad warm pads, subdued electronic drums, slow chord cycle, stable density and loudness, gently propulsive without nostalgia hooks",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, bright lead synth, arpeggio spotlight, retro hook, tom fills, gated snare, cinematic sweep,  catchy hook, anthem melody, lead solo, fills, drop, breakdown, riser, impact, dramatic build, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-riseplain-orchestral-088",
+      "seed": 84188043,
+      "activity": "motivation",
+      "genre_ids": ["orchestral-electronic"],
+      "mood_ids": ["optimistic", "steady"],
+      "duration_seconds": 90,
+      "bpm": 88,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] restrained orchestral-electronic bed for sustained motivation, nominal 88 BPM in C major; low soft strings, muted electronic pulse, broad consonant harmony, gradual timbral lift without crescendo, constant moderate energy, no heroic theme",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, brass fanfare, trailer drums, timpani, string ostinato, cinematic climax, sweeping crescendo,  catchy hook, anthem melody, lead solo, fills, drop, breakdown, riser, impact, dramatic build, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-groundbeat-hiphop-092",
+      "seed": 84192044,
+      "activity": "motivation",
+      "genre_ids": ["instrumental-hiphop"],
+      "mood_ids": ["confident", "steady"],
+      "duration_seconds": 90,
+      "bpm": 92,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] minimal instrumental hip-hop work groove, nominal 92 BPM in E minor; soft rounded kick, brushed snare texture, simple low bass foundation, hazy chord bed, highly repetitive low-salience pattern, stable dynamics, no sampled voice and no foreground riff",
+        "negative": "vocals, voice, lyrics, speech, chanting, whispers, dialogue, spoken samples, vocal chop, record scratch, sharp snare, hi-hat flourish, bass fill, beat switch, producer tag,  catchy hook, anthem melody, lead solo, fills, drop, breakdown, riser, impact, dramatic build, abrupt transition, sudden silence, alarm, ringtone, notification sound"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  ]
+}

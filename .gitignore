@@ -1,0 +1,46 @@
+# Rust
+/target
+**/target
+
+# Node / pnpm
+node_modules
+dist
+dist-ssr
+*.local
+
+# Tauri build artifacts
+apps/desktop/src-tauri/target
+apps/desktop/src-tauri/gen
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Local agent and code-graph state
+/.codex/
+/.codebase-memory/
+
+# Logs
+*.log
+__pycache__/
+*.py[cod]
+
+# Local-only ACE-Step source, interpreter, model snapshots and production runs.
+/.local/music-generation/
+/apps/desktop/src-tauri/review-candidates/
+/apps/desktop/src-tauri/review-candidates/.stage-*/
+/apps/desktop/src-tauri/learning-review-candidates/
+/apps/desktop/src-tauri/.stage-*/
+/apps/desktop/src-tauri/activity-review-candidates/
+/apps/desktop/src-tauri/.activity-review-stage-*/
+apps/desktop/src-tauri/private-beta-pack/
+/content/opus-release/
+/apps/desktop/src-tauri/music-studio-runtime/
+/release-assets/
+/tmp/
+*.msi
+*-setup.exe
+*.tar.zst.part*

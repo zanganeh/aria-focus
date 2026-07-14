@@ -1,0 +1,5551 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "activity-library-expansion-v2",
+    "created_at": "2026-07-13T00:00:00Z",
+    "notes": "Seventy-five additional local-only instrumental candidates expanding each focus activity from five to twenty listening candidates: fifteen new 180-second tracks per activity. All tracks are instrumental, contain no lyrics and no speech, and use the immutable pinned ACE-Step 1.5 turbo pipeline (FLAC, 48 kHz stereo, 8 steps, shift 3, ODE, deterministic seeds, 4/4, no random seed). Human listening review remains required before approval or publication.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["deep_work", "motivation", "creativity", "learning", "light_work"],
+    "genres": [
+      {
+        "id": "ambient-electronic",
+        "label": "Ambient Electronic"
+      },
+      {
+        "id": "minimal-synthwave",
+        "label": "Minimal Synthwave"
+      },
+      {
+        "id": "downtempo",
+        "label": "Downtempo"
+      },
+      {
+        "id": "organic-ambient",
+        "label": "Organic Ambient"
+      },
+      {
+        "id": "soft-electronic",
+        "label": "Soft Electronic"
+      }
+    ],
+    "moods": [
+      {
+        "id": "calm",
+        "label": "Calm"
+      },
+      {
+        "id": "steady",
+        "label": "Steady"
+      },
+      {
+        "id": "curious",
+        "label": "Curious"
+      },
+      {
+        "id": "clear",
+        "label": "Clear"
+      },
+      {
+        "id": "warm",
+        "label": "Warm"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "deep-work-ambient-electronic-01",
+      "seed": 1801001,
+      "activity": "deep_work",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 60,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic deep work bed at 60 BPM in C major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-minimal-synthwave-02",
+      "seed": 1801002,
+      "activity": "deep_work",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 62,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave deep work bed at 62 BPM in A minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-downtempo-03",
+      "seed": 1801003,
+      "activity": "deep_work",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 64,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo deep work bed at 64 BPM in D major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-organic-ambient-04",
+      "seed": 1801004,
+      "activity": "deep_work",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 66,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient deep work bed at 66 BPM in E minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-soft-electronic-05",
+      "seed": 1801005,
+      "activity": "deep_work",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 68,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic deep work bed at 68 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-ambient-electronic-06",
+      "seed": 1801006,
+      "activity": "deep_work",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 70,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic deep work bed at 70 BPM in F major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "F major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-minimal-synthwave-07",
+      "seed": 1801007,
+      "activity": "deep_work",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 72,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave deep work bed at 72 BPM in C minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-downtempo-08",
+      "seed": 1801008,
+      "activity": "deep_work",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 74,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo deep work bed at 74 BPM in D minor, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-organic-ambient-09",
+      "seed": 1801009,
+      "activity": "deep_work",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 76,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient deep work bed at 76 BPM in E major, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-soft-electronic-10",
+      "seed": 1801010,
+      "activity": "deep_work",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 78,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic deep work bed at 78 BPM in G minor, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-ambient-electronic-11",
+      "seed": 1801011,
+      "activity": "deep_work",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 67,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic deep work bed at 67 BPM in A major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-minimal-synthwave-12",
+      "seed": 1801012,
+      "activity": "deep_work",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 69,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave deep work bed at 69 BPM in D major, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-downtempo-13",
+      "seed": 1801013,
+      "activity": "deep_work",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 71,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo deep work bed at 71 BPM in C major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-organic-ambient-14",
+      "seed": 1801014,
+      "activity": "deep_work",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 73,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient deep work bed at 73 BPM in A minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deep-work-soft-electronic-15",
+      "seed": 1801015,
+      "activity": "deep_work",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 75,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic deep work bed at 75 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, stable low density and even loudness, steady concentration, no foreground instrument",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-ambient-electronic-01",
+      "seed": 1802001,
+      "activity": "motivation",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 90,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic motivation bed at 90 BPM in C major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-minimal-synthwave-02",
+      "seed": 1802002,
+      "activity": "motivation",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 92,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave motivation bed at 92 BPM in A minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-downtempo-03",
+      "seed": 1802003,
+      "activity": "motivation",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 94,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo motivation bed at 94 BPM in D major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-organic-ambient-04",
+      "seed": 1802004,
+      "activity": "motivation",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 96,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient motivation bed at 96 BPM in E minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-soft-electronic-05",
+      "seed": 1802005,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 98,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic motivation bed at 98 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-ambient-electronic-06",
+      "seed": 1802006,
+      "activity": "motivation",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 100,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic motivation bed at 100 BPM in F major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "F major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-minimal-synthwave-07",
+      "seed": 1802007,
+      "activity": "motivation",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 102,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave motivation bed at 102 BPM in C minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-downtempo-08",
+      "seed": 1802008,
+      "activity": "motivation",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 104,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo motivation bed at 104 BPM in D minor, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-organic-ambient-09",
+      "seed": 1802009,
+      "activity": "motivation",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 106,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient motivation bed at 106 BPM in E major, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-soft-electronic-10",
+      "seed": 1802010,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic motivation bed at 108 BPM in G minor, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-ambient-electronic-11",
+      "seed": 1802011,
+      "activity": "motivation",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 110,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic motivation bed at 110 BPM in A major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-minimal-synthwave-12",
+      "seed": 1802012,
+      "activity": "motivation",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 112,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave motivation bed at 112 BPM in D major, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-downtempo-13",
+      "seed": 1802013,
+      "activity": "motivation",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 95,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo motivation bed at 95 BPM in C major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-organic-ambient-14",
+      "seed": 1802014,
+      "activity": "motivation",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 100,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient motivation bed at 100 BPM in A minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-soft-electronic-15",
+      "seed": 1802015,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 105,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic motivation bed at 105 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, constant moderate energy, predictable forward motion, no foreground lead",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-ambient-electronic-01",
+      "seed": 1803001,
+      "activity": "creativity",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 70,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic creativity bed at 70 BPM in C major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-minimal-synthwave-02",
+      "seed": 1803002,
+      "activity": "creativity",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 72,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave creativity bed at 72 BPM in A minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-downtempo-03",
+      "seed": 1803003,
+      "activity": "creativity",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 74,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo creativity bed at 74 BPM in D major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-organic-ambient-04",
+      "seed": 1803004,
+      "activity": "creativity",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 76,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient creativity bed at 76 BPM in E minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-soft-electronic-05",
+      "seed": 1803005,
+      "activity": "creativity",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 78,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic creativity bed at 78 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-ambient-electronic-06",
+      "seed": 1803006,
+      "activity": "creativity",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 80,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic creativity bed at 80 BPM in F major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "F major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-minimal-synthwave-07",
+      "seed": 1803007,
+      "activity": "creativity",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 82,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave creativity bed at 82 BPM in C minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-downtempo-08",
+      "seed": 1803008,
+      "activity": "creativity",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 84,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo creativity bed at 84 BPM in D minor, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-organic-ambient-09",
+      "seed": 1803009,
+      "activity": "creativity",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 86,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient creativity bed at 86 BPM in E major, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-soft-electronic-10",
+      "seed": 1803010,
+      "activity": "creativity",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 88,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic creativity bed at 88 BPM in G minor, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-ambient-electronic-11",
+      "seed": 1803011,
+      "activity": "creativity",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 90,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic creativity bed at 90 BPM in A major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-minimal-synthwave-12",
+      "seed": 1803012,
+      "activity": "creativity",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 75,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave creativity bed at 75 BPM in D major, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-downtempo-13",
+      "seed": 1803013,
+      "activity": "creativity",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 77,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo creativity bed at 77 BPM in C major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-organic-ambient-14",
+      "seed": 1803014,
+      "activity": "creativity",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 79,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient creativity bed at 79 BPM in A minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creativity-soft-electronic-15",
+      "seed": 1803015,
+      "activity": "creativity",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 81,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic creativity bed at 81 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-ambient-electronic-01",
+      "seed": 1804001,
+      "activity": "learning",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 60,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic learning bed at 60 BPM in C major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-minimal-synthwave-02",
+      "seed": 1804002,
+      "activity": "learning",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 62,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave learning bed at 62 BPM in A minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-downtempo-03",
+      "seed": 1804003,
+      "activity": "learning",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 64,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo learning bed at 64 BPM in D major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-organic-ambient-04",
+      "seed": 1804004,
+      "activity": "learning",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 66,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient learning bed at 66 BPM in E minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-soft-electronic-05",
+      "seed": 1804005,
+      "activity": "learning",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 68,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic learning bed at 68 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-ambient-electronic-06",
+      "seed": 1804006,
+      "activity": "learning",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 70,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic learning bed at 70 BPM in F major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "F major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-minimal-synthwave-07",
+      "seed": 1804007,
+      "activity": "learning",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 72,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave learning bed at 72 BPM in C minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-downtempo-08",
+      "seed": 1804008,
+      "activity": "learning",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 74,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo learning bed at 74 BPM in D minor, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-organic-ambient-09",
+      "seed": 1804009,
+      "activity": "learning",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 76,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient learning bed at 76 BPM in E major, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-soft-electronic-10",
+      "seed": 1804010,
+      "activity": "learning",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 78,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic learning bed at 78 BPM in G minor, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-ambient-electronic-11",
+      "seed": 1804011,
+      "activity": "learning",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 80,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic learning bed at 80 BPM in A major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-minimal-synthwave-12",
+      "seed": 1804012,
+      "activity": "learning",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 65,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave learning bed at 65 BPM in D major, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-downtempo-13",
+      "seed": 1804013,
+      "activity": "learning",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 67,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo learning bed at 67 BPM in C major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-organic-ambient-14",
+      "seed": 1804014,
+      "activity": "learning",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 69,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient learning bed at 69 BPM in A minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-soft-electronic-15",
+      "seed": 1804015,
+      "activity": "learning",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 71,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic learning bed at 71 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-ambient-electronic-01",
+      "seed": 1805001,
+      "activity": "light_work",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 80,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic light work bed at 80 BPM in C major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-minimal-synthwave-02",
+      "seed": 1805002,
+      "activity": "light_work",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 82,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave light work bed at 82 BPM in A minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-downtempo-03",
+      "seed": 1805003,
+      "activity": "light_work",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 84,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo light work bed at 84 BPM in D major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-organic-ambient-04",
+      "seed": 1805004,
+      "activity": "light_work",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 86,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient light work bed at 86 BPM in E minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-soft-electronic-05",
+      "seed": 1805005,
+      "activity": "light_work",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 88,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic light work bed at 88 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-ambient-electronic-06",
+      "seed": 1805006,
+      "activity": "light_work",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 90,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic light work bed at 90 BPM in F major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "F major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-minimal-synthwave-07",
+      "seed": 1805007,
+      "activity": "light_work",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 92,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave light work bed at 92 BPM in C minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-downtempo-08",
+      "seed": 1805008,
+      "activity": "light_work",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 94,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo light work bed at 94 BPM in D minor, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-organic-ambient-09",
+      "seed": 1805009,
+      "activity": "light_work",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 96,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient light work bed at 96 BPM in E major, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-soft-electronic-10",
+      "seed": 1805010,
+      "activity": "light_work",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 98,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic light work bed at 98 BPM in G minor, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-ambient-electronic-11",
+      "seed": 1805011,
+      "activity": "light_work",
+      "genre_ids": ["ambient-electronic"],
+      "mood_ids": ["calm", "steady"],
+      "duration_seconds": 180,
+      "bpm": 100,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] calm ambient electronic light work bed at 100 BPM in A major, diffuse synth pads, a very soft low pulse, gentle long chord holds, slow tonal shading, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-minimal-synthwave-12",
+      "seed": 1805012,
+      "activity": "light_work",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 85,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave light work bed at 85 BPM in D major, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-downtempo-13",
+      "seed": 1805013,
+      "activity": "light_work",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 87,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo light work bed at 87 BPM in C major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-organic-ambient-14",
+      "seed": 1805014,
+      "activity": "light_work",
+      "genre_ids": ["organic-ambient"],
+      "mood_ids": ["steady", "curious"],
+      "duration_seconds": 180,
+      "bpm": 89,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] steady organic ambient light work bed at 89 BPM in A minor, soft felt piano fragments far in the background, quiet wood and air textures, long consonant harmony, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, piano solo, rhythm fills"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-work-soft-electronic-15",
+      "seed": 1805015,
+      "activity": "light_work",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["clear", "warm"],
+      "duration_seconds": 180,
+      "bpm": 91,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] clear soft electronic light work bed at 91 BPM in G major, rounded bass pulse, muted hand percussion, warm airy pads, easy repeating harmony, relaxed consistent energy, easy motion, no foreground hook",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, sharp percussion"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "G major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  ]
+}
