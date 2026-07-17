@@ -2,7 +2,7 @@
 //!
 //! Every content item records provenance and licence. The bundled test tone is
 //! generated in-process from public-domain maths, so it carries no third-party
-//! audio, no Brain.fm asset, and no generation provider terms.
+//! audio, no named third-party product asset, and no generation provider terms.
 
 use serde::{Deserialize, Serialize};
 
@@ -35,7 +35,7 @@ impl Provenance {
             licence: "No external audio sampled. Released under the project licence (MIT OR Apache-2.0).",
             contains_voice_or_speech: false,
             contains_lyrics: false,
-            notes: "Soft additive chord with a slow amplitude LFO. No hooks, drops, or abrupt changes. Intensity processing is generic tremolo/noise mix and is not a Brain.fm reproduction.",
+            notes: "Soft additive chord with a slow amplitude LFO. No hooks, drops, or abrupt changes. Intensity processing is generic tremolo/noise mix and is not a reproduction of any named third-party product.",
             sample_rate_hz: sample_rate,
             channels: 2,
             duration_seconds,

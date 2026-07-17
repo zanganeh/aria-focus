@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Only the latest tagged public beta or stable release receives security fixes.
+Only the latest tagged stable release receives security fixes.
 
 ## Reporting a vulnerability
 

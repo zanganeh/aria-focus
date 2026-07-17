@@ -7,7 +7,7 @@ export function AboutAriaFocus() {
       <dl>
         <div>
           <dt>Version</dt>
-          <dd>0.2.0-beta.1</dd>
+          <dd>0.22.0</dd>
         </div>
         <div>
           <dt>Created by</dt>

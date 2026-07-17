@@ -9,5 +9,6 @@ The optional ACE-Step-based music workflow and its output evidence are recorded
 in `content/evidence/ace-step-1.5-terms-2026-07-11.md`. That record is technical
 evidence, not automatic authorization to redistribute model weights or audio.
 
-No Brain.fm code, music, service, or trademark is included. Aria Focus is an
-independent project and is not affiliated with Brain.fm.
+Aria Focus is an independent project. It does not include code, music, private
+APIs, brand assets, or trademarks from any named third-party focus-music
+product or service, and is not affiliated with any such product or service.

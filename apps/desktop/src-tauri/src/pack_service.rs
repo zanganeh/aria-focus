@@ -8,13 +8,14 @@ use audio_engine::{
     decode_track_with_limit, AuthoredRegion, AuthoredRegionKind, DecodeExpectation, DecodedProgram,
     MediaCodec, SourceLabel, MAX_PROGRAM_SAMPLES,
 };
+use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
 use catalogue::{
     available_genres_with_eligibility, available_moods_with_eligibility, canonical_pack_path,
     is_stable_identifier, select_playback_plan_for_item_with_eligibility,
     select_playback_plan_with_eligibility, stage_pack, verify_bundled_owner_waived_pack,
     verify_generated_local_pack, verify_installed_pack, AssetCodec, ContentPackManifest,
-    GeneratedLocalRecord, GenreOption, ImportLimits, MoodOption, PlaybackEligibility,
-    PlaybackSelectionInput, SafeRegionKind,
+    CoverArtAsset, GeneratedLocalRecord, GenreOption, ImportLimits, MoodOption,
+    PlaybackEligibility, PlaybackSelectionInput, SafeRegionKind,
 };
 use domain::{Activity, TrackEnjoyment, TrackFeedback};
 use persistence::{
@@ -79,6 +80,8 @@ pub(crate) enum PackServiceError {
     Recovery { pack_id: String, reason: String },
     #[error("installed audio could not be prepared: {0}")]
     Audio(String),
+    #[error("installed cover art could not be prepared: {0}")]
+    CoverArt(String),
 }
 
 pub(crate) struct PreparedPackPlayback {
@@ -452,6 +455,34 @@ impl<R: CatalogueRegistry> PackService<R> {
 
     pub(crate) fn commit_playback(&mut self, primary_item_id: String) {
         self.recent_item_id = Some(primary_item_id);
+    }
+
+    /// Returns a bounded `data:` URL for the active installed item's declared
+    /// cover art, or `None` when the item has no cover. Only the validated
+    /// declared asset is read, the resolved path is constrained to the pack's
+    /// `assets/` tree, and the bytes are re-hashed against the manifest before
+    /// encoding. No filesystem path or signed URL leaves this method.
+    pub(crate) fn cover_art_data_url(
+        &mut self,
+        pack_id: &str,
+        item_id: &str,
+    ) -> Result<Option<String>, PackServiceError> {
+        let records = self.validated_records()?;
+        let Some((record, manifest)) = records.iter().find(|(record, manifest)| {
+            record.pack_id == pack_id && manifest.items.iter().any(|item| item.id == item_id)
+        }) else {
+            return Ok(None);
+        };
+        let Some(item) = manifest.items.iter().find(|item| item.id == item_id) else {
+            return Ok(None);
+        };
+        let Some(cover) = item.cover.as_ref() else {
+            return Ok(None);
+        };
+        let install_dir = Path::new(&record.install_path);
+        let data_url =
+            read_cover_data_url(install_dir, cover).map_err(PackServiceError::CoverArt)?;
+        Ok(Some(data_url))
     }
 
     pub(crate) fn feedback_state(
@@ -2136,6 +2167,74 @@ fn version_storage_key(version: &str) -> String {
     catalogue::import::hash_bytes(version.as_bytes())
 }
 
+/// Reads the declared cover asset from `install_dir` and returns a bounded
+/// `data:` URL. The cover path is canonicalized and constrained to the pack's
+/// `assets/` tree, the file is refused if it is a link/reparse point, the read
+/// is bounded by the manifest constant, and the bytes are re-hashed against
+/// the declared SHA-256 before base64 encoding.
+fn read_cover_data_url(install_dir: &Path, cover: &CoverArtAsset) -> Result<String, String> {
+    let canonical = canonical_pack_path(&cover.path)
+        .filter(|path| path.starts_with("assets/"))
+        .ok_or_else(|| format!("cover path {} is not a safe assets path", cover.path))?;
+    let assets_root = install_dir.join("assets");
+    let resolved = install_dir.join(&canonical);
+    // canonical_pack_path forbids `..`, absolute segments, and reserved names,
+    // so joining it under the install dir cannot escape. The lexical
+    // containment check is the authoritative defense and avoids following
+    // any link that may have replaced the validated file after verification.
+    if !resolved.starts_with(&assets_root) {
+        return Err(format!(
+            "cover path {} escapes the pack assets tree",
+            cover.path
+        ));
+    }
+    let metadata = fs::symlink_metadata(&resolved)
+        .map_err(|error| format!("cover {} is unreadable: {error}", cover.path))?;
+    if metadata.file_type().is_symlink() {
+        return Err(format!("cover {} is a symlink", cover.path));
+    }
+    if !metadata.is_file() {
+        return Err(format!("cover {} is not a regular file", cover.path));
+    }
+    let declared_bytes = cover.bytes;
+    if metadata.len() != declared_bytes {
+        return Err(format!(
+            "cover {} byte count {} differs from manifest {}",
+            cover.path,
+            metadata.len(),
+            declared_bytes
+        ));
+    }
+    if declared_bytes > catalogue::manifest::MAX_COVER_ART_BYTES {
+        return Err(format!("cover {} exceeds the byte bound", cover.path));
+    }
+    let mut file = fs::File::open(&resolved)
+        .map_err(|error| format!("cover {} could not be opened: {error}", cover.path))?;
+    let mut buffer = Vec::with_capacity(usize::try_from(declared_bytes).unwrap_or(0));
+    let max_read = usize::try_from(catalogue::manifest::MAX_COVER_ART_BYTES).unwrap_or(0);
+    let mut limited = (&mut file).take((max_read + 1) as u64);
+    use std::io::Read;
+    limited
+        .read_to_end(&mut buffer)
+        .map_err(|error| format!("cover {} could not be read: {error}", cover.path))?;
+    if buffer.len() as u64 > catalogue::manifest::MAX_COVER_ART_BYTES {
+        return Err(format!(
+            "cover {} exceeds the byte bound while reading",
+            cover.path
+        ));
+    }
+    let actual_hash = catalogue::import::hash_bytes(&buffer);
+    if !actual_hash.eq_ignore_ascii_case(&cover.sha256) {
+        return Err(format!("cover {} hash differs from manifest", cover.path));
+    }
+    let encoded = BASE64_STANDARD.encode(&buffer);
+    Ok(format!(
+        "data:{};base64,{}",
+        cover.format.expected_mime(),
+        encoded
+    ))
+}
+
 fn receipt_file_name(pack_id: &str, version: &str) -> String {
     catalogue::import::hash_bytes(format!("{pack_id}\0{version}").as_bytes())
 }
@@ -2306,8 +2405,8 @@ fn copy_private_beta_tree(
             format!("cannot copy private-beta manifest: {error}"),
         )
     })?;
-    for asset in manifest.declared_assets().into_values() {
-        let path = canonical_pack_path(&asset.path).ok_or_else(|| {
+    for asset in manifest.all_declared_assets().into_values() {
+        let path = canonical_pack_path(asset.path()).ok_or_else(|| {
             recovery_error(&manifest.pack.id, "private-beta asset path is invalid")
         })?;
         let output = destination.join(path);
@@ -2319,7 +2418,7 @@ fn copy_private_beta_tree(
                 )
             })?;
         }
-        fs::copy(source.join(&asset.path), output).map_err(|error| {
+        fs::copy(source.join(asset.path()), output).map_err(|error| {
             recovery_error(
                 &manifest.pack.id,
                 format!("cannot copy private-beta asset: {error}"),
@@ -3652,5 +3751,101 @@ mod tests {
             Err(PackServiceError::Recovery { .. })
         ));
         assert!(target.is_dir());
+    }
+
+    fn write_pack_with_cover_archive(
+        root: &Path,
+        archive_name: &str,
+        asset: &[u8],
+        cover_bytes: &[u8],
+        manifest: &ContentPackManifest,
+    ) -> PathBuf {
+        manifest.validate_published().unwrap();
+        let archive_path = root.join(archive_name);
+        let file = File::create(&archive_path).unwrap();
+        let mut zip = ZipWriter::new(file);
+        let options = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+        zip.start_file("manifest.json", options).unwrap();
+        zip.write_all(&canonical_manifest_bytes(manifest).unwrap())
+            .unwrap();
+        zip.start_file(&manifest.items[0].variants[0].asset.path, options)
+            .unwrap();
+        zip.write_all(asset).unwrap();
+        let cover = manifest.items[0].cover.as_ref().unwrap();
+        zip.start_file(&cover.path, options).unwrap();
+        zip.write_all(cover_bytes).unwrap();
+        zip.finish().unwrap();
+        archive_path
+    }
+
+    fn cover_manifest(asset: &[u8], cover_bytes: &[u8]) -> ContentPackManifest {
+        let mut manifest = serde_json::to_value(fixture_manifest(asset)).unwrap();
+        manifest["items"][0]["cover"] = json!({
+            "path": "assets/cover.png",
+            "sha256": catalogue::import::hash_bytes(cover_bytes),
+            "bytes": cover_bytes.len(),
+            "format": "png",
+            "width": 600,
+            "height": 600,
+            "provenance": {
+                "source": "Generated test cover fixture",
+                "generator": {
+                    "provider": "Test Cover Generator",
+                    "model": "cover-model",
+                    "model_version": "0.1",
+                    "prompt": "Abstract focus cover art"
+                },
+                "licence_id": null,
+                "licence_url": null
+            }
+        });
+        serde_json::from_value(manifest).unwrap()
+    }
+
+    #[test]
+    fn cover_art_lookup_returns_a_bounded_data_url_for_the_active_item() {
+        let temp = TempDir::new().unwrap();
+        let (registry, _) = MockRegistry::new(false);
+        let mut service = PackService::new(registry, temp.path().join("content"));
+        let asset = b"generated fixture bytes only";
+        let cover_bytes = b"fake-png-cover-art-bytes";
+        let manifest = cover_manifest(asset, cover_bytes);
+        let archive = write_pack_with_cover_archive(
+            temp.path(),
+            "covered.adhdpack",
+            asset,
+            cover_bytes,
+            &manifest,
+        );
+
+        service.import(&archive).unwrap();
+        let data_url = service
+            .cover_art_data_url("test.pack", "test-item")
+            .unwrap()
+            .expect("installed item declares a cover");
+        assert!(data_url.starts_with("data:image/png;base64,"));
+        let encoded = data_url.strip_prefix("data:image/png;base64,").unwrap();
+        let decoded = BASE64_STANDARD.decode(encoded).unwrap();
+        assert_eq!(decoded, cover_bytes);
+
+        // An unknown pack or item resolves to no cover rather than an error,
+        // and never exposes a filesystem path.
+        assert!(service
+            .cover_art_data_url("not.installed", "test-item")
+            .unwrap()
+            .is_none());
+        assert!(service
+            .cover_art_data_url("test.pack", "missing-item")
+            .unwrap()
+            .is_none());
+
+        // Tampering with the installed cover after verification fails closed:
+        // the pack revalidation detects the hash mismatch before any cover
+        // bytes are returned, so the lookup never serves wrong data.
+        let target = service.expected_install_path(&manifest);
+        fs::write(target.join("assets/cover.png"), b"tampered cover bytes").unwrap();
+        assert!(service
+            .cover_art_data_url("test.pack", "test-item")
+            .is_err());
     }
 }

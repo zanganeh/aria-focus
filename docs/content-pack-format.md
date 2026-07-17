@@ -143,5 +143,4 @@ the app labels and uses its procedural fallback explicitly.
   identity verification remain future work.
 - Validation and decoding make an asset technically playable; they do not prove
   the publisher's claims about quality, ownership, or functional effectiveness.
-- No starter music catalogue, Brain.fm audio, private API, brand asset, or
-  proprietary generation method is included.
+- No starter music catalogue, named third-party product audio, private API, brand asset, or proprietary generation method is included.

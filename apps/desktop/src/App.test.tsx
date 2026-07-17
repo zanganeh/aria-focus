@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import App from "./App";
 import {
@@ -334,6 +334,46 @@ it("hides feedback and exposes the provisional review warning for a review sourc
   fireEvent.click(screen.getByRole("button", { name: /Review local music/ }));
   expect(screen.getByText(/provisional boundary crossfade/i)).toBeTruthy();
   expect(screen.queryByText(/How is this track/)).toBeNull();
+});
+
+it("renders the active installed item's cover art in the player surface", async () => {
+  vi.mocked(getCurrentSource).mockReset();
+  vi.mocked(getCurrentSource).mockResolvedValue({
+    pack_id: "pack-a",
+    pack_title: "Pack A",
+    item_id: "item-a",
+    item_title: "First Track",
+    variant_id: "base",
+    fallback: false,
+    cover_art: "data:image/png;base64,aGVsbG8=",
+  });
+  mockSession.snapshot = { ...mockSession.snapshot, status: "playing" };
+  render(<App />);
+  await act(async () => Promise.resolve());
+
+  const player = screen.getByRole("region", { name: "Focus player" });
+  const cover = within(player).getByRole("img", { name: "First Track cover art" });
+  expect(cover.getAttribute("src")).toBe("data:image/png;base64,aGVsbG8=");
+});
+
+it("shows a graceful no-cover fallback and never renders cover art for a fallback source", async () => {
+  vi.mocked(getCurrentSource).mockReset();
+  vi.mocked(getCurrentSource).mockResolvedValue({
+    pack_id: "bundled-test-source",
+    pack_title: "Bundled fallback",
+    item_id: "procedural-focus-tone",
+    item_title: "Procedural test tone",
+    variant_id: "deterministic-v1",
+    fallback: true,
+    cover_art: "data:image/png;base64,aGVsbG8=",
+  });
+  mockSession.snapshot = { ...mockSession.snapshot, status: "playing" };
+  render(<App />);
+  await act(async () => Promise.resolve());
+
+  const player = screen.getByRole("region", { name: "Focus player" });
+  expect(within(player).queryByRole("img")).toBeNull();
+  expect(within(player).getByText(/Procedural test tone/)).toBeTruthy();
 });
 
 it("gates pack-dependent controls while packs startup is failed", async () => {

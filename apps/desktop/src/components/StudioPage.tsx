@@ -17,9 +17,69 @@ import {
   startRuntimeInstall,
   stopDraftPreview,
 } from "../lib/api";
-import type { RuntimeInstall, StudioCapability, StudioJobSummary } from "../lib/types";
+import type {
+  RuntimeInstall,
+  StudioCapability,
+  StudioHardwareInfo,
+  StudioJobSummary,
+  StudioRequirements,
+} from "../lib/types";
 
 const NOTE_LIMIT = 240;
+
+const BYTES_PER_GIB = 1024 * 1024 * 1024;
+const BYTES_PER_GB = 1000 * 1000 * 1000;
+
+function formatGib(bytes: number | null | undefined): string {
+  if (bytes == null) return "unknown";
+  const gib = bytes / BYTES_PER_GIB;
+  return `${gib >= 1 ? gib.toFixed(0) : gib.toFixed(1)} GiB`;
+}
+
+function formatGb(bytes: number | null | undefined): string {
+  if (bytes == null) return "unknown";
+  return `${Math.ceil(bytes / BYTES_PER_GB)} GB`;
+}
+
+function cudaLabel(cuda: boolean | null | undefined): string {
+  if (cuda === true) return "Yes";
+  if (cuda === false) return "Not detected";
+  return "unknown";
+}
+
+function StudioRequirementsPanel({
+  hardware,
+  requirements,
+  freeBytes,
+}: {
+  hardware: StudioHardwareInfo | null | undefined;
+  requirements: StudioRequirements | null | undefined;
+  freeBytes: number | null | undefined;
+}) {
+  if (!requirements) return null;
+  return (
+    <dl className="studio-requirements" role="group" aria-label="Music Studio requirements">
+      <div>
+        <dt>Minimum</dt>
+        <dd>
+          Windows 11 x64 ({requirements.architecture}), at least{" "}
+          {formatGib(requirements.min_memory_bytes)} RAM, an NVIDIA CUDA GPU with at least{" "}
+          {formatGib(requirements.min_vram_bytes)} VRAM, and about{" "}
+          {formatGb(requirements.min_free_disk_bytes)} free disk.
+        </dd>
+      </div>
+      <div>
+        <dt>Detected</dt>
+        <dd>
+          Architecture: {hardware?.architecture ?? "unknown"}; RAM:{" "}
+          {formatGib(hardware?.memory_bytes)}; GPU: {hardware?.accelerator ?? "unknown"} (
+          {cudaLabel(hardware?.cuda)}); VRAM: {formatGib(hardware?.vram_bytes)}; free disk:{" "}
+          {formatGb(freeBytes)}.
+        </dd>
+      </div>
+    </dl>
+  );
+}
 
 export function StudioPage({ onReturn }: { onReturn: () => void }) {
   const [capability, setCapability] = useState<StudioCapability | null>(null);
@@ -111,6 +171,16 @@ export function StudioPage({ onReturn }: { onReturn: () => void }) {
               ? "Music Studio needs to be set up on this device."
               : "Music Studio is unavailable right now.")}
         </p>
+        <p className="studio-muted">
+          The packaged runtime bundles its own Python, pinned source, dependencies, and model
+          snapshots. You do not need to install Python, uv, Git, FFmpeg, or model weights
+          separately. After one-time setup, generation runs offline.
+        </p>
+        <StudioRequirementsPanel
+          hardware={capability.hardware}
+          requirements={capability.requirements}
+          freeBytes={capability.free_bytes}
+        />
         {setup && (
           <p>
             Your music and choices stay on this device.

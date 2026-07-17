@@ -5,8 +5,7 @@
 //! The stateful `Processor` carries parameter smoothers so that intensity
 //! changes made during playback ramp instead of jumping, preventing clicks.
 //!
-//! This is generic amplitude tremolo plus a subtle noise mix. It is NOT a
-//! Brain.fm reproduction and makes no medical claim. Patent review is required
+//! This is generic amplitude tremolo plus a subtle noise mix. It is NOT a reproduction of any named third-party product and makes no medical claim. Patent review is required
 //! before any public/commercial neural-stimulation release.
 
 /// Modulation waveform used by the tremolo LFO.

@@ -127,6 +127,7 @@ fn fixture_manifest(bytes: &[u8]) -> ContentPackManifest {
                     },
                 ],
             },
+            cover: None,
         }],
     }
 }
@@ -208,13 +209,13 @@ fn generated_local_verification_uses_its_own_trust_contract() {
 fn app_semver_compatibility_is_enforced_separately_from_publication() {
     let manifest = fixture_manifest(&asset_bytes());
     assert!(manifest.validate_app_compatibility("0.1.0").is_ok());
-    assert!(manifest.validate_app_compatibility("0.2.0-beta.1").is_ok());
+    assert!(manifest.validate_app_compatibility("0.22.0-beta.1").is_ok());
     assert!(manifest.validate_app_compatibility("2.0.0").is_err());
     assert!(manifest.validate_app_compatibility("not-semver").is_err());
 
     let mut capped = manifest;
-    capped.pack.app_version_requirement = ">=0.1.0, <0.2.0".to_owned();
-    assert!(capped.validate_app_compatibility("0.2.0-beta.1").is_err());
+    capped.pack.app_version_requirement = ">=0.1.0, <0.22.0".to_owned();
+    assert!(capped.validate_app_compatibility("0.22.0-beta.1").is_err());
 }
 
 #[test]
@@ -1299,4 +1300,276 @@ fn loop_queue_rotates_primary_away_from_previous_item_without_dropping_it() {
     assert_eq!(selection.primary().item_id, "item-b");
     let ids: Vec<_> = selection.tracks.iter().map(|t| t.item_id.clone()).collect();
     assert_eq!(ids, vec!["item-b", "item-a", "item-c"]);
+}
+
+fn cover_asset(bytes: &[u8], path: &str, format: CoverArtFormat) -> CoverArtAsset {
+    CoverArtAsset {
+        path: path.to_owned(),
+        sha256: hash_bytes(bytes),
+        bytes: bytes.len() as u64,
+        format,
+        width: 600,
+        height: 600,
+        provenance: CoverArtProvenance {
+            source: "Generated test cover fixture".to_owned(),
+            generator: Some(GeneratorMetadata {
+                provider: "Test Cover Generator".to_owned(),
+                model: "cover-model".to_owned(),
+                model_version: "0.1".to_owned(),
+                prompt: "Abstract focus cover art".to_owned(),
+            }),
+            licence_id: None,
+            licence_url: None,
+        },
+    }
+}
+
+#[test]
+fn legacy_manifest_without_cover_remains_valid() {
+    // The default fixture has no cover; published validation must keep
+    // accepting it unchanged. Owner-waived validation additionally requires
+    // draft human-QA, mirroring the existing owner-waived test.
+    let bytes = asset_bytes();
+    let manifest = fixture_manifest(&bytes);
+    assert!(manifest.validate_published().is_ok());
+    let mut waived = fixture_manifest(&bytes);
+    waived.items[0].human_qa.status = HumanQaStatus::Draft;
+    waived.items[0].human_qa.reviews.clear();
+    assert!(waived.validate_bundled_owner_waived().is_ok());
+    assert!(manifest.declared_cover_assets().is_empty());
+    assert!(manifest
+        .all_declared_assets()
+        .values()
+        .all(|asset| matches!(asset, DeclaredAsset::Audio(_))));
+}
+
+#[test]
+fn manifest_with_valid_cover_passes_published_validation() {
+    let bytes = asset_bytes();
+    let mut manifest = fixture_manifest(&bytes);
+    let cover_bytes = b"fake-png-cover-art-bytes";
+    manifest.items[0].cover = Some(cover_asset(
+        cover_bytes,
+        "assets/cover.png",
+        CoverArtFormat::Png,
+    ));
+    assert!(manifest.validate_published().is_ok());
+    let covers = manifest.declared_cover_assets();
+    assert_eq!(covers.len(), 1);
+    assert!(manifest
+        .all_declared_assets()
+        .values()
+        .any(|asset| matches!(asset, DeclaredAsset::Cover(_))));
+}
+
+#[test]
+fn invalid_or_duplicate_cover_assets_are_rejected() {
+    let bytes = asset_bytes();
+    let cover_bytes = b"fake-png-cover-art-bytes";
+
+    let reject = |mutator: fn(&mut CoverArtAsset)| {
+        let mut manifest = fixture_manifest(&bytes);
+        let mut cover = cover_asset(cover_bytes, "assets/cover.png", CoverArtFormat::Png);
+        mutator(&mut cover);
+        manifest.items[0].cover = Some(cover);
+        assert!(manifest.validate_published().is_err());
+    };
+
+    reject(|cover| cover.path = "../escape.png".to_owned());
+    reject(|cover| cover.path = "assets/nested/../cover.png".to_owned());
+    reject(|cover| cover.sha256 = "A".repeat(64));
+    reject(|cover| cover.sha256 = "bad".to_owned());
+    reject(|cover| cover.bytes = 0);
+    reject(|cover| cover.bytes = MAX_COVER_ART_BYTES + 1);
+    reject(|cover| cover.format = CoverArtFormat::Webp);
+    reject(|cover| cover.path = "assets/cover.jpg".to_owned());
+    reject(|cover| cover.width = 0);
+    reject(|cover| cover.height = 0);
+    reject(|cover| cover.width = MAX_COVER_ART_DIMENSION + 1);
+    reject(|cover| cover.height = MAX_COVER_ART_DIMENSION + 1);
+
+    // A cover path that duplicates an audio asset path is rejected.
+    let mut manifest = fixture_manifest(&bytes);
+    manifest.items[0].cover = Some(cover_asset(
+        cover_bytes,
+        "assets/test-item.wav",
+        CoverArtFormat::Png,
+    ));
+    assert!(manifest.validate_published().is_err());
+
+    // A cover path colliding case-insensitively with another cover is rejected.
+    let mut manifest = fixture_manifest(&bytes);
+    manifest.items[0].variants[0].asset.path = "assets/item-a.wav".to_owned();
+    let mut second = manifest.items[0].clone();
+    second.id = "item-b".to_owned();
+    second.cover = Some(cover_asset(
+        cover_bytes,
+        "assets/cover.png",
+        CoverArtFormat::Png,
+    ));
+    manifest.items[0].cover = Some(cover_asset(
+        cover_bytes,
+        "assets/Cover.PNG",
+        CoverArtFormat::Png,
+    ));
+    manifest.items.push(second);
+    assert!(manifest.validate_published().is_err());
+}
+
+#[test]
+fn cover_art_provenance_is_required_and_validated() {
+    let bytes = asset_bytes();
+    let cover_bytes = b"fake-png-cover-art-bytes";
+
+    let reject_provenance = |mutator: fn(&mut CoverArtProvenance)| {
+        let mut manifest = fixture_manifest(&bytes);
+        let mut cover = cover_asset(cover_bytes, "assets/cover.png", CoverArtFormat::Png);
+        mutator(&mut cover.provenance);
+        manifest.items[0].cover = Some(cover);
+        assert!(manifest.validate_published().is_err());
+    };
+
+    reject_provenance(|prov| prov.source.clear());
+    reject_provenance(|prov| {
+        prov.generator = None;
+        prov.licence_id = None;
+    });
+    reject_provenance(|prov| {
+        prov.generator.as_mut().unwrap().provider.clear();
+    });
+    reject_provenance(|prov| {
+        prov.generator.as_mut().unwrap().prompt.clear();
+    });
+
+    // A licensed cover with no generator is accepted.
+    let mut manifest = fixture_manifest(&bytes);
+    let mut cover = cover_asset(cover_bytes, "assets/cover.png", CoverArtFormat::Png);
+    cover.provenance.generator = None;
+    cover.provenance.licence_id = Some("CC0-1.0".to_owned());
+    cover.provenance.licence_url =
+        Some("https://creativecommons.org/publicdomain/zero/1.0/".to_owned());
+    manifest.items[0].cover = Some(cover);
+    assert!(manifest.validate_published().is_ok());
+}
+
+#[test]
+fn generated_local_manifest_rejects_declared_cover_art() {
+    let _temp = tempfile::tempdir().unwrap();
+    let job_id = "job-local-cover";
+    let asset = b"local generated flac fixture";
+    let mut manifest = fixture_manifest(asset);
+    manifest.pack.id = format!("generated.local.{job_id}");
+    manifest.pack.version = "1.0.0".to_owned();
+    manifest.pack.app_version_requirement = "*".to_owned();
+    manifest.items[0].id = format!("generated.local.{job_id}.item");
+    manifest.items[0].human_qa = HumanQa {
+        status: HumanQaStatus::Draft,
+        reviews: vec![],
+    };
+    manifest.items[0].variants[0].asset = AudioAsset {
+        path: format!("assets/generated/{job_id}.flac"),
+        sha256: hash_bytes(asset),
+        bytes: asset.len() as u64,
+        codec: AssetCodec::Flac,
+        sample_rate_hz: 48_000,
+        channels: 2,
+        bit_depth: Some(24),
+    };
+    manifest.items[0].cover = Some(cover_asset(
+        b"cover",
+        "assets/cover.png",
+        CoverArtFormat::Png,
+    ));
+    assert!(manifest.validate_generated_local(job_id).is_err());
+    // Removing the cover restores the generated-local contract.
+    manifest.items[0].cover = None;
+    assert!(manifest.validate_generated_local(job_id).is_ok());
+}
+
+fn write_pack_with_cover(
+    path: &Path,
+    manifest: &ContentPackManifest,
+    audio: &[u8],
+    cover: Option<(&[u8], &str)>,
+) {
+    let file = File::create(path).unwrap();
+    let mut writer = ZipWriter::new(file);
+    let stored = SimpleFileOptions::default().compression_method(CompressionMethod::Stored);
+    writer.start_file(MANIFEST_PATH, stored).unwrap();
+    writer
+        .write_all(&canonical_manifest_bytes(manifest).unwrap())
+        .unwrap();
+    writer
+        .start_file(&manifest.items[0].variants[0].asset.path, stored)
+        .unwrap();
+    writer.write_all(audio).unwrap();
+    if let Some((cover_bytes, cover_path)) = cover {
+        writer.start_file(cover_path, stored).unwrap();
+        writer.write_all(cover_bytes).unwrap();
+    }
+    writer.finish().unwrap();
+}
+
+#[test]
+fn installed_pack_verification_includes_declared_cover_art() {
+    let temp = tempfile::tempdir().unwrap();
+    let bytes = asset_bytes();
+    let cover_bytes = b"fake-png-cover-art-bytes";
+    let mut manifest = fixture_manifest(&bytes);
+    manifest.items[0].cover = Some(cover_asset(
+        cover_bytes,
+        "assets/cover.png",
+        CoverArtFormat::Png,
+    ));
+    let archive = temp.path().join("covered.adhdpack");
+    write_pack_with_cover(
+        &archive,
+        &manifest,
+        &bytes,
+        Some((cover_bytes, "assets/cover.png")),
+    );
+
+    // Staging accepts the declared cover, and installed-tree verification
+    // confirms the cover file is present and its hash matches.
+    let staged = stage_pack(
+        &archive,
+        &temp.path().join("staging"),
+        ImportLimits::default(),
+    )
+    .unwrap();
+    let target = temp.path().join("installed/test.focus-pack/1.0.0");
+    let installed = staged.install_to(&target).unwrap();
+    assert!(target.join("assets/cover.png").is_file());
+    let verified = verify_installed_pack(&installed.directory, &installed.manifest_sha256).unwrap();
+    assert!(verified.items[0].cover.is_some());
+
+    // A pack that declares the cover but omits the file is rejected.
+    let archive_missing = temp.path().join("missing-cover.adhdpack");
+    write_pack_with_cover(&archive_missing, &manifest, &bytes, None);
+    assert!(matches!(
+        stage_pack(
+            &archive_missing,
+            &temp.path().join("staging-missing"),
+            ImportLimits::default()
+        ),
+        Err(PackImportError::MissingAsset(_))
+    ));
+
+    // A cover file whose bytes do not match the declared SHA-256 is rejected
+    // after staging, and the installed tree rejects the tampered cover.
+    let archive_tampered = temp.path().join("tampered-cover.adhdpack");
+    write_pack_with_cover(
+        &archive_tampered,
+        &manifest,
+        &bytes,
+        Some((b"FAKE-PNG-COVER-ART-BYTES", "assets/cover.png")),
+    );
+    assert!(matches!(
+        stage_pack(
+            &archive_tampered,
+            &temp.path().join("staging-tampered"),
+            ImportLimits::default()
+        ),
+        Err(PackImportError::HashMismatch(_))
+    ));
 }

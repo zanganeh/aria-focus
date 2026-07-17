@@ -153,6 +153,11 @@ export default function App() {
   const packsAvailable = startupHealth?.packs_ready !== false;
   const canUseGenreAndFeedback = coreAvailable && packsAvailable;
   const reviewActive = source?.quarantined_review === true && transportActive;
+  // Cover art is only present for clean installed-pack sources (never fallback
+  // or quarantined review); the backend omits the field otherwise.
+  const coverArt =
+    source?.cover_art && !source.fallback && !source.quarantined_review ? source.cover_art : null;
+  const coverAlt = source ? `${source.item_title} cover art` : "Cover art";
 
   useEffect(() => {
     const wasActive = previousStatus.current === "playing" || previousStatus.current === "paused";
@@ -320,9 +325,14 @@ export default function App() {
 
       {page !== "home" && transportActive && (
         <section className="mini-player" aria-label="Active focus session">
-          <div>
-            <strong>{source?.item_title ?? `${activityLabel} session`}</strong>
-            <span>{status === "paused" ? "Paused" : "Playing"}</span>
+          <div className="mini-player-info">
+            {coverArt ? (
+              <img className="mini-player-cover" src={coverArt} alt={coverAlt} decoding="async" />
+            ) : null}
+            <div>
+              <strong>{source?.item_title ?? `${activityLabel} session`}</strong>
+              <span>{status === "paused" ? "Paused" : "Playing"}</span>
+            </div>
           </div>
           <div className="mini-player-actions">
             <button
@@ -443,6 +453,12 @@ export default function App() {
                 {transportActive ? `${activityLabel} session` : "Ready when you are"}
               </p>
               <SessionTimer snapshot={session.snapshot} />
+
+              {coverArt ? (
+                <img className="player-cover" src={coverArt} alt={coverAlt} decoding="async" />
+              ) : (
+                <div className="player-cover player-cover--none" aria-hidden="true" />
+              )}
 
               {source && (
                 <p className="source-label" aria-live="polite">

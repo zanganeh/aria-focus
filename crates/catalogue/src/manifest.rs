@@ -94,6 +94,10 @@ pub struct ContentItem {
     pub analysis: TechnicalAnalysis,
     pub variants: Vec<ContentVariant>,
     pub human_qa: HumanQa,
+    /// Optional declared cover-art asset for the item. Older manifests omit
+    /// this field; `#[serde(default)]` keeps them valid.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover: Option<CoverArtAsset>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -187,6 +191,95 @@ impl AssetCodec {
     }
 }
 
+/// Declared cover-art asset for a content item. The renderer only ever sees a
+/// bounded data URL derived from this validated, installed asset; the path
+/// itself never leaves the catalogue layer.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CoverArtAsset {
+    pub path: String,
+    pub sha256: String,
+    pub bytes: u64,
+    pub format: CoverArtFormat,
+    pub width: u32,
+    pub height: u32,
+    /// Art provenance recorded with the binary asset so the replacement
+    /// manifest attributes each cover to its generator or licence.
+    pub provenance: CoverArtProvenance,
+}
+
+/// Provenance for a cover-art asset. A generated cover supplies `generator`
+/// (provider/model/model_version/prompt); a licensed cover supplies a
+/// `licence_id`. At least one of the two must be declared so the lineage is
+/// never anonymous.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CoverArtProvenance {
+    pub source: String,
+    pub generator: Option<GeneratorMetadata>,
+    pub licence_id: Option<String>,
+    pub licence_url: Option<String>,
+}
+
+/// Supported raster cover-art formats. The MIME type is derived from the
+/// format, so extension/MIME consistency is enforced structurally.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CoverArtFormat {
+    Png,
+    Webp,
+    Jpeg,
+}
+
+impl CoverArtFormat {
+    pub fn expected_extension(self) -> &'static str {
+        match self {
+            Self::Png => "png",
+            Self::Webp => "webp",
+            Self::Jpeg => "jpg",
+        }
+    }
+
+    pub fn expected_mime(self) -> &'static str {
+        match self {
+            Self::Png => "image/png",
+            Self::Webp => "image/webp",
+            Self::Jpeg => "image/jpeg",
+        }
+    }
+}
+
+/// A declared asset enumerated for installed-pack verification. It owns no
+/// new data: callers borrow either an audio asset or a cover-art asset.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum DeclaredAsset<'a> {
+    Audio(&'a AudioAsset),
+    Cover(&'a CoverArtAsset),
+}
+
+impl DeclaredAsset<'_> {
+    pub fn path(&self) -> &str {
+        match self {
+            DeclaredAsset::Audio(asset) => &asset.path,
+            DeclaredAsset::Cover(asset) => &asset.path,
+        }
+    }
+
+    pub fn sha256(&self) -> &str {
+        match self {
+            DeclaredAsset::Audio(asset) => &asset.sha256,
+            DeclaredAsset::Cover(asset) => &asset.sha256,
+        }
+    }
+
+    pub fn bytes(&self) -> u64 {
+        match self {
+            DeclaredAsset::Audio(asset) => asset.bytes,
+            DeclaredAsset::Cover(asset) => asset.bytes,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SafeRegion {
@@ -276,6 +369,9 @@ impl ContentPackManifest {
                     "generated-local record may not claim human or vocal/speech verification"
                         .to_owned(),
                 );
+            }
+            if item.cover.is_some() {
+                issues.push("generated-local record may not declare cover art".to_owned());
             }
             if item.variants.len() != 1 {
                 issues.push(
@@ -479,6 +575,35 @@ impl ContentPackManifest {
             .map(|asset| (asset.path.as_str(), asset))
             .collect()
     }
+
+    /// Declared cover-art assets keyed by their canonical path. Items without
+    /// cover art contribute nothing, so older manifests enumerate empty.
+    pub fn declared_cover_assets(&self) -> HashMap<&str, &CoverArtAsset> {
+        self.items
+            .iter()
+            .filter_map(|item| item.cover.as_ref())
+            .map(|asset| (asset.path.as_str(), asset))
+            .collect()
+    }
+
+    /// Every declared asset (audio and cover art) keyed by canonical path. This
+    /// is the closed-world enumeration used by archive staging and installed-
+    /// pack verification, so undeclared files and missing covers both fail.
+    pub fn all_declared_assets(&self) -> HashMap<&str, DeclaredAsset<'_>> {
+        let mut assets = HashMap::new();
+        for item in &self.items {
+            for variant in &item.variants {
+                assets.insert(
+                    variant.asset.path.as_str(),
+                    DeclaredAsset::Audio(&variant.asset),
+                );
+            }
+            if let Some(cover) = &item.cover {
+                assets.insert(cover.path.as_str(), DeclaredAsset::Cover(cover));
+            }
+        }
+        assets
+    }
 }
 
 impl GeneratedLocalRecord {
@@ -580,6 +705,7 @@ fn validate_item(
             issues,
         );
     }
+    validate_cover_asset(&prefix, item, asset_paths, issues);
 }
 
 fn validate_item_without_human_qa(
@@ -620,6 +746,7 @@ fn validate_item_without_human_qa(
             issues,
         );
     }
+    validate_cover_asset(&prefix, item, asset_paths, issues);
 }
 
 fn validate_tags(
@@ -949,6 +1076,98 @@ fn validate_asset(
             "variant {} stimulation availability must be unique and include Off",
             variant.id
         ));
+    }
+}
+
+/// Largest accepted cover-art payload. Keeps the renderer-bound data URL and
+/// installed-pack verification bounded; cover art is decorative, not audio.
+pub const MAX_COVER_ART_BYTES: u64 = 4 * 1024 * 1024;
+/// Cover-art images are decorative; clamp dimensions to a sane display bound.
+pub const MAX_COVER_ART_DIMENSION: u32 = 4096;
+
+fn validate_cover_asset(
+    prefix: &str,
+    item: &ContentItem,
+    paths: &mut HashSet<String>,
+    issues: &mut Vec<String>,
+) {
+    let Some(cover) = &item.cover else {
+        return;
+    };
+    let normalized = canonical_pack_path(&cover.path);
+    if normalized
+        .as_deref()
+        .is_none_or(|path| !path.starts_with("assets/"))
+    {
+        issues.push(format!("{prefix} has invalid cover path {}", cover.path));
+    }
+    let duplicate_key = normalized
+        .as_deref()
+        .unwrap_or(&cover.path)
+        .to_ascii_lowercase();
+    if !paths.insert(duplicate_key) {
+        issues.push(format!("duplicate asset path {}", cover.path));
+    }
+    if cover.sha256.len() != 64
+        || !cover
+            .sha256
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || matches!(byte, b'a'..=b'f'))
+    {
+        issues.push(format!("cover {} has invalid SHA-256", cover.path));
+    }
+    if cover.bytes == 0 {
+        issues.push(format!("cover {} has zero bytes", cover.path));
+    } else if cover.bytes > MAX_COVER_ART_BYTES {
+        issues.push(format!("cover {} exceeds the byte bound", cover.path));
+    }
+    let extension = cover.path.rsplit('.').next().unwrap_or_default();
+    if !extension.eq_ignore_ascii_case(cover.format.expected_extension()) {
+        issues.push(format!(
+            "cover {} extension does not match format",
+            cover.path
+        ));
+    }
+    if cover.width == 0
+        || cover.height == 0
+        || cover.width > MAX_COVER_ART_DIMENSION
+        || cover.height > MAX_COVER_ART_DIMENSION
+    {
+        issues.push(format!("cover {} has invalid dimensions", cover.path));
+    }
+    validate_cover_provenance(prefix, cover, issues);
+}
+
+fn validate_cover_provenance(prefix: &str, cover: &CoverArtAsset, issues: &mut Vec<String>) {
+    let provenance = &cover.provenance;
+    required(
+        &format!("{prefix} cover source"),
+        &provenance.source,
+        issues,
+    );
+    if provenance.generator.is_none() && provenance.licence_id.is_none() {
+        issues.push(format!(
+            "{prefix} cover {} must declare a generator or licence",
+            cover.path
+        ));
+    }
+    if let Some(generator) = &provenance.generator {
+        required("cover generator.provider", &generator.provider, issues);
+        required("cover generator.model", &generator.model, issues);
+        required(
+            "cover generator.model_version",
+            &generator.model_version,
+            issues,
+        );
+        required("cover generator.prompt", &generator.prompt, issues);
+    }
+    if let Some(licence_url) = provenance.licence_url.as_deref() {
+        if licence_url.trim().is_empty() {
+            issues.push(format!(
+                "{prefix} cover {} has an empty licence url",
+                cover.path
+            ));
+        }
     }
 }
 

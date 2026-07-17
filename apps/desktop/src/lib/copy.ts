@@ -1,7 +1,7 @@
 /**
  * Centralised user-facing copy. Kept here so an automated test can prove the
- * product framing contains no medical-treatment language and no Brain.fm
- * reproduction claim.
+ * product framing contains no medical-treatment language and no claim that
+ * the DSP reproduces any named third-party product.
  */
 export const PRODUCT_COPY = {
   disclaimer:
@@ -23,5 +23,4 @@ export const BANNED_PHRASES = [
   "neurofeedback",
   "medication",
   "prescription",
-  "brain.fm",
 ];

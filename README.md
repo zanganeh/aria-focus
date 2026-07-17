@@ -5,7 +5,7 @@
 <h1 align="center">Aria Focus</h1>
 
 <p align="center">
-  A private, offline focus-music player for Windows.<br>
+  A private, offline focus-music player for Windows, with a built-in AI Music Studio.<br>
   No account. No subscription. No telemetry.
 </p>
 
@@ -13,17 +13,19 @@
   <a href="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml"><img src="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue" alt="MIT OR Apache-2.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows-0078D4" alt="Windows">
-  <a href="https://github.com/zanganeh/aria-focus/releases/tag/v0.2.1-beta.1"><img src="https://img.shields.io/badge/status-unsigned%20beta%20preview-orange" alt="Unsigned beta preview"></a>
+  <img src="https://img.shields.io/badge/version-0.22.0-2EA44F" alt="0.22.0">
 </p>
 
 Aria Focus is a standalone desktop app for deep work, motivation, creativity,
 learning, and light work. It plays integrity-checked music from local storage,
 keeps preferences and session history on the device, and presents a deliberately
-small activity-first interface.
+small activity-first interface. The optional **AI Music Studio** generates short
+instrumental tracks entirely on your machine.
 
-The project is open for source review and contribution. An unsigned beta preview
-is available now with listening-test music. The first reviewed and signed public
-build is still being prepared.
+The project is open for source review and contribution. The application is at a
+stable 0.22.0 source version. Signed, reviewed public installers remain gated on
+the protected release workflow below; this README does not claim signing or
+final review has already happened.
 
 ## What it includes
 
@@ -33,7 +35,7 @@ build is still being prepared.
 - Per-activity intensity, genre, and mood preferences
 - Local session history and independent focus/enjoyment feedback
 - Fully offline playback after content installation
-- Optional **My Music** studio for locally generated instrumental tracks
+- Optional **AI Music Studio** for locally generated instrumental tracks
 - Strict manifest, hash, codec, path, and installed-tree validation
 - Safe startup recovery without silently deleting user data
 
@@ -45,32 +47,99 @@ on the computer. Bundled content has explicit provenance, technical analysis, an
 human-review gates before it can become a public release.
 
 Aria Focus is not medical treatment and does not claim to diagnose or treat ADHD.
-It is an independent project and is not affiliated with Brain.fm.
+It is an independent project and is not affiliated with any named third-party
+focus-music product or service.
 
-## Download the beta preview
+## Install and use
 
-[**Download Aria Focus 0.2.1 Beta 1 for Windows x64**](https://github.com/zanganeh/aria-focus/releases/download/v0.2.1-beta.1/Aria-Focus_0.2.1-beta.1_unsigned-preview_x64-setup.exe)
+Aria Focus runs on **Windows 11 x64**.
 
-This 251 MB prerelease is **not code-signed**, so Windows SmartScreen may warn
-before installation. Its 100 bundled Opus tracks are listening-test content and
-have not completed final public human review. Check the accompanying
-[`SHA256SUMS`](https://github.com/zanganeh/aria-focus/releases/download/v0.2.1-beta.1/SHA256SUMS)
-before running it. Use the signed release channel when it becomes available if
-you do not want to install an unsigned preview.
+1. Download the latest installer from the
+   [Releases page](https://github.com/zanganeh/aria-focus/releases).
+   Prefer a signed release when one is available. Unsigned source-only builds are
+   clearly labelled and are not official releases.
+2. Run the downloaded setup file. Windows SmartScreen may warn for unsigned
+   builds; check `SHA256SUMS` on the release page before running an unsigned
+   installer.
+3. Open Aria Focus, choose a focus activity, optionally pick a genre and mood,
+   choose a timer, and press Play. Everything stays on your device.
 
-## Project status
+Offline playback works after the content library is installed. No network
+connection is needed for listening or for generation once the Music Studio runtime
+is installed.
 
-Windows x64 is the supported packaged target. The application, playback engine,
-Opus support, content-pack integrity model, timers, history, and local-generation
-workflow are implemented and tested. Public distribution remains gated on:
+## AI Music Studio
 
-- final human review and redistribution approval for all bundled tracks;
-- publication of the immutable reviewed music archive;
-- configured Windows code signing; and
-- a clean-install and real upgrade test of the signed candidate.
+The AI Music Studio is a first-class feature. It lets you describe the music you
+want in simple terms—an activity, a sound style, an energy level, and an optional
+note—and generates a short instrumental track **locally on your device**. Nothing
+is uploaded, and no account is required.
 
-Follow [Releases](https://github.com/zanganeh/aria-focus/releases) for later signed
-builds. Do not download installers offered through unofficial mirrors.
+### Minimum requirements
+
+The packaged Music Studio runtime bundles its own private Python environment,
+pinned source, dependencies, and model snapshots. **You do not need to
+separately install Python, `uv`, Git, FFmpeg, or any model weights**—the app
+checks your hardware, downloads the signed runtime once, and then runs offline.
+
+| Requirement      | Minimum                                                    |
+| ---------------- | ---------------------------------------------------------- |
+| Operating system | Windows 11 x64                                             |
+| Architecture     | x64 (`x86_64`)                                             |
+| System RAM       | 16 GiB                                                     |
+| GPU              | NVIDIA CUDA GPU with at least 8 GiB VRAM                   |
+| Free disk        | About 14.2 GB for the public runtime, plus a safety margin |
+
+The current generation worker uses CUDA. On devices that do not meet these
+requirements, the Studio reports what it detected and what is missing instead of
+starting a generation that cannot succeed.
+
+### One-click setup
+
+1. Open **My Music** → **Music Studio**. The app inspects your device and shows
+   the detected hardware, the minimum requirements, and the disk space needed.
+2. If setup is required, press **Set up Music Studio**. The app verifies the
+   signed package manifest and signature, then copies the runtime. No shell
+   commands are run and no arbitrary packages are installed.
+3. When setup is complete, choose a sound style, energy, and length, then
+   **Generate music**. Preview, save to My Music, regenerate, or discard.
+
+### What is bundled
+
+- A private, self-contained Python runtime (no system Python is used).
+- Pinned source code and pinned dependencies for the local generator.
+- Immutable model snapshots with recorded provenance.
+- An Ed25519-signed package manifest so the app can verify integrity and
+  authenticity before and after install.
+
+### Offline and privacy
+
+After the one-time setup, generation runs entirely on your device. Generated
+tracks, requests, and feedback are stored locally and are clearly separated from
+reviewed bundled content. The app does not send prompts, audio, or usage data to
+any server.
+
+### Generation length
+
+Each generated track is either **90 seconds** or **180 seconds** of seamless
+instrumental audio, ready to loop for a focus session.
+
+### Troubleshooting
+
+- **"Set up Music Studio" fails during download:** check free disk space (about
+  14.2 GB plus margin) and your network during the one-time download, then retry.
+  Setup is resumable.
+- **"Music Studio is not supported on this device":** the app detected that your
+  GPU, VRAM, or RAM is below the minimum. The message lists what was detected and
+  what is required. Generation needs an NVIDIA CUDA GPU with at least 8 GiB VRAM.
+- **Setup reports a verification error:** the signed manifest or runtime did not
+  match. Do not run an unverified runtime; re-run setup or download the package
+  again from the pinned release.
+- **Generation is busy:** only one track is generated at a time. Wait for the
+  current track to finish, then generate another.
+
+See [`tools/music-generation/README.md`](tools/music-generation/README.md) for the
+maintainer-side production and conversion tools.
 
 ## Build from source
 
@@ -125,11 +194,9 @@ large and require their own provenance and review lifecycle. Release builds pin
 the exact archive name and SHA-256, validate a closed-world manifest, and bundle
 only approved assets.
 
-The optional My Music studio lets a user describe the music they want in simple
-terms. Generation runs locally after installing a separate runtime and model.
+The AI Music Studio is the optional user-facing generation path described above.
 Generated tracks remain local and are clearly separated from reviewed bundled
-content. See [`tools/music-generation/README.md`](tools/music-generation/README.md)
-for the maintainer-side production and conversion tools.
+content.
 
 ## Repository map
 
@@ -149,8 +216,9 @@ Start with [`docs/architecture.md`](docs/architecture.md) for system boundaries 
 
 ## Releases
 
-GitHub Actions performs ordinary CI on every pull request. Pushing a version tag
-automatically starts a separate, protected release workflow that:
+GitHub Actions performs ordinary CI on every pull request. Pushing a stable
+`vMAJOR.MINOR.PATCH` tag automatically starts a separate, protected release
+workflow that:
 
 1. checks out an existing version tag;
 2. downloads the exact pinned reviewed-library archive;
@@ -158,16 +226,17 @@ automatically starts a separate, protected release workflow that:
 4. builds NSIS and MSI installers;
 5. submits them to SignPath for Windows signing;
 6. verifies Authenticode signatures and creates `SHA256SUMS`; and
-7. uploads the signed files to a draft GitHub prerelease.
+7. uploads the signed files to a draft GitHub release.
 
 The release remains a draft until a maintainer completes the Windows install and
-upgrade matrix. See [`docs/releases.md`](docs/releases.md) and
+upgrade matrix. The release-tag validator accepts only canonical stable tags and
+rejects prerelease suffixes. See [`docs/releases.md`](docs/releases.md) and
 [`docs/content-pack-upgrades.md`](docs/content-pack-upgrades.md).
 
-Signed draft creation is automatic after a version tag is pushed and the protected
-environment is approved. Publishing that draft remains an explicit maintainer
-decision. The current unsigned preview was published manually as a clearly labelled
-exception to the signed release channel.
+Signed draft creation is automatic after a stable version tag is pushed and the
+protected environment is approved. Publishing that draft remains an explicit
+maintainer decision. Signing, the reviewed-library archive, and the Music Studio
+runtime are protected gates; this README does not claim they are already complete.
 
 ## Contributing
 

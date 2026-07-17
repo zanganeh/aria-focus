@@ -273,7 +273,7 @@ impl AdminApp {
             opus_output: ".local/pipeline/admin-opus-v1".into(),
             flac_version: "1.0.0-flac.1".into(),
             opus_version: "1.0.0-opus.1".into(),
-            app_requirement: ">=0.2.1-beta.1, <0.3.0".into(),
+            app_requirement: ">=0.22.0, <0.23.0".into(),
             release_tag: format!("v{version}"),
         };
         app.refresh();
@@ -789,10 +789,10 @@ impl AdminApp {
         });
         ui.add_space(10.0);
         frame(ui, |ui| {
-            ui.heading("3. Start signed beta after review");
+            ui.heading("3. Start signed release after review");
             ui.label("The Admin never publishes automatically. Copy this only after the tag is created and pushed:");
             ui.code(format!(
-                "gh workflow run public-beta.yml --ref {} -f release_tag={}",
+                "gh workflow run public-release.yml --ref {} -f release_tag={}",
                 self.release_tag, self.release_tag
             ));
         });

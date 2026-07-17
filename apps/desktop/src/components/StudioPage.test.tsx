@@ -336,3 +336,66 @@ it("returns to the library", async () => {
   await userEvent.click(await screen.findByRole("button", { name: "Return to Library" }));
   expect(onReturn).toHaveBeenCalledOnce();
 });
+
+it("shows detected hardware and minimum requirements on the setup view", async () => {
+  api.getStudioCapability.mockResolvedValue({
+    state: "setup_required",
+    detail: "Music Studio is ready to install on this device.",
+    required_bytes: 14_212_159_917,
+    free_bytes: 200_000_000_000,
+    hardware: {
+      architecture: "x86_64",
+      memory_bytes: 34_359_738_368,
+      accelerator: "NVIDIA CUDA",
+      vram_bytes: 12_884_901_888,
+      cuda: true,
+    },
+    requirements: {
+      architecture: "x86_64",
+      min_memory_bytes: 17_179_869_184,
+      min_vram_bytes: 8_589_934_592,
+      cuda_required: true,
+      min_free_disk_bytes: 15_317_028_915,
+    },
+  });
+  render(<StudioPage onReturn={vi.fn()} />);
+
+  const panel = await screen.findByRole("group", { name: "Music Studio requirements" });
+  expect(panel.textContent).toContain("16 GiB RAM");
+  expect(panel.textContent).toContain("8 GiB VRAM");
+  expect(panel.textContent).toContain("Detected");
+  expect(panel.textContent).toContain("NVIDIA CUDA");
+  expect(panel.textContent).toContain("32 GiB");
+  expect(panel.textContent).toContain("12 GiB");
+  // The bundled-runtime reassurance copy is present.
+  expect(screen.getByText(/bundles its own Python/)).toBeTruthy();
+});
+
+it("renders the unsupported state with actionable detail and no install button", async () => {
+  api.getStudioCapability.mockResolvedValue({
+    state: "unsupported",
+    detail:
+      "Music Studio is not supported on this device. System RAM is about 4 GiB; Music Studio needs at least 16 GiB.",
+    hardware: {
+      architecture: "x86_64",
+      memory_bytes: 4_294_967_296,
+      accelerator: null,
+      vram_bytes: null,
+      cuda: null,
+    },
+    requirements: {
+      architecture: "x86_64",
+      min_memory_bytes: 17_179_869_184,
+      min_vram_bytes: 8_589_934_592,
+      cuda_required: true,
+      min_free_disk_bytes: 15_317_028_915,
+    },
+  });
+  render(<StudioPage onReturn={vi.fn()} />);
+
+  expect(await screen.findByText(/not supported on this device/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Install Music Studio" })).toBeNull();
+  expect(screen.getByRole("group", { name: "Music Studio requirements" }).textContent).toContain(
+    "4 GiB",
+  );
+});

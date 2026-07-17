@@ -1,0 +1,222 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "activity-library-expansion-v2-repair-v1",
+    "created_at": "2026-07-13T00:00:00Z",
+    "notes": "Two regenerated 180-second replacement candidates for discontinuity repair; draft, owner-waived test material.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["deep_work", "motivation", "creativity", "learning", "light_work"],
+    "genres": [
+      {
+        "id": "ambient-electronic",
+        "label": "Ambient Electronic"
+      },
+      {
+        "id": "minimal-synthwave",
+        "label": "Minimal Synthwave"
+      },
+      {
+        "id": "downtempo",
+        "label": "Downtempo"
+      },
+      {
+        "id": "organic-ambient",
+        "label": "Organic Ambient"
+      },
+      {
+        "id": "soft-electronic",
+        "label": "Soft Electronic"
+      }
+    ],
+    "moods": [
+      {
+        "id": "calm",
+        "label": "Calm"
+      },
+      {
+        "id": "steady",
+        "label": "Steady"
+      },
+      {
+        "id": "curious",
+        "label": "Curious"
+      },
+      {
+        "id": "clear",
+        "label": "Clear"
+      },
+      {
+        "id": "warm",
+        "label": "Warm"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "creativity-minimal-synthwave-02",
+      "seed": 1803002,
+      "activity": "creativity",
+      "genre_ids": ["minimal-synthwave"],
+      "mood_ids": ["curious", "clear"],
+      "duration_seconds": 180,
+      "bpm": 72,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] curious minimal synthwave creativity bed at 72 BPM in A minor, soft analog bass pulse, broad warm pads, subdued electronic drums, slow repeating chord cycle, stable relaxed energy, gentle colour, no lead melody",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, bright lead synth, arpeggio spotlight, sidechain pumping"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "learning-downtempo-03",
+      "seed": 1804003,
+      "activity": "learning",
+      "genre_ids": ["downtempo"],
+      "mood_ids": ["warm", "calm"],
+      "duration_seconds": 180,
+      "bpm": 64,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] warm downtempo learning bed at 64 BPM in D major, warm electric piano haze, brushed low percussion, gentle shifting chord colour, sparse background texture, spacious low density, calm clarity, no melody in the foreground",
+        "negative": "vocals, voice, lyrics, speech, spoken words, spoken samples, vocal samples, chanting, whispers, dialogue, hooks, lead melody, foreground lead, solos, fills, drops, breakdowns, dramatic builds, risers, impacts, stingers, sudden silence, abrupt transitions, tempo changes, dense percussion, cymbal crashes, sharp transients, sharp snare, hard kick, alarms, bells, ringtones, notification sounds, loud drums"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -295,6 +295,25 @@ pub struct StudioHardwareInfo {
     pub architecture: Option<String>,
     pub memory_bytes: Option<u64>,
     pub accelerator: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vram_bytes: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cuda: Option<bool>,
+}
+
+/// Minimum hardware/environment requirements the Music Studio needs to run.
+///
+/// These are reported to the UI so users can see exactly what the packaged
+/// runtime needs before they start a one-time setup. They are advisory values
+/// used by the preflight check, not a guarantee that generation will succeed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct StudioRequirements {
+    pub architecture: String,
+    pub min_memory_bytes: u64,
+    pub min_vram_bytes: u64,
+    pub cuda_required: bool,
+    pub min_free_disk_bytes: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -308,6 +327,8 @@ pub struct StudioCapability {
     pub required_bytes: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub free_bytes: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirements: Option<StudioRequirements>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

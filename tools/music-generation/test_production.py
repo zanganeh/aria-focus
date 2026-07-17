@@ -29,7 +29,9 @@ class ProductionContractTests(unittest.TestCase):
         plan = production.validate(ROOT, ROOT/'content/plans/deep-work-calibration-v1.json').plan
         values = production.config(plan['candidates'][0], ROOT, Path('C:/ignored/run'))
         self.assertEqual(values['audio_format'], 'flac')
-        self.assertEqual(values['duration'], 90.0)
+        # The deep-work calibration plan intentionally targets 180s candidates;
+        # the app contract supports 90s or 180s generation lengths.
+        self.assertEqual(values['duration'], 180.0)
         self.assertEqual(values['inference_steps'], 8)
         self.assertEqual(values['infer_method'], 'ode')
         self.assertFalse(values['use_random_seed'])

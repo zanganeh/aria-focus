@@ -118,11 +118,7 @@ bit-transparent apart from shared gain, resampling, and transition processing.
 Profiles must store rate, depth, waveform, wet/dry mix, frequency scope, channel
 relationship, ramp time, and output compensation. The UI exposes only intensity.
 
-We must not claim that a generic 16 Hz effect reproduces Brain.fm. Brain.fm has
-active patents involving selected frequency/cochlear regions, rhythmic-event
-synchronisation, modulation-feature selection, and personalisation. Public or
-commercial release of similar DSP requires a claim-level patent review and may
-require a design-around or licence.
+We must not claim that a generic 16 Hz effect reproduces any named third-party product. Named focus-music products may hold active patents involving selected frequency/cochlear regions, rhythmic-event synchronisation, modulation-feature selection, and personalisation. Public or commercial release of similar DSP requires a claim-level patent review and may require a design-around or licence.
 
 ## Evaluation
 

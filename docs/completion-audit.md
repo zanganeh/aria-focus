@@ -24,7 +24,7 @@ as proof of music effectiveness or of untested operating-system behaviour.
 | Dynamic, high-quality, non-distracting focus music | Human gate | Immutable generation lineage, decode/analyser gates, blind review applications and local rating export | Blind human ratings and acceptance decisions are still required for Learning, Creativity, Motivation, and Light Work candidates |
 | Offline Windows application | Partial | Tauri NSIS/MSI bundles, native CPAL playback, embedded Deep Work private-beta pack, secure pack import | Installed-device playback, suspend/resume, device switching and uninstall checks remain |
 | Cross-platform foundation | Partial | Rust core crates, Tauri/React boundary and Windows/Ubuntu/macOS CI definitions | Hosted Ubuntu/macOS runs and native bundle/runtime checks are not yet available |
-| No Brain.fm copying or network dependency | Proven | Locally generated/licensed content pipeline and offline pack architecture | Continue enforcing provenance for every accepted track |
+| No copying or network dependency on any named third-party product | Proven | Locally generated/licensed content pipeline and offline pack architecture | Continue enforcing provenance for every accepted track |
 
 ## Version 1 acceptance audit
 

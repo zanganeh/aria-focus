@@ -68,9 +68,9 @@ fn main() {
             .expect("canonical private-beta manifest");
         let manifest_sha256 = catalogue::import::hash_bytes(&canonical);
         let mut assets = manifest
-            .declared_assets()
+            .all_declared_assets()
             .into_iter()
-            .map(|(path, asset)| (path.to_owned(), asset.sha256.clone()))
+            .map(|(path, asset)| (path.to_owned(), asset.sha256().to_owned()))
             .collect::<Vec<_>>();
         assets.sort();
         let mut actual_files = collect_plain_files(&staged);

@@ -6,7 +6,7 @@ import re
 import tomllib
 from pathlib import Path
 
-TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$")
+TAG = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -24,13 +24,13 @@ def load_toml(path: Path) -> dict:
 
 def verify(root: Path, tag: str) -> str:
     if not TAG.fullmatch(tag):
-        raise ValueError("release tag must be a canonical vMAJOR.MINOR.PATCH tag with an optional prerelease")
+        raise ValueError("release tag must be a canonical stable vMAJOR.MINOR.PATCH tag with no prerelease suffix")
 
     package = load_json(root / "package.json")
     desktop = load_json(root / "apps/desktop/package.json")
     cargo = load_toml(root / "Cargo.toml")
     tauri = load_json(root / "apps/desktop/src-tauri/tauri.conf.json")
-    assets = load_json(root / "release/public-beta-assets.json")
+    assets = load_json(root / "release/public-release-assets.json")
 
     version = package.get("version")
     expected_tag = f"v{version}"

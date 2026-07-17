@@ -14,8 +14,9 @@ pub use import::{
 };
 pub use manifest::{
     canonical_manifest_bytes, canonical_pack_path, is_stable_identifier, AssetCodec,
-    ContentPackManifest, GeneratedLocalRecord, LocalGenerationEvidence, ManifestValidationError,
-    SafeRegionKind, TaxonomyTerm, MANIFEST_PATH,
+    ContentPackManifest, CoverArtAsset, CoverArtFormat, CoverArtProvenance, DeclaredAsset,
+    GeneratedLocalRecord, LocalGenerationEvidence, ManifestValidationError, SafeRegionKind,
+    TaxonomyTerm, MANIFEST_PATH,
 };
 pub use selection::{
     available_genres, available_genres_with_eligibility, available_moods,

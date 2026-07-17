@@ -1,25 +1,28 @@
-# Aria Focus public beta release
+# Aria Focus public release
 
-`v0.2.1-beta.1` is an explicitly unsigned listening-test preview and does not
-satisfy this release gate. The first reviewed and signed public candidate must use
-a newer version and is blocked until every gate in this document passes.
+The 0.22.0 line is the first stable release track. A tag must be a canonical
+stable `vMAJOR.MINOR.PATCH` tag; prerelease suffixes are rejected by
+`scripts/verify_release_tag.py`. The first reviewed and signed public candidate
+is blocked until every gate in this document passes.
 
-Windows installer metadata uses numeric version `0.2.1` because MSI does not
-accept text prerelease identifiers; the app, packages, About panel, and Git tag
-retain the public-beta label.
+Windows installer metadata uses the numeric version `0.22.0` because MSI does not
+accept text prerelease identifiers; the app, packages, About panel, and Git tag all
+carry `0.22.0`.
 
 ## External approvals
 
-- Complete a basic Australian and US name/trademark search for “Aria Focus”.
+- Complete a basic Australian and US name/trademark search for "Aria Focus".
 - Approve redistribution terms for every bundled generated track.
 - Approve redistribution of the optional Music Studio model/runtime payload.
 - Apply to SignPath Foundation and configure origin-verified GitHub signing.
+
+These approvals are not yet complete. The workflow must fail closed until they are.
 
 ## Content staging
 
 Production audio and runtime files remain outside Git. Stage the reviewed
 100-track archive in the `aria-focus-library-v1` GitHub release, pin its exact
-asset name and SHA-256 in `release/public-beta-assets.json`, and update its
+asset name and SHA-256 in `release/public-release-assets.json`, and update its
 customer-facing manifest title to `Aria Focus Library`. The signed-release
 workflow downloads and safely stages that immutable asset before running:
 
@@ -58,6 +61,5 @@ from the exact version tag through the protected `public-release` environment an
 needs the documented SignPath secret/variables configured in GitHub. Follow
 [`releases.md`](releases.md) for setup, dispatch, and final publication.
 
-The NSIS installer is the primary customer download. Do not publish another
-unsigned installer or replace the immutable `v0.2.1-beta.1` preview assets. All
-later public builds must use a new version and follow the signed workflow.
+The NSIS installer is the primary customer download. All public builds must use a
+new stable version and follow the signed workflow.

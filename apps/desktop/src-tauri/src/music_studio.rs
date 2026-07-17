@@ -5,7 +5,7 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use music_studio_domain::{
-    CapabilityState, StudioCapability, StudioHardwareInfo, StudioRuntimeInfo,
+    CapabilityState, StudioCapability, StudioRequirements, StudioRuntimeInfo,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -20,7 +20,10 @@ use std::{
     },
 };
 
+mod preflight;
 mod runtime_download;
+
+use preflight::DISK_SAFETY_MARGIN_BYTES;
 
 const MANIFEST: &str = "package-manifest.json";
 const SIGNATURE: &str = "package-manifest.sig";
@@ -40,6 +43,13 @@ pub struct StudioRuntimePaths {
     pub database_path: PathBuf,
     distribution_base: String,
     public_key: [u8; 32],
+    // Test seam: when set, capability/install preflight uses this probe instead
+    // of probing real hardware. Production builds leave this `None` so the real
+    // native probes run; tests inject a fixed probe to stay GPU/RAM-independent.
+    preflight_probe: Option<preflight::HardwareProbe>,
+    // Test seam: when set, preflight reports this free-disk value instead of
+    // querying the filesystem. Production builds leave this `None`.
+    preflight_free_bytes: Option<u64>,
 }
 impl StudioRuntimePaths {
     pub fn for_app_data(app_data: &Path, package_source: PathBuf) -> Self {
@@ -52,6 +62,8 @@ impl StudioRuntimePaths {
             database_path: app_data.join("preferences.sqlite3"),
             distribution_base: DISTRIBUTION_BASE.into(),
             public_key: pinned_key().unwrap_or([0; 32]),
+            preflight_probe: None,
+            preflight_free_bytes: None,
         }
     }
     #[allow(dead_code)] // injection seam for isolated verifier/installer tests
@@ -63,6 +75,25 @@ impl StudioRuntimePaths {
     pub fn with_distribution_base(mut self, base: impl Into<String>) -> Self {
         self.distribution_base = base.into();
         self
+    }
+    #[allow(dead_code)] // injection seam so tests keep preflight deterministic
+    pub fn with_preflight_probe(mut self, probe: preflight::HardwareProbe) -> Self {
+        self.preflight_probe = Some(probe);
+        self
+    }
+    #[allow(dead_code)] // injection seam so tests can force a free-disk value
+    pub fn with_preflight_free_bytes(mut self, bytes: u64) -> Self {
+        self.preflight_free_bytes = Some(bytes);
+        self
+    }
+    fn preflight_probe(&self) -> preflight::HardwareProbe {
+        self.preflight_probe
+            .clone()
+            .unwrap_or_else(preflight::probe_hardware)
+    }
+    fn preflight_free_bytes(&self) -> Option<u64> {
+        self.preflight_free_bytes
+            .or_else(|| preflight::free_disk_bytes(&self.resources_dir))
     }
     pub fn draft_output_path(&self, job_id: &music_studio_domain::StudioJobId) -> PathBuf {
         self.resources_dir
@@ -381,6 +412,9 @@ fn verify_signed_manifest(root: &Path, key: &[u8; 32]) -> Result<PackageManifest
 
 /// Validates a complete package directory. The manifest bytes are deliberately
 /// verified exactly as stored: package builders must emit canonical JSON bytes.
+///
+/// Error messages are actionable so a missing or incomplete runtime can be
+/// distinguished from a verification failure without exposing internal paths.
 fn verify_package(root: &Path, key: &[u8; 32]) -> Result<PackageManifest, String> {
     let manifest = verify_signed_manifest(root, key)?;
     let runtime = root.join(RUNTIME);
@@ -389,17 +423,17 @@ fn verify_package(root: &Path, key: &[u8; 32]) -> Result<PackageManifest, String
         expected.insert(entry.path.clone());
         let file = runtime.join(&entry.path);
         if unsafe_node(&file) || !file.is_file() {
-            return Err("Music Studio setup needs attention.".into());
+            return Err("a Music Studio runtime file is missing from the package".to_owned());
         };
         let (digest, size) = hash(&file)?;
         if digest != entry.sha256 || size != entry.bytes {
-            return Err("Music Studio setup needs attention.".into());
+            return Err("a Music Studio runtime file failed its integrity check".to_owned());
         }
     }
     let mut actual = BTreeSet::new();
     collect_files(&runtime, &runtime, &mut actual)?;
     if actual != expected {
-        return Err("Music Studio setup needs attention.".into());
+        return Err("the Music Studio package contains unexpected or incomplete files".to_owned());
     }
     Ok(manifest)
 }
@@ -528,33 +562,82 @@ fn collect_files(root: &Path, dir: &Path, out: &mut BTreeSet<String>) -> Result<
 }
 
 pub fn detect_capability(paths: &StudioRuntimePaths) -> StudioCapability {
+    let probe = paths.preflight_probe();
+    let free_bytes = paths.preflight_free_bytes();
+
+    // Resolve the runtime size we would need to install: the signed manifest if
+    // present, otherwise the truthful public fallback package size.
+    let required_bytes = verify_signed_manifest(&paths.package_source, &paths.public_key)
+        .map(|m| m.required_bytes)
+        .unwrap_or(PUBLIC_RUNTIME_REQUIRED_BYTES);
+    let min_free_disk_bytes = required_bytes.saturating_add(DISK_SAFETY_MARGIN_BYTES);
+    let requirements = StudioRequirements {
+        architecture: preflight::SUPPORTED_ARCHITECTURE.to_owned(),
+        min_memory_bytes: preflight::MIN_MEMORY_BYTES,
+        min_vram_bytes: preflight::MIN_VRAM_BYTES,
+        cuda_required: true,
+        min_free_disk_bytes,
+    };
+
     let base = StudioCapability {
         state: CapabilityState::Checking,
         runtime: StudioRuntimeInfo {
             present: false,
             version: None,
         },
-        hardware: StudioHardwareInfo {
-            architecture: Some(std::env::consts::ARCH.into()),
-            memory_bytes: None,
-            accelerator: None,
-        },
+        hardware: preflight::hardware_dto(&probe),
         detail: None,
-        required_bytes: None,
-        free_bytes: None,
+        required_bytes: Some(required_bytes),
+        free_bytes,
+        requirements: Some(requirements.clone()),
     };
+
+    // An installed runtime is only "Ready" if the hardware can still run it.
+    // Generation cannot succeed without meeting the CUDA/RAM/architecture
+    // minimums, so a definitively-insufficient machine is Unsupported even when
+    // the runtime is already present. The free-disk gate does not apply to an
+    // installed runtime (no further download is needed).
     if let Ok(m) = verify_installed_layout(paths) {
+        let hardware_reasons = preflight::preflight_hardware_reasons(&probe);
+        if hardware_reasons.is_empty() {
+            return StudioCapability {
+                state: CapabilityState::Ready,
+                runtime: StudioRuntimeInfo {
+                    present: true,
+                    version: Some(m.runtime_version),
+                },
+                required_bytes: Some(m.required_bytes),
+                detail: Some("Music Studio is set up on this device.".into()),
+                ..base
+            };
+        }
         return StudioCapability {
-            state: CapabilityState::Ready,
+            state: CapabilityState::Unsupported,
             runtime: StudioRuntimeInfo {
                 present: true,
                 version: Some(m.runtime_version),
             },
             required_bytes: Some(m.required_bytes),
-            detail: Some("Music Studio is set up on this device.".into()),
+            detail: Some(format!(
+                "Music Studio is installed but this device no longer meets its requirements. {}",
+                hardware_reasons.join(" ")
+            )),
             ..base
         };
     }
+
+    let preflight_reasons = preflight::preflight_reasons(&probe, min_free_disk_bytes, free_bytes);
+    if !preflight_reasons.is_empty() {
+        return StudioCapability {
+            state: CapabilityState::Unsupported,
+            detail: Some(format!(
+                "Music Studio is not supported on this device. {}",
+                preflight_reasons.join(" ")
+            )),
+            ..base
+        };
+    }
+
     match verify_signed_manifest(&paths.package_source, &paths.public_key) {
         Ok(m) => StudioCapability {
             state: CapabilityState::SetupRequired,
@@ -575,7 +658,6 @@ pub fn detect_capability(paths: &StudioRuntimePaths) -> StudioCapability {
         },
     }
 }
-
 #[derive(Debug, Clone, Serialize)]
 pub struct RuntimeInstallDto {
     pub status: String,
@@ -692,6 +774,25 @@ impl RuntimeInstaller {
             .lock()
             .map_err(|_| "Music Studio is busy.".to_owned())?;
         cleanup(&self.paths.staging);
+
+        // Preflight: refuse to download/copy a large runtime onto a device that
+        // cannot run it or does not have enough free disk. Unknown probes never
+        // block, so this stays safe on CI and non-Windows builds.
+        let preflight_required_bytes =
+            verify_signed_manifest(&self.paths.package_source, &self.paths.public_key)
+                .map(|m| m.required_bytes)
+                .unwrap_or(PUBLIC_RUNTIME_REQUIRED_BYTES);
+        let min_free_disk_bytes = preflight_required_bytes.saturating_add(DISK_SAFETY_MARGIN_BYTES);
+        let probe = self.paths.preflight_probe();
+        let free_bytes = self.paths.preflight_free_bytes();
+        let reasons = preflight::preflight_reasons(&probe, min_free_disk_bytes, free_bytes);
+        if !reasons.is_empty() {
+            return Err(format!(
+                "Music Studio is not supported on this device. {}",
+                reasons.join(" ")
+            ));
+        }
+
         let source = if let Ok(source) =
             verify_package(&self.paths.package_source, &self.paths.public_key)
         {
@@ -731,7 +832,9 @@ impl RuntimeInstaller {
             resumable: false,
         };
         verify_package(&self.paths.staging, &self.paths.public_key)
-            .map_err(|_| "Music Studio setup could not be verified.".to_owned())?;
+            .map_err(|error| format!(
+                "Music Studio setup could not be verified: {error}. Re-run setup or download the package again from the pinned release."
+            ))?;
         if self.cancel.load(Ordering::SeqCst) {
             cleanup(&self.paths.staging);
             return Err("Music Studio setup was cancelled.".into());
@@ -857,7 +960,8 @@ mod installer_tests {
         let temp = tempfile::tempdir().unwrap();
         let installer = RuntimeInstaller::new(
             StudioRuntimePaths::for_app_data(temp.path(), temp.path().join("missing-package"))
-                .with_distribution_base(""),
+                .with_distribution_base("")
+                .with_preflight_probe(preflight::HardwareProbe::default()),
         );
 
         let started = installer.start(false).unwrap();
@@ -882,10 +986,10 @@ mod installer_tests {
     #[test]
     fn cancellation_has_a_reachable_customer_state() {
         let temp = tempfile::tempdir().unwrap();
-        let installer = RuntimeInstaller::new(StudioRuntimePaths::for_app_data(
-            temp.path(),
-            temp.path().join("package"),
-        ));
+        let installer = RuntimeInstaller::new(
+            StudioRuntimePaths::for_app_data(temp.path(), temp.path().join("package"))
+                .with_preflight_probe(preflight::HardwareProbe::default()),
+        );
         installer.running.store(true, Ordering::SeqCst);
         *installer.state.lock().unwrap() = RuntimeInstallDto {
             status: "installing".into(),
@@ -911,7 +1015,8 @@ mod installer_tests {
         let signing = SigningKey::from_bytes(&[7; 32]);
         signed_package(&package, &signing);
         let paths = StudioRuntimePaths::for_app_data(&app_data, package)
-            .with_public_key(signing.verifying_key().to_bytes());
+            .with_public_key(signing.verifying_key().to_bytes())
+            .with_preflight_probe(preflight::HardwareProbe::default());
 
         assert_eq!(
             detect_capability(&paths).state,
@@ -939,10 +1044,195 @@ mod installer_tests {
         signed_package(&package, &signing);
         fs::write(package.join(RUNTIME).join("worker.bin"), b"tampered-run").unwrap();
         let paths = StudioRuntimePaths::for_app_data(&app_data, package)
-            .with_public_key(signing.verifying_key().to_bytes());
+            .with_public_key(signing.verifying_key().to_bytes())
+            .with_preflight_probe(preflight::HardwareProbe::default());
 
         assert!(RuntimeInstaller::new(paths.clone()).install(false).is_err());
         assert!(!paths.verified_marker().exists());
         assert!(!paths.installed.exists());
+    }
+
+    #[test]
+    fn detect_capability_reports_unsupported_when_ram_is_below_minimum() {
+        let temp = tempfile::tempdir().unwrap();
+        let package = temp.path().join("package");
+        let app_data = temp.path().join("app-data");
+        let signing = SigningKey::from_bytes(&[9; 32]);
+        signed_package(&package, &signing);
+        let insufficient = preflight::HardwareProbe {
+            architecture: Some("x86_64".into()),
+            memory_bytes: Some(4 * 1024 * 1024 * 1024),
+            cuda: Some(true),
+            vram_bytes: Some(12 * 1024 * 1024 * 1024),
+            ..Default::default()
+        };
+        let paths = StudioRuntimePaths::for_app_data(&app_data, package)
+            .with_public_key(signing.verifying_key().to_bytes())
+            .with_preflight_probe(insufficient);
+
+        let capability = detect_capability(&paths);
+        assert_eq!(capability.state, CapabilityState::Unsupported);
+        let detail = capability.detail.expect("unsupported detail");
+        assert!(detail.contains("not supported"), "{detail}");
+        assert!(detail.contains("RAM"), "{detail}");
+        // Requirements and detected hardware are reported for actionable UI.
+        assert!(capability.requirements.is_some());
+        assert_eq!(
+            capability.hardware.memory_bytes,
+            Some(4 * 1024 * 1024 * 1024)
+        );
+    }
+
+    #[test]
+    fn detect_capability_reports_unsupported_when_cuda_vram_is_below_minimum() {
+        let temp = tempfile::tempdir().unwrap();
+        let package = temp.path().join("package");
+        let app_data = temp.path().join("app-data");
+        let signing = SigningKey::from_bytes(&[10; 32]);
+        signed_package(&package, &signing);
+        let insufficient = preflight::HardwareProbe {
+            architecture: Some("x86_64".into()),
+            memory_bytes: Some(32 * 1024 * 1024 * 1024),
+            cuda: Some(true),
+            vram_bytes: Some(2 * 1024 * 1024 * 1024),
+            ..Default::default()
+        };
+        let paths = StudioRuntimePaths::for_app_data(&app_data, package)
+            .with_public_key(signing.verifying_key().to_bytes())
+            .with_preflight_probe(insufficient);
+
+        let capability = detect_capability(&paths);
+        assert_eq!(capability.state, CapabilityState::Unsupported);
+        assert!(capability.detail.unwrap().contains("VRAM"));
+    }
+
+    #[test]
+    fn install_refuses_to_setup_on_unsupported_hardware() {
+        let temp = tempfile::tempdir().unwrap();
+        let package = temp.path().join("package");
+        let app_data = temp.path().join("app-data");
+        let signing = SigningKey::from_bytes(&[11; 32]);
+        signed_package(&package, &signing);
+        let insufficient = preflight::HardwareProbe {
+            architecture: Some("aarch64".into()),
+            memory_bytes: Some(32 * 1024 * 1024 * 1024),
+            cuda: Some(true),
+            vram_bytes: Some(12 * 1024 * 1024 * 1024),
+            ..Default::default()
+        };
+        let paths = StudioRuntimePaths::for_app_data(&app_data, package)
+            .with_public_key(signing.verifying_key().to_bytes())
+            .with_preflight_probe(insufficient);
+
+        let result = RuntimeInstaller::new(paths.clone()).install(false);
+        assert!(result.is_err());
+        let message = result.unwrap_err();
+        assert!(message.contains("not supported"), "{message}");
+        assert!(message.contains("Architecture"), "{message}");
+        assert!(!paths.installed.exists());
+        assert!(!paths.verified_marker().exists());
+    }
+
+    #[test]
+    fn install_refuses_to_setup_when_free_disk_is_insufficient() {
+        let temp = tempfile::tempdir().unwrap();
+        let package = temp.path().join("package");
+        let app_data = temp.path().join("app-data");
+        let signing = SigningKey::from_bytes(&[12; 32]);
+        signed_package(&package, &signing);
+        let capable = preflight::HardwareProbe {
+            architecture: Some("x86_64".into()),
+            memory_bytes: Some(32 * 1024 * 1024 * 1024),
+            cuda: Some(true),
+            vram_bytes: Some(12 * 1024 * 1024 * 1024),
+            ..Default::default()
+        };
+        // The signed package needs 9 bytes; with the 1 GiB safety margin the
+        // preflight requires just over 1 GiB free. Report a tiny free-disk value
+        // through the test seam to exercise the disk gate without relying on
+        // the real filesystem capacity.
+        let paths = StudioRuntimePaths::for_app_data(&app_data, package)
+            .with_public_key(signing.verifying_key().to_bytes())
+            .with_preflight_probe(capable)
+            .with_preflight_free_bytes(64 * 1024 * 1024);
+
+        let result = RuntimeInstaller::new(paths.clone()).install(false);
+        assert!(result.is_err());
+        let message = result.unwrap_err();
+        assert!(message.contains("not supported"), "{message}");
+        assert!(message.contains("disk"), "{message}");
+        assert!(!paths.installed.exists());
+        assert!(!paths.verified_marker().exists());
+    }
+
+    #[test]
+    fn detect_capability_reports_unsupported_when_free_disk_is_insufficient() {
+        let temp = tempfile::tempdir().unwrap();
+        let package = temp.path().join("package");
+        let app_data = temp.path().join("app-data");
+        let signing = SigningKey::from_bytes(&[13; 32]);
+        signed_package(&package, &signing);
+        let capable = preflight::HardwareProbe {
+            architecture: Some("x86_64".into()),
+            memory_bytes: Some(32 * 1024 * 1024 * 1024),
+            cuda: Some(true),
+            vram_bytes: Some(12 * 1024 * 1024 * 1024),
+            ..Default::default()
+        };
+        let paths = StudioRuntimePaths::for_app_data(&app_data, package)
+            .with_public_key(signing.verifying_key().to_bytes())
+            .with_preflight_probe(capable)
+            .with_preflight_free_bytes(0);
+
+        let capability = detect_capability(&paths);
+        assert_eq!(capability.state, CapabilityState::Unsupported);
+        assert!(capability.detail.unwrap().contains("disk"));
+        assert_eq!(capability.free_bytes, Some(0));
+    }
+
+    #[test]
+    fn installed_runtime_is_unsupported_when_hardware_becomes_insufficient() {
+        let temp = tempfile::tempdir().unwrap();
+        let package = temp.path().join("package");
+        let app_data = temp.path().join("app-data");
+        let signing = SigningKey::from_bytes(&[14; 32]);
+        signed_package(&package, &signing);
+        let capable = preflight::HardwareProbe {
+            architecture: Some("x86_64".into()),
+            memory_bytes: Some(32 * 1024 * 1024 * 1024),
+            cuda: Some(true),
+            vram_bytes: Some(12 * 1024 * 1024 * 1024),
+            ..Default::default()
+        };
+        let install_paths = StudioRuntimePaths::for_app_data(&app_data, package.clone())
+            .with_public_key(signing.verifying_key().to_bytes())
+            .with_preflight_probe(capable);
+        RuntimeInstaller::new(install_paths.clone())
+            .install(false)
+            .unwrap();
+        assert_eq!(
+            detect_capability(&install_paths).state,
+            CapabilityState::Ready
+        );
+
+        // The runtime is installed on disk, but the device now reports
+        // insufficient RAM. Ready must not bypass the hardware check.
+        let insufficient = preflight::HardwareProbe {
+            architecture: Some("x86_64".into()),
+            memory_bytes: Some(4 * 1024 * 1024 * 1024),
+            cuda: Some(true),
+            vram_bytes: Some(12 * 1024 * 1024 * 1024),
+            ..Default::default()
+        };
+        let after_paths = StudioRuntimePaths::for_app_data(&app_data, package)
+            .with_public_key(signing.verifying_key().to_bytes())
+            .with_preflight_probe(insufficient);
+        let capability = detect_capability(&after_paths);
+        assert_eq!(capability.state, CapabilityState::Unsupported);
+        assert!(
+            capability.runtime.present,
+            "runtime still reported as installed"
+        );
+        assert!(capability.detail.unwrap().contains("RAM"));
     }
 }

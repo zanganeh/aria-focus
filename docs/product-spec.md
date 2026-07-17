@@ -39,8 +39,7 @@ Version 1 supports `Focus`. The domain model reserves `Relax`, `Sleep`, and
 | Learning | Reading, comprehension, and retention | Sparse arrangement, minimal melodic competition |
 | Light Work | Email, filing, and repetitive administration | Pleasant, slightly more varied, lower stimulation |
 
-The descriptions above are our product definitions. They are not claims about
-Brain.fm's undisclosed per-activity audio recipes.
+The descriptions above are our product definitions. They are not claims about any named third-party product, its undisclosed per-activity audio recipes, or any patented implementation.
 
 ### Sound profile
 
@@ -166,8 +165,7 @@ onset density, loudness, dynamic range, stimulation variants, seamless regions,
 and human-QA status.
 
 The Windows application ships with a small starter library and supports optional
-content packs. Installed content must work with no network connection. The app
-must not scrape, download, or call Brain.fm.
+content packs. Installed content must work with no network connection. The app must not scrape, download, or call any named third-party focus-music product or service.
 
 ## Version 1 scope
 

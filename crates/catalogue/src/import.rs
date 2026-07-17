@@ -161,7 +161,7 @@ fn verify_installed_pack_with_validation(
         return Err(PackImportError::NonCanonicalManifest);
     }
 
-    let declared = manifest.declared_assets();
+    let declared = manifest.all_declared_assets();
     let assets_root = directory.join("assets");
     let assets_metadata = fs::symlink_metadata(&assets_root).map_err(|_| {
         PackImportError::InstalledPackCorrupt("assets directory is missing".to_owned())
@@ -237,7 +237,7 @@ fn validate_install_root(directory: &Path) -> Result<(), PackImportError> {
 fn verify_installed_tree(
     root: &Path,
     directory: &Path,
-    declared: &std::collections::HashMap<&str, &crate::manifest::AudioAsset>,
+    declared: &std::collections::HashMap<&str, crate::manifest::DeclaredAsset>,
     seen_files: &mut HashSet<String>,
     seen_paths: &mut HashSet<String>,
 ) -> Result<(), PackImportError> {
@@ -272,10 +272,10 @@ fn verify_installed_tree(
             .find(|(path, _)| path.to_ascii_lowercase() == folded)
             .map(|(_, asset)| *asset)
             .ok_or_else(|| PackImportError::UndeclaredPayload(relative.clone()))?;
-        if metadata.len() != asset.bytes {
+        if metadata.len() != asset.bytes() {
             return Err(PackImportError::AssetSizeMismatch(relative));
         }
-        if !hash_file_sha256(&entry.path())?.eq_ignore_ascii_case(&asset.sha256) {
+        if !hash_file_sha256(&entry.path())?.eq_ignore_ascii_case(asset.sha256()) {
             return Err(PackImportError::HashMismatch(relative));
         }
         seen_files.insert(folded);
@@ -410,7 +410,7 @@ pub fn stage_pack(
     if manifest_bytes != canonical_manifest {
         return Err(PackImportError::NonCanonicalManifest);
     }
-    let declared = manifest.declared_assets();
+    let declared = manifest.all_declared_assets();
     for file_name in file_names
         .iter()
         .filter(|name| name.as_str() != MANIFEST_PATH)
@@ -431,7 +431,7 @@ pub fn stage_pack(
         .tempdir_in(staging_root)?;
     for (path, asset) in declared {
         let mut entry = archive.by_name(path)?;
-        if entry.size() != asset.bytes {
+        if entry.size() != asset.bytes() {
             return Err(PackImportError::AssetSizeMismatch(path.to_owned()));
         }
         let destination = staging.path().join(path);
@@ -448,17 +448,17 @@ pub fn stage_pack(
                 break;
             }
             copied += count as u64;
-            if copied > asset.bytes || copied > limits.max_entry_bytes {
+            if copied > asset.bytes() || copied > limits.max_entry_bytes {
                 return Err(PackImportError::AssetSizeMismatch(path.to_owned()));
             }
             hasher.update(&buffer[..count]);
             output.write_all(&buffer[..count])?;
         }
-        if copied != asset.bytes {
+        if copied != asset.bytes() {
             return Err(PackImportError::AssetSizeMismatch(path.to_owned()));
         }
         let actual = hex_digest(hasher.finalize().as_slice());
-        if !actual.eq_ignore_ascii_case(&asset.sha256) {
+        if !actual.eq_ignore_ascii_case(asset.sha256()) {
             return Err(PackImportError::HashMismatch(path.to_owned()));
         }
     }

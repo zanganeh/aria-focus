@@ -60,6 +60,12 @@ export interface CurrentSource {
   fallback: boolean;
   quarantined_review?: boolean;
   navigation_available?: boolean;
+  /**
+   * Bounded `data:` URL for the active installed item's cover art, or null for
+   * fallback/review/generated-local sources and items without a declared cover.
+   * The renderer never receives a filesystem path.
+   */
+  cover_art?: string | null;
 }
 
 export interface ReviewCandidate {
@@ -146,11 +152,30 @@ export interface SessionHistoryRecord {
 export type StudioCapabilityState =
   "checking" | "ready" | "setup_required" | "unsupported" | "needs_attention";
 
+export interface StudioHardwareInfo {
+  architecture: string | null;
+  memory_bytes: number | null;
+  accelerator: string | null;
+  vram_bytes?: number | null;
+  cuda?: boolean | null;
+}
+
+export interface StudioRequirements {
+  architecture: string;
+  min_memory_bytes: number;
+  min_vram_bytes: number;
+  cuda_required: boolean;
+  min_free_disk_bytes: number;
+}
+
 export interface StudioCapability {
   state: StudioCapabilityState;
   detail: string | null;
   required_bytes?: number;
   free_bytes?: number;
+  hardware?: StudioHardwareInfo | null;
+  requirements?: StudioRequirements | null;
+  runtime?: { present: boolean; version: string | null } | null;
 }
 export interface RuntimeInstall {
   status: "idle" | "installing" | "complete";

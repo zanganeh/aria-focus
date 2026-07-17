@@ -6,7 +6,7 @@
 //! callback behind an atomic control boundary.
 //!
 //! IMPORTANT: the stimulation processor uses generic, well-known amplitude
-//! tremolo and noise-mixing techniques. It does NOT reproduce Brain.fm and
+//! tremolo and noise-mixing techniques. It does NOT reproduce any named third-party product and
 //! makes no medical or patent claim. Public/commercial use of neural-style
 //! stimulation DSP requires a claim-level patent review before release.
 
