@@ -41,8 +41,8 @@ PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 EXPECTED_DURATION_SECONDS = 180
 
 DEFAULT_PACK_ID = "local-activity-library-v3"
-DEFAULT_VERSION = "0.22.0"
-DEFAULT_APP_REQUIREMENT = ">=0.22.0, <0.23.0"
+DEFAULT_VERSION = "0.3.0"
+DEFAULT_APP_REQUIREMENT = ">=0.3.0, <0.4.0"
 DEFAULT_TITLE = "Local Focus Library \u2014 Replacement Test v3"
 DEFAULT_DESCRIPTION = (
     "One hundred local-only ACE-Step listening candidates with original Aria "

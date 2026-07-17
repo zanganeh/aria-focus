@@ -209,13 +209,13 @@ fn generated_local_verification_uses_its_own_trust_contract() {
 fn app_semver_compatibility_is_enforced_separately_from_publication() {
     let manifest = fixture_manifest(&asset_bytes());
     assert!(manifest.validate_app_compatibility("0.1.0").is_ok());
-    assert!(manifest.validate_app_compatibility("0.22.0-beta.1").is_ok());
+    assert!(manifest.validate_app_compatibility("0.3.0-beta.1").is_ok());
     assert!(manifest.validate_app_compatibility("2.0.0").is_err());
     assert!(manifest.validate_app_compatibility("not-semver").is_err());
 
     let mut capped = manifest;
-    capped.pack.app_version_requirement = ">=0.1.0, <0.22.0".to_owned();
-    assert!(capped.validate_app_compatibility("0.22.0-beta.1").is_err());
+    capped.pack.app_version_requirement = ">=0.1.0, <0.3.0".to_owned();
+    assert!(capped.validate_app_compatibility("0.3.0-beta.1").is_err());
 }
 
 #[test]

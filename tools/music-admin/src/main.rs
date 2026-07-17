@@ -273,7 +273,7 @@ impl AdminApp {
             opus_output: ".local/pipeline/admin-opus-v1".into(),
             flac_version: "1.0.0-flac.1".into(),
             opus_version: "1.0.0-opus.1".into(),
-            app_requirement: ">=0.22.0, <0.23.0".into(),
+            app_requirement: ">=0.3.0, <0.4.0".into(),
             release_tag: format!("v{version}"),
         };
         app.refresh();

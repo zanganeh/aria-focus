@@ -52,14 +52,14 @@ a 300 MB default package budget. `ffmpeg` and `ffprobe` are required locally.
 First validate the full-library paths without writing anything:
 
 ```powershell
-python tools/music-generation/convert_library_to_opus.py --source apps/desktop/src-tauri/private-beta-pack --output .local/opus-library-candidate --pack-version 0.22.0-opus.1 --app-version-requirement '>=0.22.0, <0.23.0' --dry-run
+python tools/music-generation/convert_library_to_opus.py --source apps/desktop/src-tauri/private-beta-pack --output .local/opus-library-candidate --pack-version 0.3.0-opus.1 --app-version-requirement '>=0.3.0, <0.4.0' --dry-run
 ```
 
 Then generate the staged candidate and its adjacent audit report. The source
 pack is only read; the new directory must not already exist.
 
 ```powershell
-python tools/music-generation/convert_library_to_opus.py --source apps/desktop/src-tauri/private-beta-pack --output .local/opus-library-candidate --pack-version 0.22.0-opus.1 --app-version-requirement '>=0.22.0, <0.23.0' --max-total-bytes 300000000
+python tools/music-generation/convert_library_to_opus.py --source apps/desktop/src-tauri/private-beta-pack --output .local/opus-library-candidate --pack-version 0.3.0-opus.1 --app-version-requirement '>=0.3.0, <0.4.0' --max-total-bytes 300000000
 ```
 
 The resulting `manifest.json` is regenerated deterministically from the source
@@ -94,7 +94,7 @@ pnpm music:pipeline all `
   --pack-title "Internal Deep Work V1" `
   --flac-version 1.0.0-flac.1 `
   --opus-version 1.0.0-opus.1 `
-  --app-version-requirement ">=0.22.0, <0.23.0"
+  --app-version-requirement ">=0.3.0, <0.4.0"
 ```
 
 If generation has already completed, use the same arguments with `package`

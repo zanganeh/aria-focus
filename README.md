@@ -13,7 +13,7 @@
   <a href="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml"><img src="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue" alt="MIT OR Apache-2.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows-0078D4" alt="Windows">
-  <img src="https://img.shields.io/badge/version-0.22.0-2EA44F" alt="0.22.0">
+  <img src="https://img.shields.io/badge/version-0.3.0-2EA44F" alt="0.3.0">
 </p>
 
 Aria Focus is a standalone desktop app for deep work, motivation, creativity,
@@ -23,7 +23,7 @@ small activity-first interface. The optional **AI Music Studio** generates short
 instrumental tracks entirely on your machine.
 
 The project is open for source review and contribution. The application is at a
-stable 0.22.0 source version. Signed, reviewed public installers remain gated on
+stable 0.3.0 source version. Signed, reviewed public installers remain gated on
 the protected release workflow below; this README does not claim signing or
 final review has already happened.
 

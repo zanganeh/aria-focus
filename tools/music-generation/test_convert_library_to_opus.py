@@ -55,13 +55,13 @@ class ConvertLibraryToOpusTests(unittest.TestCase):
             root = Path(temp)
             source = self.make_source(root)
             original = (source / "manifest.json").read_bytes()
-            report = conversion.convert(source, root / "opus", max_total_bytes=100_000, pack_version="0.22.0-opus.1", app_version_requirement=">=0.22.0, <0.23.0")
+            report = conversion.convert(source, root / "opus", max_total_bytes=100_000, pack_version="0.3.0-opus.1", app_version_requirement=">=0.3.0, <0.4.0")
             result = root / "opus"
             manifest = json.loads((result / "manifest.json").read_text())
             asset = manifest["items"][0]["variants"][0]["asset"]
             self.assertEqual(manifest["format_version"], 2)
-            self.assertEqual(manifest["pack"]["version"], "0.22.0-opus.1")
-            self.assertEqual(manifest["pack"]["app_version_requirement"], ">=0.22.0, <0.23.0")
+            self.assertEqual(manifest["pack"]["version"], "0.3.0-opus.1")
+            self.assertEqual(manifest["pack"]["app_version_requirement"], ">=0.3.0, <0.4.0")
             self.assertEqual(manifest["items"][0]["id"], "keep-this-id")
             self.assertEqual(asset["path"], "assets/keep-this-id.opus")
             self.assertEqual(asset["codec"], "ogg_opus")
@@ -90,7 +90,7 @@ class ConvertLibraryToOpusTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             source = self.make_source(root)
-            plan = conversion.dry_run(source, root / "opus", pack_version="0.22.0-opus.1", app_version_requirement=">=0.22.0, <0.23.0")
+            plan = conversion.dry_run(source, root / "opus", pack_version="0.3.0-opus.1", app_version_requirement=">=0.3.0, <0.4.0")
             self.assertEqual(plan["format_version"], 2)
             self.assertEqual(plan["outputs"], ["assets/keep-this-id.opus"])
             self.assertFalse((root / "opus").exists())
@@ -109,8 +109,8 @@ class ConvertLibraryToOpusTests(unittest.TestCase):
             conversion.convert(
                 source,
                 result,
-                pack_version="0.22.0-opus.1",
-                app_version_requirement=">=0.22.0, <0.23.0",
+                pack_version="0.3.0-opus.1",
+                app_version_requirement=">=0.3.0, <0.4.0",
             )
             self.assertTrue((result / "manifest.json").is_file())
 
@@ -124,7 +124,7 @@ class ConvertLibraryToOpusTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             source = self.make_source(root)
-            report = conversion.convert(source, root / "opus", pack_version="0.22.0-opus.1", app_version_requirement=">=0.22.0, <0.23.0")
+            report = conversion.convert(source, root / "opus", pack_version="0.3.0-opus.1", app_version_requirement=">=0.3.0, <0.4.0")
             manifest = json.loads((root / "opus/manifest.json").read_text())
             self.assertEqual(manifest["items"][0]["variants"][0]["safe_regions"][0]["end_seconds"], 0.98)
             self.assertEqual(report["items"][0]["validation"]["safe_region_clamps"], [{"start_seconds": 0.0, "old_end_seconds": 1.0, "new_end_seconds": 0.98}])
@@ -161,7 +161,7 @@ class ConvertLibraryToOpusTests(unittest.TestCase):
             root = Path(temp)
             source = self.make_source(root)
             with self.assertRaisesRegex(conversion.ConversionError, "over budget"):
-                conversion.convert(source, root / "opus", max_total_bytes=1, pack_version="0.22.0-opus.1", app_version_requirement=">=0.22.0, <0.23.0")
+                conversion.convert(source, root / "opus", max_total_bytes=1, pack_version="0.3.0-opus.1", app_version_requirement=">=0.3.0, <0.4.0")
             self.assertFalse((root / "opus").exists())
             self.assertFalse(list(root.glob(".opus.opus-staging-*")))
 

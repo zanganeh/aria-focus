@@ -14,12 +14,12 @@ CI artifacts are never official releases.
 
 Aria Focus releases are stable `vMAJOR.MINOR.PATCH` tags. The release validator
 (`scripts/verify_release_tag.py`) accepts only canonical stable tags and rejects
-prerelease suffixes such as `-beta.1`, `-alpha.2`, or `-rc.3`. The 0.22.0 line is the
+prerelease suffixes such as `-beta.1`, `-alpha.2`, or `-rc.3`. The 0.3.0 line is the
 first stable release track; do not reuse earlier `0.2.x` beta tags for stable builds.
 
 Windows installer metadata uses the numeric version because MSI does not accept
 text prerelease identifiers. Because releases are now stable, the app, packages,
-About panel, Git tag, and Tauri installer version all carry the same `0.22.0`.
+About panel, Git tag, and Tauri installer version all carry the same `0.3.0`.
 
 Code signing, the reviewed-library archive, and the Music Studio runtime are
 protected release gates. The workflow fails closed until those gates are satisfied;
@@ -74,9 +74,9 @@ Use one version consistently in root `package.json`, the desktop `package.json`,
 and `[workspace.package]` in `Cargo.toml`. Tauri's Windows bundle version is the
 numeric core; for a stable release it equals the package version. For example:
 
-- source version: `0.22.0`;
-- Git tag: `v0.22.0`;
-- Tauri installer version: `0.22.0`.
+- source version: `0.3.0`;
+- Git tag: `v0.3.0`;
+- Tauri installer version: `0.3.0`.
 
 Update release notes and run:
 
@@ -86,14 +86,14 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 python scripts/check_repository_hygiene.py
-python scripts/verify_release_tag.py v0.22.0
+python scripts/verify_release_tag.py v0.3.0
 ```
 
 Create an annotated or signed tag only from the reviewed commit:
 
 ```powershell
-git tag -s v0.22.0 -m "Aria Focus 0.22.0"
-git push origin v0.22.0
+git tag -s v0.3.0 -m "Aria Focus 0.3.0"
+git push origin v0.3.0
 ```
 
 ## Automatic protected workflow
@@ -109,8 +109,8 @@ If GitHub did not enqueue the tag event, manually dispatch the same immutable ta
 
 ```powershell
 gh workflow run public-release.yml `
-  --ref v0.22.0 `
-  -f release_tag=v0.22.0
+  --ref v0.3.0 `
+  -f release_tag=v0.3.0
 ```
 
 The workflow fails closed if the trigger tag, optional manual input, project

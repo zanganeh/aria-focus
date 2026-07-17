@@ -21,7 +21,7 @@ fn validate_cover_replacement_pack() {
     // Structure + cover/provenance invariants (parsed directly).
     let manifest: ContentPackManifest = serde_json::from_slice(&manifest_bytes).unwrap();
     assert_eq!(manifest.pack.id, "local-activity-library-v3");
-    assert_eq!(manifest.pack.version, "0.22.0");
+    assert_eq!(manifest.pack.version, "0.3.0");
     assert_eq!(manifest.items.len(), 100);
     assert!(manifest.items.iter().all(|item| item.cover.is_some()));
     assert!(manifest

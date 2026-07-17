@@ -1,13 +1,13 @@
 # Aria Focus public release
 
-The 0.22.0 line is the first stable release track. A tag must be a canonical
+The 0.3.0 line is the first stable release track. A tag must be a canonical
 stable `vMAJOR.MINOR.PATCH` tag; prerelease suffixes are rejected by
 `scripts/verify_release_tag.py`. The first reviewed and signed public candidate
 is blocked until every gate in this document passes.
 
-Windows installer metadata uses the numeric version `0.22.0` because MSI does not
+Windows installer metadata uses the numeric version `0.3.0` because MSI does not
 accept text prerelease identifiers; the app, packages, About panel, and Git tag all
-carry `0.22.0`.
+carry `0.3.0`.
 
 ## External approvals
 
