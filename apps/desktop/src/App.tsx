@@ -23,6 +23,7 @@ import { MyMusicLibrary } from "./components/MyMusicLibrary";
 import { BrandMark } from "./components/BrandMark";
 import { LaunchScreen } from "./components/LaunchScreen";
 import { AboutAriaFocus } from "./components/AboutAriaFocus";
+import { UpdateNotice } from "./components/UpdateNotice";
 import {
   getActivityGenres,
   getCurrentSource,
@@ -43,6 +44,7 @@ import {
 import { ACTIVITY_COPY } from "./lib/activities";
 import { useSession } from "./hooks/useSession";
 import { useFocusedWindowTransportKeys } from "./hooks/useFocusedWindowTransportKeys";
+import { findAvailableUpdate, installAndRelaunch } from "./lib/updater";
 import type {
   ActivityGenreState,
   ActivityMoodState,
@@ -52,6 +54,7 @@ import type {
   ReviewCandidate,
   SessionHistoryRecord,
 } from "./lib/types";
+import type { Update } from "@tauri-apps/plugin-updater";
 
 type AppPage = "home" | "library" | "history" | "settings" | "review" | "studio";
 type HomeScreen = "choose" | "sound" | "timer";
@@ -77,10 +80,14 @@ export default function App() {
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [onboardingLoadError, setOnboardingLoadError] = useState<string | null>(null);
   const [recentSessions, setRecentSessions] = useState<SessionHistoryRecord[]>([]);
+  const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
+  const [installingUpdate, setInstallingUpdate] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const previousStatus = useRef<string | null>(null);
   const focusEntryControl = useRef<HTMLButtonElement>(null);
   const retryInFlight = useRef(false);
   const healthRequest = useRef(0);
+  const updateCheckStarted = useRef(false);
   const loadOnboardingPreferences = useCallback(async () => {
     setOnboardingComplete(null);
     setOnboardingLoadError(null);
@@ -95,6 +102,41 @@ export default function App() {
   useEffect(() => {
     void loadOnboardingPreferences();
   }, [loadOnboardingPreferences]);
+
+  useEffect(() => {
+    if (updateCheckStarted.current) return;
+    updateCheckStarted.current = true;
+    let active = true;
+    void findAvailableUpdate().then((update) => {
+      if (active) setAvailableUpdate(update);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const installUpdate = async () => {
+    if (!availableUpdate || installingUpdate) return;
+    setInstallingUpdate(true);
+    setUpdateError(null);
+    try {
+      await installAndRelaunch(availableUpdate);
+    } catch (error) {
+      setUpdateError(
+        `The update could not be installed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      setInstallingUpdate(false);
+    }
+  };
+
+  const updateNotice = availableUpdate ? (
+    <UpdateNotice
+      update={availableUpdate}
+      installing={installingUpdate}
+      error={updateError}
+      onInstall={() => void installUpdate()}
+    />
+  ) : null;
 
   useEffect(() => {
     const request = ++healthRequest.current;
@@ -266,47 +308,67 @@ export default function App() {
   if (onboardingComplete === null) {
     if (onboardingLoadError) {
       return (
-        <main className="app" aria-labelledby="onboarding-load-title">
-          <h1 id="onboarding-load-title">Couldn’t load local preferences</h1>
-          <p role="alert">{onboardingLoadError}</p>
-          <button type="button" onClick={() => void loadOnboardingPreferences()}>
-            Try again
-          </button>
-        </main>
+        <>
+          {updateNotice}
+          <main className="app" aria-labelledby="onboarding-load-title">
+            <h1 id="onboarding-load-title">Couldn’t load local preferences</h1>
+            <p role="alert">{onboardingLoadError}</p>
+            <button type="button" onClick={() => void loadOnboardingPreferences()}>
+              Try again
+            </button>
+          </main>
+        </>
       );
     }
-    return <LaunchScreen label="Loading local preferences" />;
+    return (
+      <>
+        {updateNotice}
+        <LaunchScreen label="Loading local preferences" />
+      </>
+    );
   }
 
   if (!onboardingComplete && !reviewCandidatesLoaded) {
-    return <LaunchScreen label="Loading local review music" />;
+    return (
+      <>
+        {updateNotice}
+        <LaunchScreen label="Loading local review music" />
+      </>
+    );
   }
 
   if (!onboardingComplete && reviewCandidates.length === 0) {
     return (
-      <Onboarding
-        onComplete={async (intensity, genres) => {
-          await completeOnboarding(intensity, genres);
-          setOnboardingComplete(true);
-          try {
-            await session.refresh();
-          } catch (error) {
-            session.reportError(error instanceof Error ? error.message : String(error));
-          }
-        }}
-      />
+      <>
+        {updateNotice}
+        <Onboarding
+          onComplete={async (intensity, genres) => {
+            await completeOnboarding(intensity, genres);
+            setOnboardingComplete(true);
+            try {
+              await session.refresh();
+            } catch (error) {
+              session.reportError(error instanceof Error ? error.message : String(error));
+            }
+          }}
+        />
+      </>
     );
   }
 
   if (focusView && transportActive && session.snapshot) {
     return (
-      <FocusView
-        snapshot={session.snapshot}
-        activityLabel={activityLabel}
-        onPause={() => void session.pause()}
-        onResume={() => void session.resume()}
-        onExit={exitFocusView}
-      />
+      <>
+        {updateNotice}
+        <FocusView
+          snapshot={session.snapshot}
+          activityLabel={activityLabel}
+          coverArt={coverArt}
+          onPause={() => void session.pause()}
+          onResume={() => void session.resume()}
+          onExit={exitFocusView}
+        />
+      </>
     );
   }
 
@@ -321,377 +383,397 @@ export default function App() {
         </div>
       </header>
 
-      <ErrorBanner message={session.error} onDismiss={session.dismissError} />
+      <div className="app-scroll-region">
+        <ErrorBanner message={session.error} onDismiss={session.dismissError} />
+        {updateNotice}
 
-      {page !== "home" && transportActive && (
-        <section className="mini-player" aria-label="Active focus session">
-          <div className="mini-player-info">
-            {coverArt ? (
-              <img className="mini-player-cover" src={coverArt} alt={coverAlt} decoding="async" />
-            ) : null}
-            <div>
-              <strong>{source?.item_title ?? `${activityLabel} session`}</strong>
-              <span>{status === "paused" ? "Paused" : "Playing"}</span>
-            </div>
-          </div>
-          <div className="mini-player-actions">
-            <button
-              type="button"
-              className="mini-player-toggle"
-              disabled={!coreAvailable}
-              aria-label={status === "paused" ? "Resume session" : "Pause session"}
-              onClick={() => void (status === "paused" ? session.resume() : session.pause())}
-            >
-              {status === "paused" ? "Resume" : "Pause"}
-            </button>
-            <button type="button" onClick={() => setPage("home")}>
-              Open player
-            </button>
-          </div>
-        </section>
-      )}
-
-      {page === "home" && (
-        <>
-          {!transportActive && (
-            <section className="home-choice" aria-label="Choose a focus activity">
-              <ActivitySelector
-                disabled={!coreAvailable || !packsAvailable || session.starting || reviewActive}
-                onSelect={async (next) => {
-                  await session.changeActivity(next);
-                  await session.start();
-                  document.documentElement.scrollTop = 0;
-                  document.body.scrollTop = 0;
-                }}
-              />
-            </section>
-          )}
-
-          {!transportActive && homeScreen === "sound" && (
-            <section className="setup-flow guided-setup" aria-label="Choose sound">
-              <div className="screen-heading">
-                <button
-                  type="button"
-                  className="back-action"
-                  onClick={() => setHomeScreen("choose")}
-                >
-                  <AppIcon name="chevron-left" /> Back
-                </button>
-                <p className="eyebrow">Sound</p>
-                <h2>Make it feel right</h2>
-                <p>These choices filter the local music for {activityLabel}.</p>
-              </div>
-              <GenreSelector
-                state={genres}
-                disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-                onChange={(genreId) =>
-                  void setActivityGenre(genreId)
-                    .then(setGenres)
-                    .catch((error: unknown) =>
-                      session.reportError(
-                        `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
-                      ),
-                    )
-                }
-              />
-              <MoodSelector
-                state={moods}
-                disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-                onChange={(moodId) =>
-                  void setActivityMood(moodId)
-                    .then(setMoods)
-                    .catch((error: unknown) =>
-                      session.reportError(
-                        `Unable to change mood: ${error instanceof Error ? error.message : String(error)}`,
-                      ),
-                    )
-                }
-              />
-              <button
-                type="button"
-                className="primary setup-next"
-                onClick={() => setHomeScreen("timer")}
-              >
-                Choose timer
-              </button>
-            </section>
-          )}
-
-          {!transportActive && homeScreen === "timer" && (
-            <section className="setup-flow guided-setup" aria-label="Choose session timer">
-              <div className="screen-heading">
-                <button
-                  type="button"
-                  className="back-action"
-                  onClick={() => setHomeScreen("sound")}
-                >
-                  <AppIcon name="chevron-left" /> Back
-                </button>
-                <p className="eyebrow">Time</p>
-                <h2>How long?</h2>
-                <p>Keep the default if you just want to begin.</p>
-              </div>
-              <SessionTypeSelector
-                value={session.snapshot?.kind ?? { kind: "infinite" }}
-                disabled={!coreAvailable || session.starting || reviewActive}
-                onChange={(kind) => void session.changeSessionType(kind)}
-              />
-              <button
-                type="button"
-                className="primary setup-next"
-                disabled={!coreAvailable || !packsAvailable || reviewActive || session.starting}
-                onClick={() => void session.start()}
-              >
-                {session.starting ? "Starting…" : `Start ${activityLabel}`}
-              </button>
-            </section>
-          )}
-
-          {transportActive && (
-            <section className="player-surface" aria-label="Focus player">
-              <p className="eyebrow">
-                {transportActive ? `${activityLabel} session` : "Ready when you are"}
-              </p>
-              <SessionTimer snapshot={session.snapshot} />
-
+        {page !== "home" && transportActive && (
+          <section className="mini-player" aria-label="Active focus session">
+            <div className="mini-player-info">
               {coverArt ? (
-                <img className="player-cover" src={coverArt} alt={coverAlt} decoding="async" />
-              ) : (
-                <div className="player-cover player-cover--none" aria-hidden="true" />
-              )}
-
-              {source && (
-                <p className="source-label" aria-live="polite">
-                  <strong>Audio source:</strong> {source.item_title}
-                  {source.fallback
-                    ? " · explicit procedural fallback"
-                    : source.quarantined_review
-                      ? " · QUARANTINED local review — provisional transition; not approved/published"
-                      : ` · ${source.pack_title}`}
-                </p>
-              )}
-
-              <TransportControls
-                status={status}
-                starting={session.starting}
-                activityLabel={activityLabel}
-                startDisabled={!coreAvailable || !packsAvailable || reviewActive}
-                actionsDisabled={!coreAvailable}
-                onStart={() => void session.start()}
-                onPause={() => void session.pause()}
-                onResume={() => void session.resume()}
-                onStop={() => void session.stop()}
-                navigationAvailable={source?.navigation_available === true}
-                navigationPending={navigationPending}
-                onNext={() => void requestNavigation(nextTrack)}
-                onPrevious={() => void requestNavigation(previousTrack)}
-              />
-              <MasterVolume
-                variant="compact"
-                value={session.masterVolume}
-                pending={session.volumePending}
+                <img className="mini-player-cover" src={coverArt} alt={coverAlt} decoding="async" />
+              ) : null}
+              <div>
+                <strong>{source?.item_title ?? `${activityLabel} session`}</strong>
+                <span>{status === "paused" ? "Paused" : "Playing"}</span>
+              </div>
+            </div>
+            <div className="mini-player-actions">
+              <button
+                type="button"
+                className="mini-player-toggle"
                 disabled={!coreAvailable}
-                onChange={session.changeMasterVolume}
-              />
-              {transportActive && (
+                aria-label={status === "paused" ? "Resume session" : "Pause session"}
+                onClick={() => void (status === "paused" ? session.resume() : session.pause())}
+              >
+                {status === "paused" ? "Resume" : "Pause"}
+              </button>
+              <button type="button" onClick={() => setPage("home")}>
+                Open player
+              </button>
+            </div>
+          </section>
+        )}
+
+        {page === "home" && (
+          <>
+            {!transportActive && (
+              <section className="home-choice" aria-label="Choose a focus activity">
+                <ActivitySelector
+                  disabled={!coreAvailable || !packsAvailable || session.starting || reviewActive}
+                  onSelect={async (next) => {
+                    await session.changeActivity(next);
+                    await session.start();
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                  }}
+                />
+              </section>
+            )}
+
+            {!transportActive && homeScreen === "sound" && (
+              <section className="setup-flow guided-setup" aria-label="Choose sound">
+                <div className="screen-heading">
+                  <button
+                    type="button"
+                    className="back-action"
+                    onClick={() => setHomeScreen("choose")}
+                  >
+                    <AppIcon name="chevron-left" /> Back
+                  </button>
+                  <p className="eyebrow">Sound</p>
+                  <h2>Make it feel right</h2>
+                  <p>These choices filter the local music for {activityLabel}.</p>
+                </div>
+                <GenreSelector
+                  state={genres}
+                  disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+                  onChange={(genreId) =>
+                    void setActivityGenre(genreId)
+                      .then(setGenres)
+                      .catch((error: unknown) =>
+                        session.reportError(
+                          `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
+                        ),
+                      )
+                  }
+                />
+                <MoodSelector
+                  state={moods}
+                  disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+                  onChange={(moodId) =>
+                    void setActivityMood(moodId)
+                      .then(setMoods)
+                      .catch((error: unknown) =>
+                        session.reportError(
+                          `Unable to change mood: ${error instanceof Error ? error.message : String(error)}`,
+                        ),
+                      )
+                  }
+                />
                 <button
-                  ref={focusEntryControl}
                   type="button"
-                  className="focus-view-entry"
-                  onClick={() => setFocusView(true)}
+                  className="primary setup-next"
+                  onClick={() => setHomeScreen("timer")}
                 >
-                  Enter focus view
+                  Choose timer
                 </button>
-              )}
-            </section>
-          )}
-        </>
-      )}
+              </section>
+            )}
 
-      {page === "library" && <StudioLibraryCard onOpen={() => setPage("studio")} />}
-      {page === "library" && (
-        <MyMusicLibrary
-          disabled={!coreAvailable || !packsAvailable || transportActive}
-          onError={session.reportError}
-          onStarted={async () => {
-            await session.adoptStartedSession();
-            setPage("home");
-          }}
-          onCatalogueChange={() => {
-            setCatalogueRevision((revision) => revision + 1);
-            setContentPacksRevision((revision) => revision + 1);
-          }}
-        />
-      )}
-      {page === "library" && (
-        <FavoritesLibrary
-          active={transportActive}
-          disabled={!coreAvailable || !packsAvailable || session.starting}
-          revision={favoritesRevision}
-          onStarted={async () => {
-            await session.refresh();
-            setPage("home");
-          }}
-          onError={session.reportError}
-        />
-      )}
-      {page === "library" && (
-        <ContentPacks
-          key={contentPacksRevision}
-          disabled={!packsAvailable}
-          onCatalogueChange={() => setCatalogueRevision((revision) => revision + 1)}
-        />
-      )}
+            {!transportActive && homeScreen === "timer" && (
+              <section className="setup-flow guided-setup" aria-label="Choose session timer">
+                <div className="screen-heading">
+                  <button
+                    type="button"
+                    className="back-action"
+                    onClick={() => setHomeScreen("sound")}
+                  >
+                    <AppIcon name="chevron-left" /> Back
+                  </button>
+                  <p className="eyebrow">Time</p>
+                  <h2>How long?</h2>
+                  <p>Keep the default if you just want to begin.</p>
+                </div>
+                <SessionTypeSelector
+                  value={session.snapshot?.kind ?? { kind: "infinite" }}
+                  disabled={!coreAvailable || session.starting || reviewActive}
+                  onChange={(kind) => void session.changeSessionType(kind)}
+                />
+                <button
+                  type="button"
+                  className="primary setup-next"
+                  disabled={!coreAvailable || !packsAvailable || reviewActive || session.starting}
+                  onClick={() => void session.start()}
+                >
+                  {session.starting ? "Starting…" : `Start ${activityLabel}`}
+                </button>
+              </section>
+            )}
 
-      {page === "history" && <RecentSessions sessions={recentSessions} />}
+            {transportActive && (
+              <section className="player-surface" aria-label="Focus player">
+                {coverArt && (
+                  <img
+                    className="player-background"
+                    src={coverArt}
+                    alt=""
+                    aria-hidden="true"
+                    decoding="async"
+                  />
+                )}
+                <div className="player-overlay" aria-hidden="true" />
+                <div className="player-content">
+                  <p className="eyebrow">
+                    {transportActive ? `${activityLabel} session` : "Ready when you are"}
+                  </p>
+                  <SessionTimer snapshot={session.snapshot} />
 
-      {page === "studio" && <StudioPage onReturn={() => setPage("library")} />}
+                  {coverArt ? (
+                    <img className="player-cover" src={coverArt} alt={coverAlt} decoding="async" />
+                  ) : (
+                    <div className="player-cover player-cover--none" aria-hidden="true" />
+                  )}
 
-      {page === "settings" && startupHealth && (
-        <StartupRecovery
-          health={startupHealth}
-          busy={retryingStartup}
-          retryError={startupRetryError}
-          onRetry={() => void retryStartupServices()}
-        />
-      )}
-      {page === "settings" && (
-        <section className="settings-menu" aria-labelledby="settings-heading">
-          <div className="screen-heading">
-            <p className="eyebrow">Settings</p>
-            <h2 id="settings-heading">Make it comfortable</h2>
-            <p>These stay on this device.</p>
-          </div>
-          {reviewCandidates.length > 0 && (
-            <button type="button" className="settings-row" onClick={() => setPage("review")}>
-              <AppIcon name="sliders" />
-              <span>
-                <strong>Review local music</strong>
-                <small>Blind candidate review</small>
-              </span>
-              <span aria-hidden="true">›</span>
-            </button>
-          )}
-        </section>
-      )}
+                  {source && (
+                    <p className="source-label" aria-live="polite">
+                      <strong>Audio source:</strong> {source.item_title}
+                      {source.fallback
+                        ? " · explicit procedural fallback"
+                        : source.quarantined_review
+                          ? " · QUARANTINED local review — provisional transition; not approved/published"
+                          : ` · ${source.pack_title}`}
+                    </p>
+                  )}
 
-      {page === "settings" && (
-        <IntensitySelector
-          value={session.intensity}
-          disabled={!coreAvailable}
-          onChange={(i) => void session.changeIntensity(i)}
-        />
-      )}
-      {page === "settings" && (
-        <MasterVolume
-          value={session.masterVolume}
-          pending={session.volumePending}
-          disabled={!coreAvailable}
-          onChange={session.changeMasterVolume}
-        />
-      )}
-      {page === "settings" && (
-        <section className="settings-session-options" aria-labelledby="session-options-heading">
-          <div className="screen-heading">
-            <p className="eyebrow">Optional</p>
-            <h2 id="session-options-heading">Sound and timer</h2>
-            <p>Leave these alone to use the app defaults.</p>
-          </div>
-          <GenreSelector
-            state={genres}
-            disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-            onChange={(genreId) =>
-              void setActivityGenre(genreId)
-                .then(setGenres)
-                .catch((error: unknown) =>
-                  session.reportError(
-                    `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
-                  ),
-                )
-            }
+                  <TransportControls
+                    status={status}
+                    starting={session.starting}
+                    activityLabel={activityLabel}
+                    startDisabled={!coreAvailable || !packsAvailable || reviewActive}
+                    actionsDisabled={!coreAvailable}
+                    onStart={() => void session.start()}
+                    onPause={() => void session.pause()}
+                    onResume={() => void session.resume()}
+                    onStop={() => void session.stop()}
+                    navigationAvailable={source?.navigation_available === true}
+                    navigationPending={navigationPending}
+                    onNext={() => void requestNavigation(nextTrack)}
+                    onPrevious={() => void requestNavigation(previousTrack)}
+                  />
+                  <MasterVolume
+                    variant="compact"
+                    value={session.masterVolume}
+                    pending={session.volumePending}
+                    disabled={!coreAvailable}
+                    onChange={session.changeMasterVolume}
+                  />
+                  {transportActive && (
+                    <button
+                      ref={focusEntryControl}
+                      type="button"
+                      className="focus-view-entry"
+                      onClick={() => setFocusView(true)}
+                    >
+                      Enter focus view
+                    </button>
+                  )}
+                </div>
+              </section>
+            )}
+          </>
+        )}
+
+        {page === "library" && <StudioLibraryCard onOpen={() => setPage("studio")} />}
+        {page === "library" && (
+          <MyMusicLibrary
+            disabled={!coreAvailable || !packsAvailable || transportActive}
+            onError={session.reportError}
+            onStarted={async () => {
+              await session.adoptStartedSession();
+              setPage("home");
+            }}
+            onCatalogueChange={() => {
+              setCatalogueRevision((revision) => revision + 1);
+              setContentPacksRevision((revision) => revision + 1);
+            }}
           />
-          <MoodSelector
-            state={moods}
-            disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-            onChange={(moodId) =>
-              void setActivityMood(moodId)
-                .then(setMoods)
-                .catch((error: unknown) =>
-                  session.reportError(
-                    `Unable to change music mood: ${error instanceof Error ? error.message : String(error)}`,
-                  ),
-                )
-            }
-          />
-          <SessionTypeSelector
-            value={session.snapshot?.kind ?? { kind: "infinite" }}
-            disabled={!coreAvailable || session.starting || reviewActive}
-            onChange={(kind) => void session.changeSessionType(kind)}
-          />
-        </section>
-      )}
-
-      {page === "settings" && provenance && source?.fallback && (
-        <details className="provenance">
-          <summary>Test tone provenance &amp; licence</summary>
-          <dl>
-            <dt>Asset</dt>
-            <dd>{provenance.title}</dd>
-            <dt>Generator</dt>
-            <dd>
-              {provenance.generator} v{provenance.generator_version}
-            </dd>
-            <dt>Source</dt>
-            <dd>{provenance.source}</dd>
-            <dt>Licence</dt>
-            <dd>{provenance.licence}</dd>
-            <dt>Voice / lyrics</dt>
-            <dd>
-              {provenance.contains_voice_or_speech ? "yes" : "no"} /{" "}
-              {provenance.contains_lyrics ? "yes" : "no"}
-            </dd>
-            <dt>Looping</dt>
-            <dd>
-              {provenance.loops_seamlessly ? "seamless" : "crossfaded"},{" "}
-              {provenance.duration_seconds}s @ {provenance.sample_rate_hz}Hz
-            </dd>
-          </dl>
-          <p className="provenance-notes">{provenance.notes}</p>
-        </details>
-      )}
-
-      {page === "settings" && <AboutAriaFocus />}
-
-      {page === "review" && (
-        <section className="review-page" aria-label="Local music review">
-          <div className="screen-heading">
-            <button type="button" className="back-action" onClick={() => setPage("settings")}>
-              <AppIcon name="chevron-left" /> Settings
-            </button>
-            <p className="eyebrow">Local review</p>
-            <h2>Candidate music</h2>
-          </div>
-          <QuarantinedReview
-            candidates={reviewCandidates}
+        )}
+        {page === "library" && (
+          <FavoritesLibrary
             active={transportActive}
-            disabled={!coreAvailable || session.starting}
-            onStart={(id) =>
-              void startReviewCandidate(id)
-                .then(async () => {
-                  await session.refresh();
-                  setPage("home");
-                })
-                .catch((error: unknown) =>
-                  session.reportError(
-                    `Unable to start quarantined review: ${error instanceof Error ? error.message : String(error)}`,
-                  ),
-                )
-            }
+            disabled={!coreAvailable || !packsAvailable || session.starting}
+            revision={favoritesRevision}
+            onStarted={async () => {
+              await session.refresh();
+              setPage("home");
+            }}
+            onError={session.reportError}
           />
-        </section>
-      )}
+        )}
+        {page === "library" && (
+          <ContentPacks
+            key={contentPacksRevision}
+            disabled={!packsAvailable}
+            onCatalogueChange={() => setCatalogueRevision((revision) => revision + 1)}
+          />
+        )}
 
-      {page === "settings" && <Disclaimer />}
+        {page === "history" && <RecentSessions sessions={recentSessions} />}
+
+        {page === "studio" && <StudioPage onReturn={() => setPage("library")} />}
+
+        {page === "settings" && startupHealth && (
+          <StartupRecovery
+            health={startupHealth}
+            busy={retryingStartup}
+            retryError={startupRetryError}
+            onRetry={() => void retryStartupServices()}
+          />
+        )}
+        {page === "settings" && (
+          <section className="settings-menu" aria-labelledby="settings-heading">
+            <div className="screen-heading">
+              <p className="eyebrow">Settings</p>
+              <h2 id="settings-heading">Make it comfortable</h2>
+              <p>These stay on this device.</p>
+            </div>
+            {reviewCandidates.length > 0 && (
+              <button type="button" className="settings-row" onClick={() => setPage("review")}>
+                <AppIcon name="sliders" />
+                <span>
+                  <strong>Review local music</strong>
+                  <small>Blind candidate review</small>
+                </span>
+                <span aria-hidden="true">›</span>
+              </button>
+            )}
+          </section>
+        )}
+
+        {page === "settings" && (
+          <IntensitySelector
+            value={session.intensity}
+            disabled={!coreAvailable}
+            onChange={(i) => void session.changeIntensity(i)}
+          />
+        )}
+        {page === "settings" && (
+          <MasterVolume
+            value={session.masterVolume}
+            pending={session.volumePending}
+            disabled={!coreAvailable}
+            onChange={session.changeMasterVolume}
+          />
+        )}
+        {page === "settings" && (
+          <section className="settings-session-options" aria-labelledby="session-options-heading">
+            <div className="screen-heading">
+              <p className="eyebrow">Optional</p>
+              <h2 id="session-options-heading">Sound and timer</h2>
+              <p>Leave these alone to use the app defaults.</p>
+            </div>
+            <GenreSelector
+              state={genres}
+              disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+              onChange={(genreId) =>
+                void setActivityGenre(genreId)
+                  .then(setGenres)
+                  .catch((error: unknown) =>
+                    session.reportError(
+                      `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
+                    ),
+                  )
+              }
+            />
+            <MoodSelector
+              state={moods}
+              disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+              onChange={(moodId) =>
+                void setActivityMood(moodId)
+                  .then(setMoods)
+                  .catch((error: unknown) =>
+                    session.reportError(
+                      `Unable to change music mood: ${error instanceof Error ? error.message : String(error)}`,
+                    ),
+                  )
+              }
+            />
+            <SessionTypeSelector
+              value={session.snapshot?.kind ?? { kind: "infinite" }}
+              disabled={!coreAvailable || session.starting || reviewActive}
+              onChange={(kind) => void session.changeSessionType(kind)}
+            />
+          </section>
+        )}
+
+        {page === "settings" && provenance && source?.fallback && (
+          <details className="provenance">
+            <summary>Test tone provenance &amp; licence</summary>
+            <dl>
+              <dt>Asset</dt>
+              <dd>{provenance.title}</dd>
+              <dt>Generator</dt>
+              <dd>
+                {provenance.generator} v{provenance.generator_version}
+              </dd>
+              <dt>Source</dt>
+              <dd>{provenance.source}</dd>
+              <dt>Licence</dt>
+              <dd>{provenance.licence}</dd>
+              <dt>Voice / lyrics</dt>
+              <dd>
+                {provenance.contains_voice_or_speech ? "yes" : "no"} /{" "}
+                {provenance.contains_lyrics ? "yes" : "no"}
+              </dd>
+              <dt>Looping</dt>
+              <dd>
+                {provenance.loops_seamlessly ? "seamless" : "crossfaded"},{" "}
+                {provenance.duration_seconds}s @ {provenance.sample_rate_hz}Hz
+              </dd>
+            </dl>
+            <p className="provenance-notes">{provenance.notes}</p>
+          </details>
+        )}
+
+        {page === "settings" && <AboutAriaFocus />}
+
+        {page === "review" && (
+          <section className="review-page" aria-label="Local music review">
+            <div className="screen-heading">
+              <button type="button" className="back-action" onClick={() => setPage("settings")}>
+                <AppIcon name="chevron-left" /> Settings
+              </button>
+              <p className="eyebrow">Local review</p>
+              <h2>Candidate music</h2>
+            </div>
+            <QuarantinedReview
+              candidates={reviewCandidates}
+              active={transportActive}
+              disabled={!coreAvailable || session.starting}
+              onStart={(id) =>
+                void startReviewCandidate(id)
+                  .then(async () => {
+                    await session.refresh();
+                    setPage("home");
+                  })
+                  .catch((error: unknown) =>
+                    session.reportError(
+                      `Unable to start quarantined review: ${error instanceof Error ? error.message : String(error)}`,
+                    ),
+                  )
+              }
+            />
+          </section>
+        )}
+
+        {page === "settings" && <Disclaimer />}
+
+        <footer className="footer">
+          <span>Offline focus music · Focus / {activityLabel}</span>
+          {transportActive && <span aria-hidden="true"> · playing</span>}
+        </footer>
+      </div>
 
       <nav className="app-navigation" aria-label="Main navigation">
         {(
@@ -717,11 +799,6 @@ export default function App() {
           </button>
         ))}
       </nav>
-
-      <footer className="footer">
-        <span>Offline focus music · Focus / {activityLabel}</span>
-        {transportActive && <span aria-hidden="true"> · playing</span>}
-      </footer>
     </main>
   );
 }

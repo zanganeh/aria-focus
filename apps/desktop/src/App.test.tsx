@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import App from "./App";
+import { findAvailableUpdate, installAndRelaunch } from "./lib/updater";
 import {
   completeOnboarding,
   getActivityGenres,
@@ -60,6 +61,11 @@ vi.mock("./hooks/useSession", () => ({
   useSession: () => mockSession,
 }));
 
+vi.mock("./lib/updater", () => ({
+  findAvailableUpdate: vi.fn(),
+  installAndRelaunch: vi.fn(),
+}));
+
 vi.mock("./lib/api", () => ({
   listMyMusic: vi.fn().mockResolvedValue([]),
   startMyMusic: vi.fn().mockResolvedValue(undefined),
@@ -114,6 +120,8 @@ const EMPTY_MOODS = { selected_mood_id: null, selected_mood_available: true, ava
 
 beforeEach(() => {
   vi.useFakeTimers();
+  vi.mocked(findAvailableUpdate).mockResolvedValue(null);
+  vi.mocked(installAndRelaunch).mockResolvedValue();
   mockSession.snapshot = {
     activity: "deep_work",
     intensity: "medium",
@@ -142,6 +150,7 @@ beforeEach(() => {
       item_title: "First Track",
       variant_id: "base",
       fallback: false,
+      cover_art: "data:image/png;base64,ZmFrZQ==",
     })
     .mockResolvedValue({
       pack_id: "pack-b",
@@ -186,6 +195,24 @@ beforeEach(() => {
   vi.mocked(getStudioCapability).mockResolvedValue({ state: "ready", detail: null });
 });
 
+it("shows an available update without installing until the user consents", async () => {
+  const update = {
+    version: "0.4.0",
+    body: "A safer, smoother release.",
+  } as never;
+  vi.mocked(findAvailableUpdate).mockResolvedValue(update);
+
+  render(<App />);
+  await act(async () => Promise.resolve());
+
+  expect(screen.getByRole("heading", { name: "Aria Focus 0.4.0 is ready" })).toBeTruthy();
+  expect(installAndRelaunch).not.toHaveBeenCalled();
+
+  fireEvent.click(screen.getByRole("button", { name: "Download and restart" }));
+  await act(async () => Promise.resolve());
+  expect(installAndRelaunch).toHaveBeenCalledWith(update);
+});
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
@@ -200,6 +227,18 @@ it("refreshes the callback-published source identity while playback is active", 
   await act(async () => vi.advanceTimersByTimeAsync(500));
   expect(screen.getByText(/Second Track/)).toBeTruthy();
   expect(getCurrentSource).toHaveBeenCalledTimes(2);
+});
+
+it("uses approved cover art as player and focus-view background only", async () => {
+  render(<App />);
+  await act(async () => Promise.resolve());
+  expect(
+    screen.getByRole("region", { name: "Focus player" }).querySelector(".player-background"),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Enter focus view" }));
+  expect(
+    screen.getByRole("main", { name: "Focus view" }).querySelector(".focus-view-background"),
+  ).toBeTruthy();
 });
 
 it.each(["stopped", "expired"] as const)(

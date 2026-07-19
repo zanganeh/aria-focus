@@ -14,6 +14,8 @@ pub const LOCKED_NEGATIVE_PROMPT: &str =
 const MAX_DETAILS_CHARS: usize = 500;
 const MAX_CREATIVE_PROMPT_CHARS: usize = 2_000;
 const MAX_FAILURE_DETAILS_CHARS: usize = 500;
+const MIN_TEMPO_BPM: u16 = 40;
+const MAX_TEMPO_BPM: u16 = 200;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -108,6 +110,8 @@ pub struct StudioPromptInput {
     pub instrument_ids: Vec<StudioId>,
     pub additional_details: Option<String>,
     pub edited_creative_prompt: Option<String>,
+    #[serde(default)]
+    pub tempo_bpm: Option<u16>,
     pub duration: StudioDuration,
 }
 
@@ -127,13 +131,15 @@ struct StudioPromptInputWire {
     #[serde(default)]
     edited_creative_prompt: Option<String>,
     #[serde(default)]
+    tempo_bpm: Option<u16>,
+    #[serde(default)]
     duration: StudioDuration,
 }
 
 impl<'de> Deserialize<'de> for StudioPromptInput {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let wire = StudioPromptInputWire::deserialize(deserializer)?;
-        Self::new(
+        Self::new_with_tempo(
             wire.activity,
             wire.genre_id,
             wire.mood_id,
@@ -141,6 +147,7 @@ impl<'de> Deserialize<'de> for StudioPromptInput {
             wire.instrument_ids,
             wire.additional_details,
             wire.edited_creative_prompt,
+            wire.tempo_bpm,
             wire.duration,
         )
         .map_err(de::Error::custom)
@@ -159,6 +166,31 @@ impl StudioPromptInput {
         edited_creative_prompt: Option<String>,
         duration: StudioDuration,
     ) -> Result<Self, StudioError> {
+        Self::new_with_tempo(
+            activity,
+            genre_id,
+            mood_id,
+            energy,
+            instrument_ids,
+            additional_details,
+            edited_creative_prompt,
+            None,
+            duration,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_with_tempo(
+        activity: Activity,
+        genre_id: StudioId,
+        mood_id: Option<StudioId>,
+        energy: StudioEnergy,
+        instrument_ids: Vec<StudioId>,
+        additional_details: Option<String>,
+        edited_creative_prompt: Option<String>,
+        tempo_bpm: Option<u16>,
+        duration: StudioDuration,
+    ) -> Result<Self, StudioError> {
         if instrument_ids.len() > 5 {
             return Err(StudioError::new(
                 StudioErrorCode::InvalidRequest,
@@ -175,6 +207,12 @@ impl StudioPromptInput {
             MAX_CREATIVE_PROMPT_CHARS,
             "edited creative prompt",
         )?;
+        if tempo_bpm.is_some_and(|tempo| !(MIN_TEMPO_BPM..=MAX_TEMPO_BPM).contains(&tempo)) {
+            return Err(StudioError::new(
+                StudioErrorCode::InvalidRequest,
+                "tempo must be between 40 and 200 BPM",
+            ));
+        }
         Ok(Self {
             activity,
             genre_id,
@@ -183,6 +221,7 @@ impl StudioPromptInput {
             instrument_ids,
             additional_details,
             edited_creative_prompt,
+            tempo_bpm,
             duration,
         })
     }
@@ -227,7 +266,7 @@ pub fn build_studio_prompt(
     input: &StudioPromptInput,
     seed: u64,
 ) -> Result<BuiltStudioPrompt, StudioError> {
-    let input = StudioPromptInput::new(
+    let input = StudioPromptInput::new_with_tempo(
         input.activity,
         input.genre_id.clone(),
         input.mood_id.clone(),
@@ -235,6 +274,7 @@ pub fn build_studio_prompt(
         input.instrument_ids.clone(),
         input.additional_details.clone(),
         input.edited_creative_prompt.clone(),
+        input.tempo_bpm,
         input.duration,
     )?;
     let mut parts = vec![
@@ -243,6 +283,9 @@ pub fn build_studio_prompt(
         format!("genre: {}", input.genre_id.as_str()),
         format!("energy: {}", energy_name(input.energy)),
     ];
+    if let Some(tempo) = input.tempo_bpm {
+        parts.push(format!("tempo: {tempo} BPM"));
+    }
     if let Some(mood) = input.mood_id {
         parts.push(format!("mood: {}", mood.as_str()));
     }

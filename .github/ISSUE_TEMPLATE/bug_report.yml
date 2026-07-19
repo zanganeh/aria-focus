@@ -1,0 +1,75 @@
+name: Bug report
+description: Report a reproducible problem in Aria Focus
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not include private music, credentials, or personal data. For security issues, see [SECURITY.md](https://github.com/zanganeh/aria-focus/blob/main/SECURITY.md).
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Find this in Settings → About.
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2 x64
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Playback / player
+        - Library / content
+        - Music Studio
+        - Settings / onboarding
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Give the smallest exact sequence that shows the problem.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and context
+      description: Include the exact error text, screenshots, and relevant logs. Redact private paths or data.
+    validations:
+      required: true
+  - type: textarea
+    id: music-studio-hardware
+    attributes:
+      label: Music Studio hardware (if relevant)
+      description: Include RAM, GPU/model, VRAM, CUDA status, architecture, and free disk when reporting Studio setup or generation issues.
+      placeholder: 32 GiB RAM; NVIDIA RTX ... 12 GiB VRAM; CUDA detected; x64; 80 GB free
+    validations:
+      required: false

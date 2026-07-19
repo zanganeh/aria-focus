@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest a focused improvement to Aria Focus
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Aria Focus is designed for free, local, offline focus music. Please do not include private data.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What user need or friction would this address?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful behavior or UI change.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or other approaches have you tried?
+    validations:
+      required: true
+  - type: textarea
+    id: offline
+    attributes:
+      label: Offline behavior
+      description: Explain how this should work after one-time setup without a network connection.
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy considerations
+      description: What local-only, data-minimization, or consent behavior should be preserved?
+    validations:
+      required: true

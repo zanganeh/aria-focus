@@ -75,10 +75,13 @@ struct StudioJobSummaryDto {
     can_save: bool,
     can_discard: bool,
     safe_message: Option<String>,
+    creative_prompt: String,
+    locked_negative_prompt: String,
 }
 
 impl StudioJobSummaryDto {
     fn from_record(record: music_studio_domain::StudioJobRecord) -> Self {
+        let prompt = record.prompt;
         Self {
             id: record.job_id.as_str().to_owned(),
             status: studio_job_status(record.state).to_owned(),
@@ -104,6 +107,8 @@ impl StudioJobSummaryDto {
             safe_message: record
                 .failure
                 .map(|_| "This music could not be created. Please try again.".into()),
+            creative_prompt: prompt.creative_prompt,
+            locked_negative_prompt: prompt.locked_negative_prompt,
         }
     }
 }
@@ -1931,6 +1936,9 @@ fn set_item_feedback(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let target_path = app_data_path(app.handle());
             let migration_result = target_path

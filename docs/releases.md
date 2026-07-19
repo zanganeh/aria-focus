@@ -3,10 +3,12 @@
 Aria Focus uses two separate GitHub Actions paths:
 
 - `.github/workflows/ci.yml` builds and tests source changes and produces
-  unsigned source-only Windows artifacts for inspection.
+  unsigned source-only Windows and macOS artifacts for inspection. Windows
+  remains MSI/NSIS; macOS is app/DMG for Apple Silicon (`aarch64`) and Intel
+  (`x86_64`), with separate CI artifacts for each architecture.
 - `.github/workflows/public-release.yml` is a tag-triggered, protected release workflow
-  for reviewed content and signed public installers. Manual dispatch remains available
-  as a recovery path.
+  for reviewed content and signed public Windows installers. Manual dispatch remains
+  available as a recovery path. It does not claim a signed/notarized macOS release.
 
 CI artifacts are never official releases.
 
@@ -24,6 +26,29 @@ About panel, Git tag, and Tauri installer version all carry the same `0.3.0`.
 Code signing, the reviewed-library archive, and the Music Studio runtime are
 protected release gates. The workflow fails closed until those gates are satisfied;
 it does not claim signing or approval has already occurred.
+
+The updater is also fail-closed until its metadata is configured. The checked-in
+Tauri configuration contains the literal placeholder
+`REPLACE_WITH_TAURI_UPDATER_PUBLIC_KEY`; an unavailable endpoint or invalid key is
+silently ignored by the app. The public release workflow creates updater archives
+and `latest.json` only when all of these are configured:
+
+- GitHub secret `TAURI_SIGNING_PRIVATE_KEY`;
+- GitHub secret `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`; and
+- repository variable `TAURI_UPDATER_PUBLIC_KEY` containing the matching public
+  key (never the private key).
+
+Generate a key pair locally with `pnpm tauri signer generate -w
+~/.tauri/aria-focus.key`, store the private key and password only in the two
+GitHub secrets, and put the generated public key in the repository variable and
+in a reviewed config update. The guarded workflow build creates the signed NSIS
+updater archive, its `.sig`, and a Windows `latest.json` entry pointing at the
+same stable GitHub release. It does not produce updater metadata when the
+secrets/variable are absent.
+
+The updater uses Tauri's signed `downloadAndInstall()` flow and the process
+plugin's relaunch only after the user clicks “Download and restart”; it never
+downloads arbitrary release files or restarts on its own.
 
 Pushing a stable version tag automatically starts signed draft creation. The
 workflow still requires protected-environment approval and creates a draft that
@@ -126,6 +151,12 @@ After approval, it:
 6. verifies both returned Authenticode signatures;
 7. writes `SHA256SUMS`; and
 8. creates or updates a **draft release** (not a prerelease) for the existing tag.
+
+The macOS source-only job is intentionally separate from this protected path. A
+public macOS release additionally needs an Apple Developer ID certificate,
+notarization credentials, and a maintainer review of the resulting app/DMG.
+Until those secrets are added, keep using the CI macOS artifacts for inspection;
+do not label them signed public downloads.
 
 ## Publish the draft
 

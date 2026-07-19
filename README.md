@@ -5,27 +5,45 @@
 <h1 align="center">Aria Focus</h1>
 
 <p align="center">
-  A private, offline focus-music player for Windows, with a built-in AI Music Studio.<br>
+  A free, open-source, offline focus-music alternative for the broad use case of Brain.fm, with a built-in AI Music Studio.<br>
   No account. No subscription. No telemetry.
 </p>
 
 <p align="center">
   <a href="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml"><img src="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue" alt="MIT OR Apache-2.0"></a>
-  <img src="https://img.shields.io/badge/platform-Windows-0078D4" alt="Windows">
-  <img src="https://img.shields.io/badge/version-0.3.0-2EA44F" alt="0.3.0">
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-0078D4" alt="Windows and macOS">
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest"><img src="https://img.shields.io/github/v/release/zanganeh/aria-focus?display_name=tag&sort=semver&label=latest%20stable&color=2EA44F" alt="Latest stable release"></a>
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest"><img src="https://img.shields.io/github/downloads/zanganeh/aria-focus/latest/total?label=latest%20stable%20downloads&color=2EA44F" alt="Downloads of the latest stable release"></a>
 </p>
 
-Aria Focus is a standalone desktop app for deep work, motivation, creativity,
+Aria Focus is a standalone desktop app for the broad focus-music use case—deep work, motivation, creativity,
 learning, and light work. It plays integrity-checked music from local storage,
 keeps preferences and session history on the device, and presents a deliberately
 small activity-first interface. The optional **AI Music Studio** generates short
 instrumental tracks entirely on your machine.
 
-The project is open for source review and contribution. The application is at a
-stable 0.3.0 source version. Signed, reviewed public installers remain gated on
-the protected release workflow below; this README does not claim signing or
-final review has already happened.
+The project is open for source review and contribution. A public stable release
+and its installers are only claimed after a stable version tag has been published
+and the protected release workflow below has completed; before then, the dynamic
+release badges and download count do not represent a published installer.
+
+## Download the latest stable release
+
+<p>
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest">📦 Windows installer</a>
+  ·
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest">📦 macOS DMG</a>
+</p>
+
+These links resolve to the latest **stable** GitHub release when one exists.
+They remain unavailable before the first stable release and never point to a beta
+as “latest stable”. CI artifacts are source-only inspection builds, not official
+customer releases.
+
+Aria Focus is independent and is not affiliated with Brain.fm. It does not
+reproduce Brain.fm audio, assets, branding, or screenshots; the project uses
+only its own code and existing Aria Focus visuals.
 
 ## What it includes
 
@@ -52,15 +70,22 @@ focus-music product or service.
 
 ## Install and use
 
-Aria Focus runs on **Windows 11 x64**.
+Aria Focus has source-only packages for **Windows 11 x64** (MSI and NSIS) and
+**macOS** (DMG containing an app bundle) for both **Apple Silicon/aarch64** and
+**Intel/x86_64**. macOS packages are currently CI artifacts until Apple signing
+and notarization are configured for the public release workflow.
 
-1. Download the latest installer from the
+When a stable release has been published, use the download area above. Before
+publication, this README does not claim that a stable installer exists.
+
+1. Download the appropriate package from the
    [Releases page](https://github.com/zanganeh/aria-focus/releases).
-   Prefer a signed release when one is available. Unsigned source-only builds are
-   clearly labelled and are not official releases.
-2. Run the downloaded setup file. Windows SmartScreen may warn for unsigned
-   builds; check `SHA256SUMS` on the release page before running an unsigned
-   installer.
+   Windows releases provide MSI and NSIS installers; macOS releases provide a
+   DMG. Prefer a signed release when one is available. Unsigned source-only
+   builds are clearly labelled and are not official releases.
+2. On Windows, run the downloaded setup file. On macOS, open the DMG and drag
+   Aria Focus to Applications. Unsigned builds may require an explicit macOS
+   Privacy & Security approval; check `SHA256SUMS` when present.
 3. Open Aria Focus, choose a focus activity, optionally pick a genre and mood,
    choose a timer, and press Play. Everything stays on your device.
 
@@ -71,9 +96,10 @@ is installed.
 ## AI Music Studio
 
 The AI Music Studio is a first-class feature. It lets you describe the music you
-want in simple terms—an activity, a sound style, an energy level, and an optional
-note—and generates a short instrumental track **locally on your device**. Nothing
-is uploaded, and no account is required.
+want in simple terms—an activity, genre, mood, speed/tempo, duration, energy, and
+optional plain-language details—and generates a short instrumental track
+**locally on your device**. The optional More controls add instruments and fuller
+creative direction. Nothing is uploaded, and no account is required.
 
 ### Minimum requirements
 
@@ -90,18 +116,22 @@ checks your hardware, downloads the signed runtime once, and then runs offline.
 | GPU              | NVIDIA CUDA GPU with at least 8 GiB VRAM                   |
 | Free disk        | About 14.2 GB for the public runtime, plus a safety margin |
 
-The current generation worker uses CUDA. On devices that do not meet these
+The current generation worker uses CUDA and is **Windows/NVIDIA-only**. macOS
+packages do not bundle a Music Studio runtime unless a separate macOS runtime is
+created and reviewed. On devices that do not meet these
 requirements, the Studio reports what it detected and what is missing instead of
 starting a generation that cannot succeed.
 
 ### One-click setup
 
-1. Open **My Music** → **Music Studio**. The app inspects your device and shows
+1. Open **Create** → **Music Studio**. The app inspects your device and shows
    the detected hardware, the minimum requirements, and the disk space needed.
-2. If setup is required, press **Set up Music Studio**. The app verifies the
+2. If setup is required, press **Set up Music Studio**. This is the one-time
+   internet step: the app verifies the
    signed package manifest and signature, then copies the runtime. No shell
    commands are run and no arbitrary packages are installed.
-3. When setup is complete, choose a sound style, energy, and length, then
+3. When setup is complete, choose a genre, mood, speed/tempo, duration, and
+   energy, then
    **Generate music**. Preview, save to My Music, regenerate, or discard.
 
 ### What is bundled
@@ -133,8 +163,9 @@ instrumental audio, ready to loop for a focus session.
   GPU, VRAM, or RAM is below the minimum. The message lists what was detected and
   what is required. Generation needs an NVIDIA CUDA GPU with at least 8 GiB VRAM.
 - **Setup reports a verification error:** the signed manifest or runtime did not
-  match. Do not run an unverified runtime; re-run setup or download the package
-  again from the pinned release.
+  match. Do not run an unverified runtime; use **Retry setup** in Music Studio to
+  resume or repair the local runtime, or download the package again from the
+  pinned release.
 - **Generation is busy:** only one track is generated at a time. Wait for the
   current track to finish, then generate another.
 
@@ -178,14 +209,18 @@ cargo test --workspace
 python scripts/check_repository_hygiene.py
 ```
 
-### Source-only Windows installer
+### Source-only desktop packages
 
 ```powershell
 pnpm tauri build
 ```
 
-The resulting NSIS and MSI packages appear under `target/release/bundle/`. They
-do not contain the official reviewed music library and are not official releases.
+The resulting NSIS and MSI packages appear under `target/release/bundle/` on
+Windows. On macOS, use `pnpm tauri build --config
+src-tauri/tauri.macos.conf.json` on the matching Apple Silicon or Intel runner to
+produce an `.app` and `.dmg` under the macOS bundle directories. These
+source-only packages contain neither the official reviewed music library nor the
+Windows-only Music Studio runtime, and are not official releases.
 
 ## Music and local generation
 
@@ -223,7 +258,8 @@ workflow that:
 1. checks out an existing version tag;
 2. downloads the exact pinned reviewed-library archive;
 3. verifies repository hygiene, content, frontend, and Rust tests;
-4. builds NSIS and MSI installers;
+4. builds the signed Windows NSIS and MSI installers; macOS packaging is a
+   separate source-only CI path until Apple signing/notarization is configured;
 5. submits them to SignPath for Windows signing;
 6. verifies Authenticode signatures and creates `SHA256SUMS`; and
 7. uploads the signed files to a draft GitHub release.
@@ -236,7 +272,9 @@ rejects prerelease suffixes. See [`docs/releases.md`](docs/releases.md) and
 Signed draft creation is automatic after a stable version tag is pushed and the
 protected environment is approved. Publishing that draft remains an explicit
 maintainer decision. Signing, the reviewed-library archive, and the Music Studio
-runtime are protected gates; this README does not claim they are already complete.
+runtime, Apple signing/notarization, and updater metadata are protected gates;
+this README does not claim they are already complete. See
+[`docs/releases.md`](docs/releases.md) for updater signing setup.
 
 ## Contributing
 

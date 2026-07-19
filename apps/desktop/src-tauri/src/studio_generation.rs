@@ -31,9 +31,25 @@ const DURATION_TOLERANCE_SECONDS: f64 = 1.0;
 #[serde(deny_unknown_fields)]
 pub struct CreateStudioMusicRequest {
     pub activity: domain::Activity,
+    #[serde(default)]
+    pub genre_id: Option<String>,
+    #[serde(default)]
+    /// Kept as a stable alias for clients from the first Music Studio request contract.
     pub sound_style_id: String,
+    #[serde(default)]
+    pub mood_id: Option<String>,
     pub energy: StudioEnergy,
     pub duration_seconds: StudioDuration,
+    #[serde(default)]
+    pub tempo_bpm: Option<u16>,
+    #[serde(default)]
+    pub instrument_ids: Vec<String>,
+    #[serde(default)]
+    pub additional_details: Option<String>,
+    #[serde(default)]
+    pub creative_direction: Option<String>,
+    /// Kept for clients from the first Music Studio request contract.
+    #[serde(default)]
     pub note: Option<String>,
     pub parent_job_id: Option<String>,
 }
@@ -317,25 +333,31 @@ impl GenerationService {
         self: &Arc<Self>,
         request: CreateStudioMusicRequest,
     ) -> Result<StudioJobRecord, String> {
-        let style = match request.sound_style_id.as_str() {
-            "ambient" | "gentle-piano" | "soft-electronic" => request.sound_style_id,
-            _ => return Err("Please choose a sound style.".into()),
-        };
-        if request
-            .note
-            .as_ref()
-            .is_some_and(|note| note.chars().count() > 240)
-        {
-            return Err("Please check your music choices and try again.".into());
-        }
-        let input = StudioPromptInput::new(
+        let genre = request
+            .genre_id
+            .or_else(|| (!request.sound_style_id.is_empty()).then_some(request.sound_style_id))
+            .ok_or_else(|| "Please choose a genre.".to_owned())?;
+        let mood = request
+            .mood_id
+            .map(StudioId::new)
+            .transpose()
+            .map_err(|_| "Please choose a mood.".to_owned())?;
+        let instruments = request
+            .instrument_ids
+            .into_iter()
+            .map(StudioId::new)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| "Please check your instruments and try again.".to_owned())?;
+        let details = request.additional_details.or(request.note);
+        let input = StudioPromptInput::new_with_tempo(
             request.activity,
-            StudioId::new(style).map_err(|_| "Please choose a sound style.".to_owned())?,
-            None,
+            StudioId::new(genre).map_err(|_| "Please choose a genre.".to_owned())?,
+            mood,
             request.energy,
-            Vec::new(),
-            request.note,
-            None,
+            instruments,
+            details,
+            request.creative_direction,
+            request.tempo_bpm,
             request.duration_seconds,
         )
         .map_err(|_| "Please check your music choices and try again.".to_owned())?;
@@ -994,9 +1016,15 @@ mod tests {
     fn request(parent_job_id: Option<String>) -> CreateStudioMusicRequest {
         CreateStudioMusicRequest {
             activity: domain::Activity::DeepWork,
+            genre_id: Some("ambient".into()),
             sound_style_id: "ambient".into(),
+            mood_id: Some("focused".into()),
             energy: StudioEnergy::Medium,
             duration_seconds: StudioDuration::Seconds90,
+            tempo_bpm: Some(90),
+            instrument_ids: vec!["piano".into()],
+            additional_details: None,
+            creative_direction: None,
             note: Some("steady rain".into()),
             parent_job_id,
         }

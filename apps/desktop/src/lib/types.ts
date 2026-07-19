@@ -197,14 +197,24 @@ export interface StudioJobSummary {
   can_save: boolean;
   can_discard: boolean;
   safe_message: string | null;
+  creative_prompt?: string | null;
+  locked_negative_prompt?: string | null;
 }
 export interface CreateStudioMusic {
   activity: Activity;
-  sound_style_id: "ambient" | "gentle-piano" | "soft-electronic";
+  genre_id?: string;
+  /** Backward-compatible alias accepted by older local clients. */
+  sound_style_id?: string;
+  mood_id?: string | null;
   energy: "low" | "medium" | "high";
   duration_seconds: 90 | 180;
-  note: string | null;
-  parent_job_id: string | null;
+  tempo_bpm?: number | null;
+  instrument_ids?: string[];
+  additional_details?: string | null;
+  creative_direction?: string | null;
+  /** Backward-compatible alias for additional_details. */
+  note?: string | null;
+  parent_job_id?: string | null;
 }
 export interface MyMusicItem {
   item_id: string;
