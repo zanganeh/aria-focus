@@ -175,6 +175,36 @@ fn prompt_is_deterministic_locked_and_instrumental() {
     )
     .is_err());
 }
+
+#[test]
+fn tempo_is_bounded_and_included_in_the_deterministic_prompt() {
+    let input = StudioPromptInput::new_with_tempo(
+        Activity::DeepWork,
+        id("ambient"),
+        Some(id("focused")),
+        StudioEnergy::Medium,
+        vec![id("piano")],
+        Some("steady rain".into()),
+        Some("gentle, even texture".into()),
+        Some(90),
+        StudioDuration::Seconds90,
+    )
+    .unwrap();
+    let prompt = build_studio_prompt(&input, 42).unwrap();
+    assert!(prompt.creative_prompt.contains("tempo: 90 BPM"));
+    assert!(StudioPromptInput::new_with_tempo(
+        Activity::DeepWork,
+        id("ambient"),
+        None,
+        StudioEnergy::Medium,
+        vec![],
+        None,
+        None,
+        Some(201),
+        StudioDuration::Seconds90,
+    )
+    .is_err());
+}
 #[test]
 fn all_allowed_and_disallowed_transitions_are_enforced() {
     let cases = [

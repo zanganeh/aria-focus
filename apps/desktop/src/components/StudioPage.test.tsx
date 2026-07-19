@@ -77,19 +77,26 @@ it("enables Generate with defaults, enforces the note limit, and sends the exact
   const generate = await screen.findByRole("button", { name: "Generate" });
   expect(generate.hasAttribute("disabled")).toBe(false);
   expect((screen.getByLabelText("Focus type") as HTMLSelectElement).value).toBe("deep_work");
-  expect((screen.getByLabelText("Sound style") as HTMLSelectElement).value).toBe("ambient");
+  expect((screen.getByLabelText("Genre") as HTMLSelectElement).value).toBe("ambient");
+  expect((screen.getByLabelText("Mood") as HTMLSelectElement).value).toBe("focused");
   expect((screen.getByLabelText("Energy") as HTMLSelectElement).value).toBe("medium");
-  expect((screen.getByLabelText("Length") as HTMLSelectElement).value).toBe("180");
-  const note = screen.getByLabelText("Anything else?");
-  expect(note.getAttribute("maxlength")).toBe("240");
-  await user.type(note, "soft rain");
+  expect((screen.getByLabelText("Speed / tempo") as HTMLSelectElement).value).toBe("90");
+  expect((screen.getByLabelText("Duration") as HTMLSelectElement).value).toBe("180");
+  const details = screen.getByLabelText("Details");
+  expect(details.getAttribute("maxlength")).toBe("500");
+  await user.type(details, "soft rain");
   await user.click(generate);
   expect(api.createStudioMusic).toHaveBeenCalledWith({
     activity: "deep_work",
+    genre_id: "ambient",
     sound_style_id: "ambient",
+    mood_id: "focused",
     energy: "medium",
+    tempo_bpm: 90,
     duration_seconds: 180,
-    note: "soft rain",
+    instrument_ids: [],
+    additional_details: "soft rain",
+    creative_direction: null,
     parent_job_id: null,
   });
 });
@@ -106,6 +113,58 @@ it("restores an active job, renders its customer stage, and waits for cancel", a
   await user.click(screen.getByRole("button", { name: "Cancel" }));
   await waitFor(() => expect(api.cancelStudioMusic).toHaveBeenCalledWith(active.id));
   await waitFor(() => expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull());
+});
+
+it("keeps advanced controls collapsed and sends bounded creative choices", async () => {
+  const user = userEvent.setup();
+  render(<StudioPage onReturn={vi.fn()} />);
+  await screen.findByRole("button", { name: "Generate" });
+  expect(screen.queryByLabelText("Fuller creative direction")).toBeNull();
+  await user.click(screen.getByRole("button", { name: /More/ }));
+  await user.click(screen.getByLabelText("Piano"));
+  await user.selectOptions(screen.getByLabelText("Genre"), "electronic");
+  await user.selectOptions(screen.getByLabelText("Mood"), "calm");
+  await user.selectOptions(screen.getByLabelText("Energy"), "high");
+  await user.type(screen.getByLabelText("Details"), "steady rain");
+  await user.type(
+    screen.getByLabelText("Fuller creative direction"),
+    "A patient, spacious arrangement",
+  );
+  await user.selectOptions(screen.getByLabelText("Speed / tempo"), "150");
+  const fullPrompt =
+    "instrumental music only; activity: deep_work; genre: electronic; energy: high; tempo: 150 BPM; mood: calm; instruments: piano; details: steady rain; creative direction: A patient, spacious arrangement";
+  expect(screen.getByText(fullPrompt).tagName).toBe("PRE");
+  expect(screen.getByText("Full prompt preview")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Generate" }));
+  expect(api.createStudioMusic).toHaveBeenCalledWith(
+    expect.objectContaining({
+      genre_id: "electronic",
+      sound_style_id: "electronic",
+      mood_id: "calm",
+      energy: "high",
+      tempo_bpm: 150,
+      instrument_ids: ["piano"],
+      additional_details: "steady rain",
+      creative_direction: "A patient, spacious arrangement",
+    }),
+  );
+});
+
+it("shows the complete deterministic prompt on result cards", async () => {
+  api.listRecentStudioJobs.mockResolvedValue([
+    job({
+      status: "Ready",
+      stage: "ready",
+      can_preview: true,
+      can_save: true,
+      creative_prompt: "instrumental music only; genre: ambient; tempo: 90 BPM",
+      locked_negative_prompt: "vocals, lyrics, spoken words",
+    }),
+  ]);
+  render(<StudioPage onReturn={vi.fn()} />);
+  await userEvent.click(await screen.findByText("Generated prompt"));
+  expect(screen.getByText(/genre: ambient; tempo: 90 BPM/)).toBeTruthy();
+  expect(screen.getByText(/vocals, lyrics, spoken words/)).toBeTruthy();
 });
 
 it("polling survives reload state and refreshes an active job to ready", async () => {
@@ -198,10 +257,15 @@ it("generates another draft with the existing job as its parent", async () => {
 
   expect(api.regenerateStudioMusic).toHaveBeenCalledWith("job_abcdefghijkl", {
     activity: "deep_work",
+    genre_id: "ambient",
     sound_style_id: "ambient",
+    mood_id: "focused",
     energy: "medium",
+    tempo_bpm: 90,
     duration_seconds: 180,
-    note: null,
+    instrument_ids: [],
+    additional_details: null,
+    creative_direction: null,
   });
   expect(await screen.findByText(/Preparing your music/)).toBeTruthy();
   expect(screen.getByRole("button", { name: "Generate another" })).toBeTruthy();
@@ -318,7 +382,7 @@ it("shows live setup state and makes cancellation reachable", async () => {
   });
   render(<StudioPage onReturn={vi.fn()} />);
 
-  fireEvent.click(await screen.findByRole("button", { name: "Install Music Studio" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Set up Music Studio" }));
   const cancel = await screen.findByRole("button", { name: "Cancel setup" });
   expect(screen.getByText("Downloading Music Studio file 2 of 8.")).toBeTruthy();
   expect(screen.getByRole("progressbar", { name: "Music Studio download progress" })).toBeTruthy();
@@ -394,7 +458,7 @@ it("renders the unsupported state with actionable detail and no install button",
   render(<StudioPage onReturn={vi.fn()} />);
 
   expect(await screen.findByText(/not supported on this device/)).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Install Music Studio" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Set up Music Studio" })).toBeNull();
   expect(screen.getByRole("group", { name: "Music Studio requirements" }).textContent).toContain(
     "4 GiB",
   );

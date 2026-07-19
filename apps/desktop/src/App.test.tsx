@@ -142,6 +142,7 @@ beforeEach(() => {
       item_title: "First Track",
       variant_id: "base",
       fallback: false,
+      cover_art: "data:image/png;base64,ZmFrZQ==",
     })
     .mockResolvedValue({
       pack_id: "pack-b",
@@ -200,6 +201,18 @@ it("refreshes the callback-published source identity while playback is active", 
   await act(async () => vi.advanceTimersByTimeAsync(500));
   expect(screen.getByText(/Second Track/)).toBeTruthy();
   expect(getCurrentSource).toHaveBeenCalledTimes(2);
+});
+
+it("uses approved cover art as player and focus-view background only", async () => {
+  render(<App />);
+  await act(async () => Promise.resolve());
+  expect(
+    screen.getByRole("region", { name: "Focus player" }).querySelector(".player-background"),
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Enter focus view" }));
+  expect(
+    screen.getByRole("main", { name: "Focus view" }).querySelector(".focus-view-background"),
+  ).toBeTruthy();
 });
 
 it.each(["stopped", "expired"] as const)(

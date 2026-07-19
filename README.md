@@ -5,7 +5,7 @@
 <h1 align="center">Aria Focus</h1>
 
 <p align="center">
-  A private, offline focus-music player for Windows, with a built-in AI Music Studio.<br>
+  A free, open-source, offline focus-music alternative for the broad use case of Brain.fm, with a built-in AI Music Studio.<br>
   No account. No subscription. No telemetry.
 </p>
 
@@ -13,19 +13,25 @@
   <a href="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml"><img src="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue" alt="MIT OR Apache-2.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows-0078D4" alt="Windows">
-  <img src="https://img.shields.io/badge/version-0.3.0-2EA44F" alt="0.3.0">
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest"><img src="https://img.shields.io/github/v/release/zanganeh/aria-focus?display_name=tag&sort=semver&label=latest%20stable&color=2EA44F" alt="Latest stable release"></a>
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest"><img src="https://img.shields.io/github/downloads/zanganeh/aria-focus/latest/total?label=latest%20stable%20downloads&color=2EA44F" alt="Downloads of the latest stable release"></a>
 </p>
 
-Aria Focus is a standalone desktop app for deep work, motivation, creativity,
+Aria Focus is a standalone desktop app for the broad focus-music use case—deep work, motivation, creativity,
 learning, and light work. It plays integrity-checked music from local storage,
 keeps preferences and session history on the device, and presents a deliberately
 small activity-first interface. The optional **AI Music Studio** generates short
 instrumental tracks entirely on your machine.
 
-The project is open for source review and contribution. The application is at a
-stable 0.3.0 source version. Signed, reviewed public installers remain gated on
-the protected release workflow below; this README does not claim signing or
-final review has already happened.
+The project is open for source review and contribution. The application source
+currently targets version 0.3.0. A public stable release and its installer are
+only claimed after a stable version tag has been published and the protected
+release workflow below has completed; before then, the dynamic release badges
+and download count do not represent a published installer.
+
+Aria Focus is independent and is not affiliated with Brain.fm. It does not
+reproduce Brain.fm audio, assets, branding, or screenshots; the project uses
+only its own code and existing Aria Focus visuals.
 
 ## What it includes
 
@@ -54,6 +60,11 @@ focus-music product or service.
 
 Aria Focus runs on **Windows 11 x64**.
 
+When a stable release has been published, use the
+[Download the latest stable Windows installer](https://github.com/zanganeh/aria-focus/releases/latest)
+link. Before publication, this README does not claim that a stable installer
+exists.
+
 1. Download the latest installer from the
    [Releases page](https://github.com/zanganeh/aria-focus/releases).
    Prefer a signed release when one is available. Unsigned source-only builds are
@@ -71,9 +82,10 @@ is installed.
 ## AI Music Studio
 
 The AI Music Studio is a first-class feature. It lets you describe the music you
-want in simple terms—an activity, a sound style, an energy level, and an optional
-note—and generates a short instrumental track **locally on your device**. Nothing
-is uploaded, and no account is required.
+want in simple terms—an activity, genre, mood, speed/tempo, duration, energy, and
+optional plain-language details—and generates a short instrumental track
+**locally on your device**. The optional More controls add instruments and fuller
+creative direction. Nothing is uploaded, and no account is required.
 
 ### Minimum requirements
 
@@ -96,12 +108,14 @@ starting a generation that cannot succeed.
 
 ### One-click setup
 
-1. Open **My Music** → **Music Studio**. The app inspects your device and shows
+1. Open **Create** → **Music Studio**. The app inspects your device and shows
    the detected hardware, the minimum requirements, and the disk space needed.
-2. If setup is required, press **Set up Music Studio**. The app verifies the
+2. If setup is required, press **Set up Music Studio**. This is the one-time
+   internet step: the app verifies the
    signed package manifest and signature, then copies the runtime. No shell
    commands are run and no arbitrary packages are installed.
-3. When setup is complete, choose a sound style, energy, and length, then
+3. When setup is complete, choose a genre, mood, speed/tempo, duration, and
+   energy, then
    **Generate music**. Preview, save to My Music, regenerate, or discard.
 
 ### What is bundled
@@ -133,8 +147,9 @@ instrumental audio, ready to loop for a focus session.
   GPU, VRAM, or RAM is below the minimum. The message lists what was detected and
   what is required. Generation needs an NVIDIA CUDA GPU with at least 8 GiB VRAM.
 - **Setup reports a verification error:** the signed manifest or runtime did not
-  match. Do not run an unverified runtime; re-run setup or download the package
-  again from the pinned release.
+  match. Do not run an unverified runtime; use **Retry setup** in Music Studio to
+  resume or repair the local runtime, or download the package again from the
+  pinned release.
 - **Generation is busy:** only one track is generated at a time. Wait for the
   current track to finish, then generate another.
 

@@ -5,13 +5,14 @@ import type { SessionSnapshot } from "../lib/types";
 interface Props {
   snapshot: SessionSnapshot;
   activityLabel: string;
+  coverArt?: string | null;
   onPause: () => void;
   onResume: () => void;
   onExit: () => void;
 }
 
 /** A deliberately small session-only surface for sustained focus. */
-export function FocusView({ snapshot, activityLabel, onPause, onResume, onExit }: Props) {
+export function FocusView({ snapshot, activityLabel, coverArt, onPause, onResume, onExit }: Props) {
   const primaryControl = useRef<HTMLButtonElement>(null);
   const isInfinite = snapshot.kind.kind === "infinite";
   const isInterval = snapshot.kind.kind === "interval";
@@ -29,6 +30,10 @@ export function FocusView({ snapshot, activityLabel, onPause, onResume, onExit }
 
   return (
     <main className="focus-view" aria-label="Focus view">
+      {coverArt && (
+        <img className="focus-view-background" src={coverArt} alt="" aria-hidden="true" />
+      )}
+      <div className="focus-view-overlay" aria-hidden="true" />
       <section
         className="focus-view-content"
         aria-labelledby="focus-view-activity"

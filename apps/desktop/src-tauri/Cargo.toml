@@ -50,6 +50,7 @@ getrandom = "0.3.4"
 reqwest = { version = "=0.12.12", default-features = false, features = ["blocking", "rustls-tls"] }
 tar = "=0.4.43"
 fs2 = "=0.4.3"
+tauri-plugin-opener = "2.5.4"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_SystemInformation", "Win32_System_Threading"] }
