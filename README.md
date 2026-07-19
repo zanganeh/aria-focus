@@ -69,10 +69,11 @@ focus-music product or service.
 
 ## Install and use
 
-Aria Focus has source-only packages for **Windows 11 x64** (MSI and NSIS) and
-**macOS** (DMG containing an app bundle) for both **Apple Silicon/aarch64** and
-**Intel/x86_64**. macOS packages are currently CI artifacts until Apple signing
-and notarization are configured for the public release workflow.
+Aria Focus has packages for **Windows 11 x64** (MSI and NSIS) and **macOS** (DMG
+containing an app bundle) for both **Apple Silicon/aarch64** and
+**Intel/x86_64**. Stable release packages are produced by GitHub Actions only;
+the public workflow signs Windows installers with SignPath and signs/notarizes
+macOS DMGs with Apple Developer credentials.
 
 When a stable release has been published, use the download area above. Before
 publication, this README does not claim that a stable installer exists.
@@ -258,11 +259,12 @@ Actions creates the tag and starts the release workflow that:
 1. checks out the selected source ref;
 2. downloads the exact pinned reviewed-library archive;
 3. verifies repository hygiene, content, frontend, and Rust tests;
-4. builds the signed Windows NSIS and MSI installers and uploads source-only
-   macOS DMGs for Apple Silicon and Intel to the draft release; public macOS
-   distribution still requires Apple signing/notarization;
-5. submits them to SignPath for Windows signing;
-6. verifies Authenticode signatures and creates `SHA256SUMS`; and
+4. builds the signed Windows NSIS and MSI installers and signed/notarized macOS
+   DMGs for Apple Silicon and Intel;
+5. submits Windows installers to SignPath and signs/notarizes macOS DMGs with
+   Apple Developer credentials;
+6. verifies Authenticode and macOS signatures, validates the notarization ticket,
+   and creates `SHA256SUMS`; and
 7. uploads the signed files to a draft GitHub release.
 
 The release remains a draft until a maintainer completes the Windows install and
@@ -270,12 +272,14 @@ upgrade matrix. The release-tag validator accepts only canonical stable tags and
 rejects prerelease suffixes. See [`docs/releases.md`](docs/releases.md) and
 [`docs/content-pack-upgrades.md`](docs/content-pack-upgrades.md).
 
-The repository workflow performs the tag creation, build, SignPath submission,
-Authenticode verification, checksums, and draft-release upload. It needs the
-documented reviewed-library and SignPath secrets/variables configured in GitHub.
-Publishing that draft remains an explicit maintainer decision. Signing, the
-reviewed-library archive, and the Music Studio runtime, Apple signing/notarization,
-and updater metadata are protected gates; this README does not claim they are
+The repository workflow performs the build, Windows and macOS signing,
+notarization, checksums, and draft-release upload. For a manual run, it creates
+the stable tag only after all protected gates pass. The `publish_release`
+checkbox can publish the verified draft after all assets are uploaded; otherwise
+the draft remains available for final manual testing. It needs the documented
+reviewed-library, SignPath, and Apple Developer secrets/variables configured in
+GitHub. Signing, the reviewed-library archive, the Music Studio runtime, and
+updater metadata are protected gates; this README does not claim they are
 already complete. See
 [`docs/releases.md`](docs/releases.md) for updater signing setup.
 

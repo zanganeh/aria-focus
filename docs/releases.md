@@ -7,8 +7,8 @@ Aria Focus uses two separate GitHub Actions paths:
   remains MSI/NSIS; macOS is app/DMG for Apple Silicon (`aarch64`) and Intel
   (`x86_64`), with separate CI artifacts for each architecture.
 - `.github/workflows/public-release.yml` is a tag-triggered, protected release workflow
-  for reviewed content and signed public Windows installers. Manual dispatch remains
-  available as a recovery path. It does not claim a signed/notarized macOS release.
+  for reviewed content and signed public Windows/macOS installers. Manual dispatch
+  remains available as a recovery path and can optionally publish the verified draft.
 
 CI artifacts are never official releases.
 
@@ -23,9 +23,9 @@ Windows installer metadata uses the numeric version because MSI does not accept
 text prerelease identifiers. Because releases are now stable, the app, packages,
 About panel, Git tag, and Tauri installer version all carry the same `0.3.0`.
 
-Code signing, the reviewed-library archive, and the Music Studio runtime are
-protected release gates. The workflow fails closed until those gates are satisfied;
-it does not claim signing or approval has already occurred.
+Code signing, notarization, the reviewed-library archive, and the Music Studio
+runtime are protected release gates. The workflow fails closed until those gates
+are satisfied; it does not claim signing or approval has already occurred.
 
 The updater is also fail-closed until its metadata is configured. The checked-in
 Tauri configuration contains the literal placeholder
@@ -51,9 +51,9 @@ plugin's relaunch only after the user clicks “Download and restart”; it neve
 downloads arbitrary release files or restarts on its own.
 
 Pushing a stable version tag automatically starts signed draft creation. The
-workflow still requires protected-environment approval and creates a draft that
-must be published manually after installed-app testing. Ordinary branch pushes
-never create releases.
+workflow still requires protected-environment approval. Manual dispatch can
+publish the verified draft with `publish_release`; otherwise it remains a draft
+for installed-app testing. Ordinary branch pushes never create releases.
 
 ## One-time repository setup
 
@@ -67,7 +67,13 @@ never create releases.
    - variables `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG`,
      `SIGNPATH_SIGNING_POLICY_SLUG`, and
      `SIGNPATH_ARTIFACT_CONFIGURATION_SLUG`.
-5. Keep the workflow's `GITHUB_TOKEN` permission at the declared minimum. The
+5. Export a Developer ID Application `.p12` certificate as base64 and add the
+   Apple Developer environment configuration:
+   - secrets `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`,
+     `APPLE_PASSWORD` (an app-specific password), and `KEYCHAIN_PASSWORD`;
+   - variables `APPLE_TEAM_ID` and `APPLE_SIGNING_IDENTITY` (the workflow also
+     verifies the imported Developer ID identity before building).
+6. Keep the workflow's `GITHUB_TOKEN` permission at the declared minimum. The
    release job needs `contents: write` only to create the draft release and upload
    its signed files.
 
@@ -114,31 +120,25 @@ python scripts/check_repository_hygiene.py
 python scripts/verify_release_tag.py v0.3.0
 ```
 
-Create an annotated or signed tag only from the reviewed commit:
-
-```powershell
-git tag -s v0.3.0 -m "Aria Focus 0.3.0"
-git push origin v0.3.0
-```
-
 ## Automatic protected workflow
 
-Pushing the reviewed version tag automatically starts `public-release.yml`. Watch
-it with:
+For a manual stable release, open **Actions → Signed public release → Run
+workflow**, select the reviewed `source_ref`, enter the matching stable tag, and
+choose whether `publish_release` should publish the verified draft. The workflow
+validates the library and signing configuration, builds and signs the packages,
+and creates the tag only after all gates pass. Watch it with:
 
 ```powershell
 gh run watch
 ```
 
-If GitHub did not enqueue the tag event, manually dispatch the same immutable tag:
+Pushing an already-reviewed stable version tag also starts `public-release.yml`:
 
 ```powershell
-gh workflow run public-release.yml `
-  --ref v0.3.0 `
-  -f release_tag=v0.3.0
+git push origin v0.3.0
 ```
 
-The workflow fails closed if the trigger tag, optional manual input, project
+The workflow fails closed if the trigger tag, project
 versions, reviewed-library pin, content manifest, tests, or signatures differ.
 
 After approval, it:
@@ -152,11 +152,10 @@ After approval, it:
 7. writes `SHA256SUMS`; and
 8. creates or updates a **draft release** (not a prerelease) for the existing tag.
 
-The macOS source-only job is intentionally separate from this protected path. A
-public macOS release additionally needs an Apple Developer ID certificate,
-notarization credentials, and a maintainer review of the resulting app/DMG.
-Until those secrets are added, keep using the CI macOS artifacts for inspection;
-do not label them signed public downloads.
+The macOS jobs run on Apple Silicon and Intel runners, import the protected
+Developer ID certificate, build the reviewed library, sign the app, notarize the
+DMG through Tauri's configured Apple credentials, staple the ticket, and validate
+it before uploading.
 
 ## Publish the draft
 
