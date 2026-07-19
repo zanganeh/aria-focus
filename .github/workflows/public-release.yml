@@ -7,8 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing version tag to build (for example v0.3.0)
+        description: New stable version tag to create (for example v0.3.0)
         required: true
+        type: string
+      source_ref:
+        description: Branch or commit to release; the workflow creates the tag after all gates pass
+        required: true
+        default: main
         type: string
 
 concurrency:
@@ -29,13 +34,14 @@ jobs:
       contents: write
     env:
       RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      SOURCE_REF: ${{ github.event_name == 'push' && github.ref_name || inputs.source_ref }}
       TAURI_BUILD_CONFIG: src-tauri/tauri.release.conf.json
       UPDATER_CONFIGURED: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD != '' && vars.TAURI_UPDATER_PUBLIC_KEY != '' }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ env.SOURCE_REF }}
       - uses: dtolnay/rust-toolchain@1.92.0
         with:
           components: rustfmt, clippy
@@ -48,17 +54,25 @@ jobs:
         with:
           python-version: "3.12"
       - run: pnpm install --frozen-lockfile
-      - name: Verify tag and pinned release identity
+      - name: Verify release identity
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF -ne "refs/tags/$env:RELEASE_TAG") {
-            throw "The workflow trigger tag differs from the requested release tag."
-          }
-          $exact = git describe --tags --exact-match HEAD
-          if ($LASTEXITCODE -ne 0 -or $exact -ne $env:RELEASE_TAG) {
-            throw "Checked-out commit is not the requested exact tag."
+          if ($env:GITHUB_EVENT_NAME -eq 'push') {
+            if ($env:GITHUB_REF -ne "refs/tags/$env:RELEASE_TAG") {
+              throw "The workflow trigger tag differs from the requested release tag."
+            }
+            $exact = git describe --tags --exact-match HEAD
+            if ($LASTEXITCODE -ne 0 -or $exact -ne $env:RELEASE_TAG) {
+              throw "Checked-out commit is not the requested exact tag."
+            }
+          } else {
+            $existing = git ls-remote --tags origin "refs/tags/$env:RELEASE_TAG"
+            if ($LASTEXITCODE -eq 0 -and $existing) {
+              throw "Release tag already exists. Dispatch a new version instead of replacing it."
+            }
           }
           python scripts/verify_release_tag.py $env:RELEASE_TAG
+          "RELEASE_SOURCE_SHA=$((git rev-parse HEAD).Trim())" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Download pinned reviewed library
         shell: pwsh
         run: |
@@ -84,6 +98,17 @@ jobs:
           cargo fmt --all -- --check
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace
+      - name: Create release tag from Actions
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tagRef = "refs/tags/$($env:RELEASE_TAG)"
+          gh api --method POST "repos/$env:GITHUB_REPOSITORY/git/refs" `
+            -f ref=$tagRef `
+            -f sha=$env:RELEASE_SOURCE_SHA
+          if ($LASTEXITCODE -ne 0) { throw "GitHub Actions could not create the release tag." }
       - name: Configure signed updater build when updater secrets are configured
         if: ${{ env.UPDATER_CONFIGURED == 'true' }}
         env:
