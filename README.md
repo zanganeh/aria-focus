@@ -258,8 +258,9 @@ Actions creates the tag and starts the release workflow that:
 1. checks out the selected source ref;
 2. downloads the exact pinned reviewed-library archive;
 3. verifies repository hygiene, content, frontend, and Rust tests;
-4. builds the signed Windows NSIS and MSI installers; macOS packaging is a
-   separate source-only CI path until Apple signing/notarization is configured;
+4. builds the signed Windows NSIS and MSI installers and uploads source-only
+   macOS DMGs for Apple Silicon and Intel to the draft release; public macOS
+   distribution still requires Apple signing/notarization;
 5. submits them to SignPath for Windows signing;
 6. verifies Authenticode signatures and creates `SHA256SUMS`; and
 7. uploads the signed files to a draft GitHub release.

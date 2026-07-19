@@ -33,6 +33,14 @@ class PublicReleaseWorkflowTests(unittest.TestCase):
     def test_workflow_is_named_for_stable_release(self) -> None:
         self.assertIn("name: Signed public release", self.workflow())
 
+    def test_release_includes_source_only_macos_assets_for_both_architectures(self) -> None:
+        value = self.workflow()
+        self.assertIn("build-macos-release-assets:", value)
+        self.assertIn("needs: build-sign-publish", value)
+        self.assertIn("arch: aarch64", value)
+        self.assertIn("arch: x86_64", value)
+        self.assertIn("gh release upload \"$RELEASE_TAG\"", value)
+
 
 if __name__ == "__main__":
     unittest.main()
