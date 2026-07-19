@@ -6,6 +6,9 @@
   "permissions": [
     "core:default",
     "dialog:allow-open",
+    "process:allow-restart",
+    "updater:allow-check",
+    "updater:allow-download-and-install",
     {
       "identifier": "opener:allow-open-url",
       "allow": [{ "url": "https://github.com/zanganeh/aria-focus/**" }]

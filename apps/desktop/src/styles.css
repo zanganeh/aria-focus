@@ -193,6 +193,30 @@ body {
   border-color: var(--danger);
   padding: 6px 10px;
 }
+.update-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--accent-strong) 60%, var(--panel));
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.update-notice h2,
+.update-notice p {
+  margin: 0;
+}
+.update-notice h2 {
+  margin-top: 4px;
+  font-size: 1.05rem;
+}
+.update-notice p:last-child {
+  margin-top: 6px;
+}
+.update-notice button {
+  flex: 0 0 auto;
+}
 
 .activities {
   background: var(--panel);

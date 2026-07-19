@@ -40,6 +40,12 @@ the pinned `studio-runtime-v1.0.0` release.
 
 ## Signed installers
 
+The public signed release path currently covers Windows MSI and NSIS installers.
+The separate CI macOS job builds a source-only `.app` and `.dmg` without the
+reviewed private-beta music or Windows-only Music Studio runtime. Adding those
+files to this public release requires Apple Developer ID signing and
+notarization credentials, which are not assumed here.
+
 Build the release configuration with the reviewed library:
 
 ```powershell
@@ -63,3 +69,14 @@ needs the documented SignPath secret/variables configured in GitHub. Follow
 
 The NSIS installer is the primary customer download. All public builds must use a
 new stable version and follow the signed workflow.
+
+## Updater signing
+
+The app includes the official Tauri 2 updater plugin, but update installation is
+not live until the matching public key and signed metadata exist. Configure
+`TAURI_SIGNING_PRIVATE_KEY` and
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` as GitHub Actions secrets and
+`TAURI_UPDATER_PUBLIC_KEY` as a repository variable. The release workflow then
+creates updater archives, signatures, and `latest.json` only when all three are
+present; otherwise it intentionally publishes no updater metadata. Never commit
+the private key.

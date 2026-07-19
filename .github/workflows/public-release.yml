@@ -29,6 +29,8 @@ jobs:
       contents: write
     env:
       RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      TAURI_BUILD_CONFIG: src-tauri/tauri.release.conf.json
+      UPDATER_CONFIGURED: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD != '' && vars.TAURI_UPDATER_PUBLIC_KEY != '' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -82,8 +84,22 @@ jobs:
           cargo fmt --all -- --check
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace
+      - name: Configure signed updater build when updater secrets are configured
+        if: ${{ env.UPDATER_CONFIGURED == 'true' }}
+        env:
+          TAURI_UPDATER_PUBLIC_KEY: ${{ vars.TAURI_UPDATER_PUBLIC_KEY }}
+        shell: pwsh
+        run: |
+          node scripts/prepare-tauri-updater-config.cjs `
+            apps/desktop/src-tauri/tauri.conf.json `
+            apps/desktop/src-tauri/tauri.release.conf.json `
+            apps/desktop/src-tauri/tauri.release-updater.conf.json
+          "TAURI_BUILD_CONFIG=src-tauri/tauri.release-updater.conf.json" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Build release installers
-        run: pnpm -C apps/desktop tauri build --features bundled-library --config src-tauri/tauri.release.conf.json
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: pnpm -C apps/desktop tauri build --features bundled-library --config $env:TAURI_BUILD_CONFIG
       - name: Collect unsigned installers
         shell: pwsh
         run: |
@@ -130,6 +146,39 @@ jobs:
             }
             Copy-Item -LiteralPath $file.FullName -Destination release-output/
           }
+          Get-ChildItem release-output -File | Sort-Object Name | ForEach-Object {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          } | Set-Content -Encoding ascii release-output/SHA256SUMS
+      - name: Collect updater artifacts and latest.json
+        if: ${{ env.UPDATER_CONFIGURED == 'true' }}
+        shell: pwsh
+        run: |
+          $nsisZip = @(Get-ChildItem target/release/bundle/nsis/*.zip -File)
+          $nsisSig = @(Get-ChildItem target/release/bundle/nsis/*.zip.sig -File)
+          if ($nsisZip.Count -ne 1 -or $nsisSig.Count -ne 1) {
+            throw "Expected one signed NSIS updater archive and signature."
+          }
+          Copy-Item -LiteralPath $nsisZip[0].FullName -Destination release-output/
+          Copy-Item -LiteralPath $nsisSig[0].FullName -Destination release-output/
+          $version = $env:RELEASE_TAG.TrimStart('v')
+          $signature = Get-Content -Raw -LiteralPath $nsisSig[0].FullName
+          $latest = [ordered]@{
+            version = $version
+            notes = "Aria Focus $env:RELEASE_TAG"
+            pub_date = (Get-Date).ToUniversalTime().ToString('o')
+            platforms = [ordered]@{
+              'windows-x86_64' = [ordered]@{
+                signature = $signature.Trim()
+                url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:RELEASE_TAG/$($nsisZip[0].Name)"
+              }
+            }
+          }
+          $latest | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 release-output/latest.json
+      - name: Finalize release checksums
+        shell: pwsh
+        run: |
+          Remove-Item -LiteralPath release-output/SHA256SUMS -Force -ErrorAction SilentlyContinue
           Get-ChildItem release-output -File | Sort-Object Name | ForEach-Object {
             $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()
             "$hash  $($_.Name)"

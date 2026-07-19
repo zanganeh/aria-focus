@@ -23,6 +23,7 @@ import { MyMusicLibrary } from "./components/MyMusicLibrary";
 import { BrandMark } from "./components/BrandMark";
 import { LaunchScreen } from "./components/LaunchScreen";
 import { AboutAriaFocus } from "./components/AboutAriaFocus";
+import { UpdateNotice } from "./components/UpdateNotice";
 import {
   getActivityGenres,
   getCurrentSource,
@@ -43,6 +44,7 @@ import {
 import { ACTIVITY_COPY } from "./lib/activities";
 import { useSession } from "./hooks/useSession";
 import { useFocusedWindowTransportKeys } from "./hooks/useFocusedWindowTransportKeys";
+import { findAvailableUpdate, installAndRelaunch } from "./lib/updater";
 import type {
   ActivityGenreState,
   ActivityMoodState,
@@ -52,6 +54,7 @@ import type {
   ReviewCandidate,
   SessionHistoryRecord,
 } from "./lib/types";
+import type { Update } from "@tauri-apps/plugin-updater";
 
 type AppPage = "home" | "library" | "history" | "settings" | "review" | "studio";
 type HomeScreen = "choose" | "sound" | "timer";
@@ -77,10 +80,14 @@ export default function App() {
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [onboardingLoadError, setOnboardingLoadError] = useState<string | null>(null);
   const [recentSessions, setRecentSessions] = useState<SessionHistoryRecord[]>([]);
+  const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
+  const [installingUpdate, setInstallingUpdate] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
   const previousStatus = useRef<string | null>(null);
   const focusEntryControl = useRef<HTMLButtonElement>(null);
   const retryInFlight = useRef(false);
   const healthRequest = useRef(0);
+  const updateCheckStarted = useRef(false);
   const loadOnboardingPreferences = useCallback(async () => {
     setOnboardingComplete(null);
     setOnboardingLoadError(null);
@@ -95,6 +102,41 @@ export default function App() {
   useEffect(() => {
     void loadOnboardingPreferences();
   }, [loadOnboardingPreferences]);
+
+  useEffect(() => {
+    if (updateCheckStarted.current) return;
+    updateCheckStarted.current = true;
+    let active = true;
+    void findAvailableUpdate().then((update) => {
+      if (active) setAvailableUpdate(update);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const installUpdate = async () => {
+    if (!availableUpdate || installingUpdate) return;
+    setInstallingUpdate(true);
+    setUpdateError(null);
+    try {
+      await installAndRelaunch(availableUpdate);
+    } catch (error) {
+      setUpdateError(
+        `The update could not be installed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      setInstallingUpdate(false);
+    }
+  };
+
+  const updateNotice = availableUpdate ? (
+    <UpdateNotice
+      update={availableUpdate}
+      installing={installingUpdate}
+      error={updateError}
+      onInstall={() => void installUpdate()}
+    />
+  ) : null;
 
   useEffect(() => {
     const request = ++healthRequest.current;
@@ -266,48 +308,67 @@ export default function App() {
   if (onboardingComplete === null) {
     if (onboardingLoadError) {
       return (
-        <main className="app" aria-labelledby="onboarding-load-title">
-          <h1 id="onboarding-load-title">Couldn’t load local preferences</h1>
-          <p role="alert">{onboardingLoadError}</p>
-          <button type="button" onClick={() => void loadOnboardingPreferences()}>
-            Try again
-          </button>
-        </main>
+        <>
+          {updateNotice}
+          <main className="app" aria-labelledby="onboarding-load-title">
+            <h1 id="onboarding-load-title">Couldn’t load local preferences</h1>
+            <p role="alert">{onboardingLoadError}</p>
+            <button type="button" onClick={() => void loadOnboardingPreferences()}>
+              Try again
+            </button>
+          </main>
+        </>
       );
     }
-    return <LaunchScreen label="Loading local preferences" />;
+    return (
+      <>
+        {updateNotice}
+        <LaunchScreen label="Loading local preferences" />
+      </>
+    );
   }
 
   if (!onboardingComplete && !reviewCandidatesLoaded) {
-    return <LaunchScreen label="Loading local review music" />;
+    return (
+      <>
+        {updateNotice}
+        <LaunchScreen label="Loading local review music" />
+      </>
+    );
   }
 
   if (!onboardingComplete && reviewCandidates.length === 0) {
     return (
-      <Onboarding
-        onComplete={async (intensity, genres) => {
-          await completeOnboarding(intensity, genres);
-          setOnboardingComplete(true);
-          try {
-            await session.refresh();
-          } catch (error) {
-            session.reportError(error instanceof Error ? error.message : String(error));
-          }
-        }}
-      />
+      <>
+        {updateNotice}
+        <Onboarding
+          onComplete={async (intensity, genres) => {
+            await completeOnboarding(intensity, genres);
+            setOnboardingComplete(true);
+            try {
+              await session.refresh();
+            } catch (error) {
+              session.reportError(error instanceof Error ? error.message : String(error));
+            }
+          }}
+        />
+      </>
     );
   }
 
   if (focusView && transportActive && session.snapshot) {
     return (
-      <FocusView
-        snapshot={session.snapshot}
-        activityLabel={activityLabel}
-        coverArt={coverArt}
-        onPause={() => void session.pause()}
-        onResume={() => void session.resume()}
-        onExit={exitFocusView}
-      />
+      <>
+        {updateNotice}
+        <FocusView
+          snapshot={session.snapshot}
+          activityLabel={activityLabel}
+          coverArt={coverArt}
+          onPause={() => void session.pause()}
+          onResume={() => void session.resume()}
+          onExit={exitFocusView}
+        />
+      </>
     );
   }
 
@@ -324,6 +385,7 @@ export default function App() {
 
       <div className="app-scroll-region">
         <ErrorBanner message={session.error} onDismiss={session.dismissError} />
+        {updateNotice}
 
         {page !== "home" && transportActive && (
           <section className="mini-player" aria-label="Active focus session">
