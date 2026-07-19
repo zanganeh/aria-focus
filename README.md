@@ -71,9 +71,9 @@ focus-music product or service.
 ## Install and use
 
 Aria Focus has source-only packages for **Windows 11 x64** (MSI and NSIS) and
-**macOS** (DMG containing an app bundle). macOS packages are currently CI
-artifacts until Apple signing and notarization are configured for the public
-release workflow.
+**macOS** (DMG containing an app bundle) for both **Apple Silicon/aarch64** and
+**Intel/x86_64**. macOS packages are currently CI artifacts until Apple signing
+and notarization are configured for the public release workflow.
 
 When a stable release has been published, use the download area above. Before
 publication, this README does not claim that a stable installer exists.
@@ -217,10 +217,10 @@ pnpm tauri build
 
 The resulting NSIS and MSI packages appear under `target/release/bundle/` on
 Windows. On macOS, use `pnpm tauri build --config
-src-tauri/tauri.macos.conf.json` to produce an `.app` and `.dmg` under the macOS
-bundle directories. These source-only packages contain neither the official
-reviewed music library nor the Windows-only Music Studio runtime, and are not
-official releases.
+src-tauri/tauri.macos.conf.json` on the matching Apple Silicon or Intel runner to
+produce an `.app` and `.dmg` under the macOS bundle directories. These
+source-only packages contain neither the official reviewed music library nor the
+Windows-only Music Studio runtime, and are not official releases.
 
 ## Music and local generation
 

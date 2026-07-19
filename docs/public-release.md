@@ -41,10 +41,11 @@ the pinned `studio-runtime-v1.0.0` release.
 ## Signed installers
 
 The public signed release path currently covers Windows MSI and NSIS installers.
-The separate CI macOS job builds a source-only `.app` and `.dmg` without the
-reviewed private-beta music or Windows-only Music Studio runtime. Adding those
-files to this public release requires Apple Developer ID signing and
-notarization credentials, which are not assumed here.
+The separate CI macOS matrix builds source-only `.app` and `.dmg` artifacts for
+Apple Silicon (`aarch64`) and Intel (`x86_64`) without the reviewed private-beta
+music or Windows-only Music Studio runtime. Adding those files to this public
+release requires Apple Developer ID signing and notarization credentials, which
+are not assumed here.
 
 Build the release configuration with the reviewed library:
 

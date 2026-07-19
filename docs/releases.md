@@ -4,7 +4,8 @@ Aria Focus uses two separate GitHub Actions paths:
 
 - `.github/workflows/ci.yml` builds and tests source changes and produces
   unsigned source-only Windows and macOS artifacts for inspection. Windows
-  remains MSI/NSIS; macOS is app/DMG.
+  remains MSI/NSIS; macOS is app/DMG for Apple Silicon (`aarch64`) and Intel
+  (`x86_64`), with separate CI artifacts for each architecture.
 - `.github/workflows/public-release.yml` is a tag-triggered, protected release workflow
   for reviewed content and signed public Windows installers. Manual dispatch remains
   available as a recovery path. It does not claim a signed/notarized macOS release.
