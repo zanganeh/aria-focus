@@ -62,10 +62,12 @@ The legacy-data E2E must follow the complete matrix in
 [`content-pack-upgrades.md`](content-pack-upgrades.md), including the retired-v1/current-v2 case.
 Do not publish a build whose content tests ran only against an empty profile.
 
-The repository workflow performs the build, SignPath submission, Authenticode
-verification, checksums, and draft-release upload. It must be manually dispatched
-from the exact version tag through the protected `public-release` environment and
-needs the documented SignPath secret/variables configured in GitHub. Follow
+The repository workflow performs the tag creation, build, SignPath submission,
+Authenticode verification, checksums, and draft-release upload. Dispatch it from
+the protected `public-release` environment with a new stable version and the
+source ref to release; it creates the tag only after the content and code gates
+pass. It needs the documented SignPath secret/variables configured in GitHub.
+Follow
 [`releases.md`](releases.md) for setup, dispatch, and final publication.
 
 The NSIS installer is the primary customer download. All public builds must use a

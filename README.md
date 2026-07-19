@@ -13,8 +13,8 @@
   <a href="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml"><img src="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue" alt="MIT OR Apache-2.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-0078D4" alt="Windows and macOS">
-  <a href="https://github.com/zanganeh/aria-focus/releases/latest"><img src="https://img.shields.io/github/v/release/zanganeh/aria-focus?display_name=tag&sort=semver&label=latest%20stable&color=2EA44F" alt="Latest stable release"></a>
-  <a href="https://github.com/zanganeh/aria-focus/releases/latest"><img src="https://img.shields.io/github/downloads/zanganeh/aria-focus/latest/total?label=latest%20stable%20downloads&color=2EA44F" alt="Downloads of the latest stable release"></a>
+  <a href="https://github.com/zanganeh/aria-focus/releases"><img src="https://img.shields.io/badge/%F0%9F%93%A6%20Releases-download-2EA44F?style=flat-square&logo=github&logoColor=white" alt="Download releases"></a>
+  <a href="https://github.com/zanganeh/aria-focus/releases"><img src="https://img.shields.io/github/downloads/zanganeh/aria-focus/total?label=downloads&color=2EA44F&style=flat-square&logo=github" alt="Release downloads"></a>
 </p>
 
 Aria Focus is a standalone desktop app for the broad focus-music use case—deep work, motivation, creativity,
@@ -23,23 +23,22 @@ keeps preferences and session history on the device, and presents a deliberately
 small activity-first interface. The optional **AI Music Studio** generates short
 instrumental tracks entirely on your machine.
 
-The project is open for source review and contribution. A public stable release
-and its installers are only claimed after a stable version tag has been published
-and the protected release workflow below has completed; before then, the dynamic
-release badges and download count do not represent a published installer.
+The project is open for source review and contribution. GitHub Actions builds and
+publishes release assets; this repository does not rely on locally built installers.
+Until the first stable tag is published, the Releases link may contain only clearly
+labelled preview builds.
 
-## Download the latest stable release
+## Download from GitHub Releases
 
 <p>
-  <a href="https://github.com/zanganeh/aria-focus/releases/latest">📦 Windows installer</a>
+  <a href="https://github.com/zanganeh/aria-focus/releases">📦 Windows installer</a>
   ·
-  <a href="https://github.com/zanganeh/aria-focus/releases/latest">📦 macOS DMG</a>
+  <a href="https://github.com/zanganeh/aria-focus/releases">📦 macOS DMG</a>
 </p>
 
-These links resolve to the latest **stable** GitHub release when one exists.
-They remain unavailable before the first stable release and never point to a beta
-as “latest stable”. CI artifacts are source-only inspection builds, not official
-customer releases.
+Use the package assets attached to the newest non-preview GitHub release when one
+is available. Preview builds are clearly marked. CI artifacts are source-only
+inspection builds, not official customer releases.
 
 Aria Focus is independent and is not affiliated with Brain.fm. It does not
 reproduce Brain.fm audio, assets, branding, or screenshots; the project uses
@@ -251,11 +250,12 @@ Start with [`docs/architecture.md`](docs/architecture.md) for system boundaries 
 
 ## Releases
 
-GitHub Actions performs ordinary CI on every pull request. Pushing a stable
-`vMAJOR.MINOR.PATCH` tag automatically starts a separate, protected release
-workflow that:
+GitHub Actions performs ordinary CI on every pull request. From **Actions → Signed
+public release → Run workflow**, a maintainer chooses a stable `vMAJOR.MINOR.PATCH`
+tag and a source ref (normally `main`). After every protected gate passes, GitHub
+Actions creates the tag and starts the release workflow that:
 
-1. checks out an existing version tag;
+1. checks out the selected source ref;
 2. downloads the exact pinned reviewed-library archive;
 3. verifies repository hygiene, content, frontend, and Rust tests;
 4. builds the signed Windows NSIS and MSI installers; macOS packaging is a
@@ -269,11 +269,13 @@ upgrade matrix. The release-tag validator accepts only canonical stable tags and
 rejects prerelease suffixes. See [`docs/releases.md`](docs/releases.md) and
 [`docs/content-pack-upgrades.md`](docs/content-pack-upgrades.md).
 
-Signed draft creation is automatic after a stable version tag is pushed and the
-protected environment is approved. Publishing that draft remains an explicit
-maintainer decision. Signing, the reviewed-library archive, and the Music Studio
-runtime, Apple signing/notarization, and updater metadata are protected gates;
-this README does not claim they are already complete. See
+The repository workflow performs the tag creation, build, SignPath submission,
+Authenticode verification, checksums, and draft-release upload. It needs the
+documented reviewed-library and SignPath secrets/variables configured in GitHub.
+Publishing that draft remains an explicit maintainer decision. Signing, the
+reviewed-library archive, and the Music Studio runtime, Apple signing/notarization,
+and updater metadata are protected gates; this README does not claim they are
+already complete. See
 [`docs/releases.md`](docs/releases.md) for updater signing setup.
 
 ## Contributing
