@@ -87,7 +87,17 @@ The audio library is not stored in Git.
 1. Complete provenance, technical analysis, two-person listening review, and
    redistribution approval for all 100 tracks.
 2. Build a closed-world ZIP containing only `manifest.json` and its declared
-   assets.
+   audio and cover assets. The checked-in builder validates the approval gate
+   before writing the archive:
+
+   ```powershell
+   python scripts/build_public_library_archive.py `
+     --root apps/desktop/src-tauri/private-beta-pack `
+     --output aria-focus-library-v1.zip
+   ```
+
+   The command prints the lowercase SHA-256. It refuses to create an archive
+   for a draft, incompletely reviewed, oversized, or otherwise invalid pack.
 3. Create the separate GitHub release named by
    `release/public-release-assets.json` and upload the ZIP under the exact
    configured filename.
