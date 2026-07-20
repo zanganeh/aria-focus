@@ -604,6 +604,7 @@ it("uses clear pages and keeps an active-session route back to the player", asyn
 
   fireEvent.click(screen.getByRole("button", { name: "Open player" }));
   expect(screen.getByRole("region", { name: "Focus player" })).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Active focus session" })).toBeNull();
 });
 
 it("opens Music Studio from the simple Library card", async () => {
@@ -682,6 +683,8 @@ it("starts directly from a tile and keeps optional controls in bottom settings",
   await act(async () => Promise.resolve());
   expect(mockSession.changeActivity).toHaveBeenCalledWith("creativity");
   expect(mockSession.start).toHaveBeenCalledOnce();
+  expect(screen.getByRole("region", { name: "Focus player" })).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Choose a focus activity" })).toBeNull();
 
   fireEvent.click(screen.getByRole("button", { name: "Settings" }));
   expect(screen.getByRole("heading", { name: "Sound and timer" })).toBeTruthy();

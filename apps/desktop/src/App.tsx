@@ -88,6 +88,7 @@ export default function App() {
   const [updateError, setUpdateError] = useState<string | null>(null);
   const previousStatus = useRef<string | null>(null);
   const focusEntryControl = useRef<HTMLButtonElement>(null);
+  const scrollRegion = useRef<HTMLDivElement>(null);
   const retryInFlight = useRef(false);
   const healthRequest = useRef(0);
   const updateCheckStarted = useRef(false);
@@ -264,6 +265,23 @@ export default function App() {
     requestAnimationFrame(() => focusEntryControl.current?.focus());
   };
 
+  const resetContentScroll = useCallback(() => {
+    requestAnimationFrame(() => {
+      const region = scrollRegion.current;
+      if (region && typeof region.scrollTo === "function") {
+        region.scrollTo({ top: 0, behavior: "auto" });
+      } else if (region) {
+        region.scrollTop = 0;
+      }
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+  }, []);
+
+  useEffect(() => {
+    resetContentScroll();
+  }, [expandedPlayer, homeScreen, page, resetContentScroll]);
+
   useEffect(() => {
     let active = true;
     void getActivityGenres()
@@ -383,7 +401,9 @@ export default function App() {
   }
 
   return (
-    <main className={`app ${transportActive ? "session-active" : "session-idle"}`}>
+    <main
+      className={`app ${transportActive ? "session-active" : "session-idle"}${page === "home" && expandedPlayer ? " expanded-player" : ""}`}
+    >
       <header className="header">
         <div className="header-row">
           <div className="brand-lockup">
@@ -394,12 +414,13 @@ export default function App() {
       </header>
 
       <div
-        className={`app-scroll-region${page === "home" ? " home-scroll-region" : ""}${expandedPlayer ? " player-scroll-region" : ""}`}
+        ref={scrollRegion}
+        className={`app-scroll-region${page === "home" ? " home-scroll-region" : ""}${page === "home" && expandedPlayer ? " player-scroll-region" : ""}`}
       >
         <ErrorBanner message={session.error} onDismiss={session.dismissError} />
         {updateNotice}
 
-        {transportActive && (
+        {transportActive && !expandedPlayer && (
           <section className="mini-player" aria-label="Active focus session">
             <div className="mini-player-info">
               {coverArt ? (
@@ -435,6 +456,7 @@ export default function App() {
                 className="mini-player-open"
                 onClick={() => {
                   setPage("home");
+                  setHomeScreen("choose");
                   setExpandedPlayer(true);
                 }}
               >
@@ -454,117 +476,117 @@ export default function App() {
 
         {page === "home" && (
           <>
-            <section className="home-choice" aria-label="Choose a focus activity">
-              <div className="home-heading">
-                <p className="eyebrow">Start</p>
-                <h2>Choose your focus space</h2>
-                <p>Pick a soundscape and begin in one tap.</p>
-              </div>
-              <ActivitySelector
-                disabled={
-                  !coreAvailable ||
-                  !packsAvailable ||
-                  session.starting ||
-                  reviewActive ||
-                  transportActive
-                }
-                onSelect={async (next) => {
-                  setExpandedPlayer(false);
-                  await session.changeActivity(next);
-                  await session.start();
-                  document.documentElement.scrollTop = 0;
-                  document.body.scrollTop = 0;
-                }}
-              />
-            </section>
-            {transportActive && !expandedPlayer && (
-              <p className="home-playing-note">
-                {activityLabel} is playing. Use the player above for controls or choose another
-                page.
-              </p>
+            {!expandedPlayer && (
+              <>
+                <section className="home-choice" aria-label="Choose a focus activity">
+                  <div className="home-heading">
+                    <p className="eyebrow">Start</p>
+                    <h2>Choose your focus space</h2>
+                    <p>Pick a soundscape and begin in one tap.</p>
+                  </div>
+                  <ActivitySelector
+                    disabled={
+                      !coreAvailable ||
+                      !packsAvailable ||
+                      session.starting ||
+                      reviewActive ||
+                      transportActive
+                    }
+                    onSelect={async (next) => {
+                      await session.changeActivity(next);
+                      await session.start();
+                      setPage("home");
+                      setHomeScreen("choose");
+                      setExpandedPlayer(true);
+                      resetContentScroll();
+                    }}
+                  />
+                </section>
+                {!transportActive && homeScreen === "sound" && (
+                  <section className="setup-flow guided-setup" aria-label="Choose sound">
+                    <div className="screen-heading">
+                      <button
+                        type="button"
+                        className="back-action"
+                        onClick={() => setHomeScreen("choose")}
+                      >
+                        <AppIcon name="chevron-left" /> Back
+                      </button>
+                      <p className="eyebrow">Sound</p>
+                      <h2>Make it feel right</h2>
+                      <p>These choices filter the local music for {activityLabel}.</p>
+                    </div>
+                    <GenreSelector
+                      state={genres}
+                      disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+                      onChange={(genreId) =>
+                        void setActivityGenre(genreId)
+                          .then(setGenres)
+                          .catch((error: unknown) =>
+                            session.reportError(
+                              `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
+                            ),
+                          )
+                      }
+                    />
+                    <MoodSelector
+                      state={moods}
+                      disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+                      onChange={(moodId) =>
+                        void setActivityMood(moodId)
+                          .then(setMoods)
+                          .catch((error: unknown) =>
+                            session.reportError(
+                              `Unable to change mood: ${error instanceof Error ? error.message : String(error)}`,
+                            ),
+                          )
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="primary setup-next"
+                      onClick={() => setHomeScreen("timer")}
+                    >
+                      Choose timer
+                    </button>
+                  </section>
+                )}
+
+                {!transportActive && homeScreen === "timer" && (
+                  <section className="setup-flow guided-setup" aria-label="Choose session timer">
+                    <div className="screen-heading">
+                      <button
+                        type="button"
+                        className="back-action"
+                        onClick={() => setHomeScreen("sound")}
+                      >
+                        <AppIcon name="chevron-left" /> Back
+                      </button>
+                      <p className="eyebrow">Time</p>
+                      <h2>How long?</h2>
+                      <p>Keep the default if you just want to begin.</p>
+                    </div>
+                    <SessionTypeSelector
+                      value={session.snapshot?.kind ?? { kind: "infinite" }}
+                      disabled={!coreAvailable || session.starting || reviewActive}
+                      onChange={(kind) => void session.changeSessionType(kind)}
+                    />
+                    <button
+                      type="button"
+                      className="primary setup-next"
+                      disabled={
+                        !coreAvailable || !packsAvailable || reviewActive || session.starting
+                      }
+                      onClick={() => void session.start()}
+                    >
+                      {session.starting ? "Starting…" : `Start ${activityLabel}`}
+                    </button>
+                  </section>
+                )}
+              </>
             )}
 
-            {!transportActive && homeScreen === "sound" && (
-              <section className="setup-flow guided-setup" aria-label="Choose sound">
-                <div className="screen-heading">
-                  <button
-                    type="button"
-                    className="back-action"
-                    onClick={() => setHomeScreen("choose")}
-                  >
-                    <AppIcon name="chevron-left" /> Back
-                  </button>
-                  <p className="eyebrow">Sound</p>
-                  <h2>Make it feel right</h2>
-                  <p>These choices filter the local music for {activityLabel}.</p>
-                </div>
-                <GenreSelector
-                  state={genres}
-                  disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-                  onChange={(genreId) =>
-                    void setActivityGenre(genreId)
-                      .then(setGenres)
-                      .catch((error: unknown) =>
-                        session.reportError(
-                          `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
-                        ),
-                      )
-                  }
-                />
-                <MoodSelector
-                  state={moods}
-                  disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-                  onChange={(moodId) =>
-                    void setActivityMood(moodId)
-                      .then(setMoods)
-                      .catch((error: unknown) =>
-                        session.reportError(
-                          `Unable to change mood: ${error instanceof Error ? error.message : String(error)}`,
-                        ),
-                      )
-                  }
-                />
-                <button
-                  type="button"
-                  className="primary setup-next"
-                  onClick={() => setHomeScreen("timer")}
-                >
-                  Choose timer
-                </button>
-              </section>
-            )}
-
-            {!transportActive && homeScreen === "timer" && (
-              <section className="setup-flow guided-setup" aria-label="Choose session timer">
-                <div className="screen-heading">
-                  <button
-                    type="button"
-                    className="back-action"
-                    onClick={() => setHomeScreen("sound")}
-                  >
-                    <AppIcon name="chevron-left" /> Back
-                  </button>
-                  <p className="eyebrow">Time</p>
-                  <h2>How long?</h2>
-                  <p>Keep the default if you just want to begin.</p>
-                </div>
-                <SessionTypeSelector
-                  value={session.snapshot?.kind ?? { kind: "infinite" }}
-                  disabled={!coreAvailable || session.starting || reviewActive}
-                  onChange={(kind) => void session.changeSessionType(kind)}
-                />
-                <button
-                  type="button"
-                  className="primary setup-next"
-                  disabled={!coreAvailable || !packsAvailable || reviewActive || session.starting}
-                  onClick={() => void session.start()}
-                >
-                  {session.starting ? "Starting…" : `Start ${activityLabel}`}
-                </button>
-              </section>
-            )}
-
-            {transportActive && expandedPlayer && (
+            {expandedPlayer && (
               <section className="player-surface" aria-label="Focus player">
                 {coverArt ? (
                   <img
@@ -869,7 +891,9 @@ export default function App() {
             aria-current={page === id ? "page" : undefined}
             onClick={() => {
               setPage(id);
+              setHomeScreen("choose");
               setExpandedPlayer(false);
+              resetContentScroll();
             }}
           >
             <AppIcon name={icon} />

@@ -2049,7 +2049,69 @@ button:focus-visible,
   padding-bottom: 8px;
 }
 .home-scroll-region.player-scroll-region {
-  overflow-y: auto;
+  overflow: hidden;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+.app.expanded-player {
+  gap: 0;
+  padding-top: 0;
+}
+.app.expanded-player .header,
+.app.expanded-player .footer {
+  display: none;
+}
+.app.expanded-player .app-scroll-region {
+  padding-bottom: 8px;
+}
+.app.expanded-player .player-surface {
+  min-height: 0;
+  height: 100%;
+  align-content: start;
+  padding: 12px 16px;
+  border-radius: 24px;
+}
+.app.expanded-player .player-content {
+  gap: 8px;
+  min-height: 0;
+  padding: 10px 12px;
+  align-content: start;
+}
+.app.expanded-player .player-cover {
+  width: clamp(9rem, 27vw, 13rem);
+  height: clamp(9rem, 27vw, 13rem);
+  border-radius: 16px;
+}
+.app.expanded-player .timer .elapsed {
+  font-size: clamp(2.8rem, 9vw, 4rem);
+}
+.app.expanded-player .source-label {
+  max-width: 34rem;
+  font-size: 0.74rem;
+}
+.app.expanded-player .transport-media {
+  gap: 8px;
+}
+.app.expanded-player .transport-icon {
+  width: 40px;
+  height: 40px;
+}
+.app.expanded-player .transport-playpause {
+  width: 56px;
+  height: 56px;
+}
+.app.expanded-player .transport-stop {
+  width: 36px;
+  height: 36px;
+}
+.app.expanded-player .player-volume {
+  width: min(100%, 280px);
+}
+.app.expanded-player .focus-view-entry {
+  min-height: 40px;
+}
+.session-active .home-scroll-region > .footer {
+  display: none;
 }
 .home-scroll-region > .home-choice,
 .home-scroll-region > .guided-setup,
@@ -2061,6 +2123,7 @@ button:focus-visible,
 }
 .home-scroll-region > .footer {
   order: 3;
+  margin-top: auto;
 }
 .home-choice {
   min-height: 0;
