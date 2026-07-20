@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { SessionType } from "../lib/types";
+import { AppIcon } from "./AppIcon";
 
 const PRESETS = [15, 25, 30, 45, 60, 90] as const;
 
@@ -82,20 +83,49 @@ export function SessionTypeSelector({ value, disabled, onChange }: Props) {
     });
   }
 
+  const options = [
+    {
+      kind: "infinite" as const,
+      label: "Infinite",
+      description: "Play until you stop",
+      icon: "infinity" as const,
+    },
+    {
+      kind: "countdown" as const,
+      label: "Countdown",
+      description: "Choose a duration",
+      icon: "clock" as const,
+    },
+    {
+      kind: "interval" as const,
+      label: "Interval",
+      description: "Work and quiet breaks",
+      icon: "repeat" as const,
+    },
+  ];
+
   return (
     <fieldset className="session-type" disabled={disabled}>
       <legend>Session timer</legend>
       <div className="session-type-options">
-        {(["infinite", "countdown", "interval"] as const).map((kind) => (
-          <label key={kind}>
+        {options.map(({ kind, label, description, icon }) => (
+          <label key={kind} className={`session-type-card${value.kind === kind ? " selected" : ""}`}>
             <input
+              className="session-type-input"
               type="radio"
               name="session-type"
               value={kind}
               checked={value.kind === kind}
+              aria-label={label}
               onChange={() => selectKind(kind)}
             />
-            {kind === "infinite" ? "Infinite" : kind === "countdown" ? "Countdown" : "Interval"}
+            <span className="session-type-icon" aria-hidden="true">
+              <AppIcon name={icon} />
+            </span>
+            <span className="session-type-copy">
+              <strong>{label}</strong>
+              <small>{description}</small>
+            </span>
           </label>
         ))}
       </div>

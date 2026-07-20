@@ -1,4 +1,4 @@
-import activityTileArt from "../assets/activity-tile-art-v1.png";
+import { ActivityArtwork } from "./ActivityArtwork";
 import { ACTIVITY_COPY, ACTIVITY_ORDER } from "../lib/activities";
 import type { Activity } from "../lib/types";
 
@@ -22,11 +22,7 @@ export function ActivitySelector({ disabled, onSelect }: Props) {
             aria-label={`Start ${copy.label}`}
             onClick={() => void onSelect(activity)}
           >
-            <span
-              className="activity-tile-art"
-              aria-hidden="true"
-              style={{ backgroundImage: `url(${activityTileArt})` }}
-            />
+            <ActivityArtwork className="activity-tile-art" activity={activity} />
             <span className="activity-tile-label">{copy.label}</span>
           </button>
         );

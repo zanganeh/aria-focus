@@ -2040,3 +2040,358 @@ button:focus-visible,
   margin: 0;
   color: var(--text-muted, #57606a);
 }
+
+/* Focus home: the activity grid stays visible while a session plays, with a
+   compact player above the navigation bar. Expanded controls are opt-in. */
+.home-scroll-region {
+  overflow: hidden;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+.home-scroll-region.player-scroll-region {
+  overflow-y: auto;
+}
+.home-scroll-region > .home-choice,
+.home-scroll-region > .guided-setup,
+.home-scroll-region > .home-playing-note {
+  order: 1;
+}
+.home-scroll-region > .mini-player {
+  order: 2;
+}
+.home-scroll-region > .footer {
+  order: 3;
+}
+.home-choice {
+  min-height: 0;
+  gap: 10px;
+}
+.home-heading {
+  display: grid;
+  gap: 3px;
+  padding: 0 4px 2px;
+}
+.home-heading h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.45rem, 4vw, 1.85rem);
+  letter-spacing: -0.05em;
+}
+.home-heading p:last-child,
+.home-playing-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+.home-playing-note {
+  padding: 0 4px;
+  text-align: center;
+}
+
+.activity-tile {
+  min-height: 112px;
+}
+.activity-tile[data-activity="deep_work"],
+.activity-tile[data-activity="motivation"] {
+  min-height: 102px;
+}
+.activity-tile-label {
+  place-items: end start;
+  padding: 16px 18px;
+  font-size: clamp(1.05rem, 3vw, 1.35rem);
+  text-align: left;
+}
+.activity-artwork {
+  background-repeat: no-repeat;
+  background-size: 500% auto;
+}
+.activity-artwork[data-activity="deep_work"] {
+  background-position: 0 50%;
+}
+.activity-artwork[data-activity="motivation"] {
+  background-position: 25% 50%;
+}
+.activity-artwork[data-activity="creativity"] {
+  background-position: 50% 50%;
+}
+.activity-artwork[data-activity="learning"] {
+  background-position: 75% 50%;
+}
+.activity-artwork[data-activity="light_work"] {
+  background-position: 100% 50%;
+}
+
+.mini-player {
+  min-height: 68px;
+  padding: 9px 10px;
+  border-radius: 17px;
+  background: linear-gradient(135deg, rgba(106, 80, 126, 0.94), rgba(54, 47, 68, 0.96));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+}
+.mini-player-cover--fallback {
+  display: block;
+  background-color: #171421;
+  background-repeat: no-repeat;
+  background-size: 500% auto;
+  background-position: 0 50%;
+}
+.mini-player-cover--fallback[data-activity="motivation"] {
+  background-position: 25% 50%;
+}
+.mini-player-cover--fallback[data-activity="creativity"] {
+  background-position: 50% 50%;
+}
+.mini-player-cover--fallback[data-activity="learning"] {
+  background-position: 75% 50%;
+}
+.mini-player-cover--fallback[data-activity="light_work"] {
+  background-position: 100% 50%;
+}
+.mini-player-info > div {
+  min-width: 0;
+}
+.mini-player-info strong,
+.mini-player-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mini-player-actions {
+  align-items: center;
+}
+.mini-player-actions button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 42px;
+}
+.mini-player-toggle,
+.mini-player-stop {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+}
+.mini-player-toggle svg,
+.mini-player-stop svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+.mini-player-stop {
+  border-color: rgba(255, 190, 200, 0.45);
+  color: #ffdbe1;
+}
+.mini-player-open {
+  padding-inline: 12px;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.player-background--fallback,
+.focus-view-background--fallback {
+  display: block;
+  background-color: #171421;
+  background-repeat: no-repeat;
+  background-size: 500% auto;
+}
+.player-background--fallback[data-activity="motivation"],
+.focus-view-background--fallback[data-activity="motivation"] {
+  background-position: 25% 50%;
+}
+.player-background--fallback[data-activity="creativity"],
+.focus-view-background--fallback[data-activity="creativity"] {
+  background-position: 50% 50%;
+}
+.player-background--fallback[data-activity="learning"],
+.focus-view-background--fallback[data-activity="learning"] {
+  background-position: 75% 50%;
+}
+.player-background--fallback[data-activity="light_work"],
+.focus-view-background--fallback[data-activity="light_work"] {
+  background-position: 100% 50%;
+}
+.player-cover--fallback {
+  display: block;
+  background-color: #171421;
+  background-repeat: no-repeat;
+  background-size: 500% auto;
+}
+
+.player-toolbar,
+.focus-view-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.player-back-action,
+.focus-view-topbar .back-action {
+  margin: 0;
+  color: var(--text);
+}
+.adhd-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 7px 9px 7px 12px;
+  border-color: rgba(237, 179, 255, 0.26);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+  text-align: left;
+}
+.adhd-mode-toggle.enabled {
+  border-color: rgba(237, 179, 255, 0.7);
+  background: rgba(202, 122, 255, 0.2);
+}
+.adhd-mode-copy {
+  display: grid;
+  gap: 0;
+  line-height: 1.15;
+}
+.adhd-mode-copy strong {
+  font-size: 0.77rem;
+}
+.adhd-mode-copy small {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+.adhd-mode-switch {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  transition: background 150ms ease;
+}
+.adhd-mode-switch span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 150ms ease;
+}
+.adhd-mode-toggle.enabled .adhd-mode-switch {
+  background: linear-gradient(135deg, #f2bdff, #c573ff);
+}
+.adhd-mode-toggle.enabled .adhd-mode-switch span {
+  transform: translateX(14px);
+}
+
+.timer .phase {
+  margin-top: 10px;
+}
+.timer .completion {
+  margin-top: 10px;
+}
+
+.session-type-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.session-type-card {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  min-height: 112px;
+  padding: 13px;
+  border: 1px solid rgba(236, 214, 255, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+.session-type-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(237, 179, 255, 0.5);
+}
+.session-type-card.selected {
+  border-color: var(--accent-strong);
+  background: rgba(202, 122, 255, 0.16);
+  box-shadow: 0 0 0 2px rgba(202, 122, 255, 0.12);
+}
+.session-type-card:has(.session-type-input:focus-visible) {
+  outline: 3px solid var(--accent-strong);
+  outline-offset: 3px;
+}
+.session-type-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.session-type-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent-strong);
+}
+.session-type-icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+.session-type-copy {
+  display: grid;
+  gap: 2px;
+}
+.session-type-copy strong {
+  font-size: 0.88rem;
+}
+.session-type-copy small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.25;
+}
+
+.focus-view-topbar {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  left: 24px;
+  width: auto;
+}
+
+@media (max-width: 520px) {
+  .activity-tile {
+    min-height: 104px;
+  }
+  .activity-tile[data-activity="deep_work"],
+  .activity-tile[data-activity="motivation"] {
+    min-height: 92px;
+  }
+  .session-type-options {
+    grid-template-columns: 1fr;
+  }
+  .session-type-card {
+    grid-template-columns: 38px 1fr;
+    align-items: center;
+    min-height: 72px;
+  }
+  .session-type-copy {
+    gap: 1px;
+  }
+  .mini-player-open {
+    padding-inline: 9px;
+  }
+}

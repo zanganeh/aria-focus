@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivitySelector } from "./components/ActivitySelector";
+import { ActivityArtwork } from "./components/ActivityArtwork";
+import { AdhdModeToggle } from "./components/AdhdModeToggle";
 import { GenreSelector } from "./components/GenreSelector";
 import { MoodSelector } from "./components/MoodSelector";
 import { ContentPacks } from "./components/ContentPacks";
@@ -74,6 +76,7 @@ export default function App() {
   const [reviewCandidatesLoaded, setReviewCandidatesLoaded] = useState(false);
   const [startupRetryError, setStartupRetryError] = useState<string | null>(null);
   const [focusView, setFocusView] = useState(false);
+  const [expandedPlayer, setExpandedPlayer] = useState(false);
   const [page, setPage] = useState<AppPage>("home");
   const [homeScreen, setHomeScreen] = useState<HomeScreen>("choose");
   const [navigationPending, setNavigationPending] = useState(false);
@@ -250,7 +253,10 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!transportActive) setFocusView(false);
+    if (!transportActive) {
+      setFocusView(false);
+      setExpandedPlayer(false);
+    }
   }, [transportActive]);
 
   const exitFocusView = () => {
@@ -362,8 +368,12 @@ export default function App() {
         {updateNotice}
         <FocusView
           snapshot={session.snapshot}
+          activity={activity}
           activityLabel={activityLabel}
           coverArt={coverArt}
+          intensity={session.intensity}
+          intensityDisabled={!coreAvailable}
+          onChangeIntensity={(value) => void session.changeIntensity(value)}
           onPause={() => void session.pause()}
           onResume={() => void session.resume()}
           onExit={exitFocusView}
@@ -383,18 +393,25 @@ export default function App() {
         </div>
       </header>
 
-      <div className="app-scroll-region">
+      <div
+        className={`app-scroll-region${page === "home" ? " home-scroll-region" : ""}${expandedPlayer ? " player-scroll-region" : ""}`}
+      >
         <ErrorBanner message={session.error} onDismiss={session.dismissError} />
         {updateNotice}
 
-        {page !== "home" && transportActive && (
+        {transportActive && (
           <section className="mini-player" aria-label="Active focus session">
             <div className="mini-player-info">
               {coverArt ? (
                 <img className="mini-player-cover" src={coverArt} alt={coverAlt} decoding="async" />
-              ) : null}
+              ) : (
+                <ActivityArtwork
+                  activity={activity}
+                  className="mini-player-cover mini-player-cover--fallback"
+                />
+              )}
               <div>
-                <strong>{source?.item_title ?? `${activityLabel} session`}</strong>
+                <strong>{source?.fallback ? `${activityLabel} preview` : source?.item_title ?? `${activityLabel} session`}</strong>
                 <span>{status === "paused" ? "Paused" : "Playing"}</span>
               </div>
             </div>
@@ -406,10 +423,22 @@ export default function App() {
                 aria-label={status === "paused" ? "Resume session" : "Pause session"}
                 onClick={() => void (status === "paused" ? session.resume() : session.pause())}
               >
-                {status === "paused" ? "Resume" : "Pause"}
+                <AppIcon name={status === "paused" ? "play" : "pause"} />
+                <span className="visually-hidden">{status === "paused" ? "Resume" : "Pause"}</span>
               </button>
-              <button type="button" onClick={() => setPage("home")}>
+              <button
+                type="button"
+                className="mini-player-open"
+                onClick={() => {
+                  setPage("home");
+                  setExpandedPlayer(true);
+                }}
+              >
                 Open player
+              </button>
+              <button type="button" className="mini-player-stop" onClick={() => void session.stop()}>
+                <AppIcon name="stop" />
+                <span className="visually-hidden">Stop session</span>
               </button>
             </div>
           </section>
@@ -417,18 +446,27 @@ export default function App() {
 
         {page === "home" && (
           <>
-            {!transportActive && (
-              <section className="home-choice" aria-label="Choose a focus activity">
-                <ActivitySelector
-                  disabled={!coreAvailable || !packsAvailable || session.starting || reviewActive}
-                  onSelect={async (next) => {
-                    await session.changeActivity(next);
-                    await session.start();
-                    document.documentElement.scrollTop = 0;
-                    document.body.scrollTop = 0;
-                  }}
-                />
-              </section>
+            <section className="home-choice" aria-label="Choose a focus activity">
+              <div className="home-heading">
+                <p className="eyebrow">Start</p>
+                <h2>Choose your focus space</h2>
+                <p>Pick a soundscape and begin in one tap.</p>
+              </div>
+              <ActivitySelector
+                disabled={!coreAvailable || !packsAvailable || session.starting || reviewActive || transportActive}
+                onSelect={async (next) => {
+                  setExpandedPlayer(false);
+                  await session.changeActivity(next);
+                  await session.start();
+                  document.documentElement.scrollTop = 0;
+                  document.body.scrollTop = 0;
+                }}
+              />
+            </section>
+            {transportActive && !expandedPlayer && (
+              <p className="home-playing-note">
+                {activityLabel} is playing. Use the player above for controls or choose another page.
+              </p>
             )}
 
             {!transportActive && homeScreen === "sound" && (
@@ -511,9 +549,9 @@ export default function App() {
               </section>
             )}
 
-            {transportActive && (
+            {transportActive && expandedPlayer && (
               <section className="player-surface" aria-label="Focus player">
-                {coverArt && (
+                {coverArt ? (
                   <img
                     className="player-background"
                     src={coverArt}
@@ -521,9 +559,28 @@ export default function App() {
                     aria-hidden="true"
                     decoding="async"
                   />
+                ) : (
+                  <ActivityArtwork
+                    className="player-background player-background--fallback"
+                    activity={activity}
+                  />
                 )}
                 <div className="player-overlay" aria-hidden="true" />
                 <div className="player-content">
+                  <div className="player-toolbar">
+                    <button
+                      type="button"
+                      className="back-action player-back-action"
+                      onClick={() => setExpandedPlayer(false)}
+                    >
+                      <AppIcon name="chevron-left" /> Back to Start
+                    </button>
+                    <AdhdModeToggle
+                      value={session.intensity}
+                      disabled={!coreAvailable}
+                      onChange={(value) => void session.changeIntensity(value)}
+                    />
+                  </div>
                   <p className="eyebrow">
                     {transportActive ? `${activityLabel} session` : "Ready when you are"}
                   </p>
@@ -532,14 +589,19 @@ export default function App() {
                   {coverArt ? (
                     <img className="player-cover" src={coverArt} alt={coverAlt} decoding="async" />
                   ) : (
-                    <div className="player-cover player-cover--none" aria-hidden="true" />
+                    <ActivityArtwork
+                      className="player-cover player-cover--fallback"
+                      activity={activity}
+                      label={`${activityLabel} artwork`}
+                      decorative={false}
+                    />
                   )}
 
                   {source && (
                     <p className="source-label" aria-live="polite">
                       <strong>Audio source:</strong> {source.item_title}
                       {source.fallback
-                        ? " · explicit procedural fallback"
+                        ? " · preview tone — no authored music pack is installed"
                         : source.quarantined_review
                           ? " · QUARANTINED local review — provisional transition; not approved/published"
                           : ` · ${source.pack_title}`}
@@ -792,6 +854,7 @@ export default function App() {
             aria-current={page === id ? "page" : undefined}
             onClick={() => {
               setPage(id);
+              setExpandedPlayer(false);
             }}
           >
             <AppIcon name={icon} />
