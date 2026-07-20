@@ -196,7 +196,12 @@ jobs:
             if ($signature.Status -ne 'Valid') {
               throw "Invalid Authenticode signature: $($file.Name)"
             }
-            Copy-Item -LiteralPath $file.FullName -Destination release-output/
+            $assetName = if ($file.Extension -eq '.msi') {
+              'aria-focus-windows-x86_64.msi'
+            } else {
+              'aria-focus-windows-x86_64-setup.exe'
+            }
+            Copy-Item -LiteralPath $file.FullName -Destination "release-output/$assetName"
           }
           Get-ChildItem release-output -File | Sort-Object Name | ForEach-Object {
             $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()
@@ -211,10 +216,12 @@ jobs:
           if ($nsisZip.Count -ne 1 -or $nsisSig.Count -ne 1) {
             throw "Expected one signed NSIS updater archive and signature."
           }
-          Copy-Item -LiteralPath $nsisZip[0].FullName -Destination release-output/
-          Copy-Item -LiteralPath $nsisSig[0].FullName -Destination release-output/
+          $updaterName = 'aria-focus-windows-x86_64.nsis.zip'
+          $updaterSignatureName = "$updaterName.sig"
+          Copy-Item -LiteralPath $nsisZip[0].FullName -Destination "release-output/$updaterName"
+          Copy-Item -LiteralPath $nsisSig[0].FullName -Destination "release-output/$updaterSignatureName"
           $version = $env:RELEASE_TAG.TrimStart('v')
-          $signature = Get-Content -Raw -LiteralPath $nsisSig[0].FullName
+          $signature = Get-Content -Raw -LiteralPath "release-output/$updaterSignatureName"
           $latest = [ordered]@{
             version = $version
             notes = "Aria Focus $env:RELEASE_TAG"
@@ -222,7 +229,7 @@ jobs:
             platforms = [ordered]@{
               'windows-x86_64' = [ordered]@{
                 signature = $signature.Trim()
-                url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:RELEASE_TAG/$($nsisZip[0].Name)"
+                url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:RELEASE_TAG/$updaterName"
               }
             }
           }
@@ -354,7 +361,7 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$app"
           xcrun stapler validate "$dmg"
           mkdir -p release-output
-          cp "$dmg" release-output/
+          cp "$dmg" "release-output/aria-focus-macos-${{ matrix.arch }}.dmg"
           shasum -a 256 release-output/*.dmg > release-output/SHA256SUMS-${{ matrix.arch }}
       - name: Upload signed macOS assets to the draft release
         env:

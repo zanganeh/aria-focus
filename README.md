@@ -17,6 +17,14 @@
   <a href="https://github.com/zanganeh/aria-focus/releases"><img src="https://img.shields.io/github/downloads/zanganeh/aria-focus/total?label=downloads&color=2EA44F&style=flat-square&logo=github" alt="Release downloads"></a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest/download/aria-focus-windows-x86_64-setup.exe">🪟 Windows</a>
+  ·
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest/download/aria-focus-macos-aarch64.dmg">🍎 macOS Apple Silicon</a>
+  ·
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest/download/aria-focus-macos-x86_64.dmg">🍎 macOS Intel</a>
+</p>
+
 Aria Focus is a standalone desktop app for the broad focus-music use case—deep work, motivation, creativity,
 learning, and light work. It plays integrity-checked music from local storage,
 keeps preferences and session history on the device, and presents a deliberately
@@ -31,14 +39,17 @@ labelled preview builds.
 ## Download from GitHub Releases
 
 <p>
-  <a href="https://github.com/zanganeh/aria-focus/releases">📦 Windows installer</a>
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest/download/aria-focus-windows-x86_64-setup.exe">📦 Windows installer</a>
   ·
-  <a href="https://github.com/zanganeh/aria-focus/releases">📦 macOS DMG</a>
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest/download/aria-focus-macos-aarch64.dmg">📦 macOS Apple Silicon DMG</a>
+  ·
+  <a href="https://github.com/zanganeh/aria-focus/releases/latest/download/aria-focus-macos-x86_64.dmg">📦 macOS Intel DMG</a>
 </p>
 
-Use the package assets attached to the newest non-preview GitHub release when one
-is available. Preview builds are clearly marked. CI artifacts are source-only
-inspection builds, not official customer releases.
+The links above always target the newest non-preview GitHub release. They become
+active when the first stable release is published. Preview builds are clearly
+marked, and CI artifacts are source-only inspection builds, not official customer
+releases.
 
 Aria Focus is independent and is not affiliated with Brain.fm. It does not
 reproduce Brain.fm audio, assets, branding, or screenshots; the project uses

@@ -46,6 +46,9 @@ class PublicReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("arch: x86_64", value)
         self.assertIn("tauri.macos.release.conf.json", value)
         self.assertIn("xcrun stapler validate", value)
+        self.assertIn("aria-focus-windows-x86_64-setup.exe", value)
+        self.assertIn("aria-focus-windows-x86_64.msi", value)
+        self.assertIn("aria-focus-macos-${{ matrix.arch }}.dmg", value)
         self.assertIn("gh release upload \"$RELEASE_TAG\"", value)
 
     def test_release_requires_external_signing_gates(self) -> None:
