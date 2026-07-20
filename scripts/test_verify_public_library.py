@@ -19,6 +19,10 @@ class PublicLibraryGateTests(unittest.TestCase):
                     path = root / relative
                     path.parent.mkdir(exist_ok=True)
                     path.write_bytes(payload)
+                    cover_payload = f"cover-{activity}-{index}".encode()
+                    cover_relative = f"assets/{activity}-{index}.png"
+                    cover_path = root / cover_relative
+                    cover_path.write_bytes(cover_payload)
                     items.append(
                         {
                             "id": f"{activity}-{index}",
@@ -44,6 +48,23 @@ class PublicLibraryGateTests(unittest.TestCase):
                                     }
                                 }
                             ],
+                            "cover": {
+                                "path": cover_relative,
+                                "sha256": hashlib.sha256(cover_payload).hexdigest(),
+                                "bytes": len(cover_payload),
+                                "format": "png",
+                                "width": 1024,
+                                "height": 1024,
+                                "provenance": {
+                                    "source": "Generated test cover fixture",
+                                    "generator": {
+                                        "provider": "Test Cover Generator",
+                                        "model": "test-cover-model",
+                                        "model_version": "1",
+                                        "prompt": "test",
+                                    },
+                                },
+                            },
                         }
                     )
             (root / "manifest.json").write_text(

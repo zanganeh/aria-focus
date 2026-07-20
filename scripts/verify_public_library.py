@@ -75,6 +75,21 @@ def verify(root: Path) -> None:
             raise ValueError(f"{item.get('id')} asset integrity differs")
         expected_files.add(relative.replace("\\", "/"))
         total += path.stat().st_size
+        cover = item.get("cover")
+        if not isinstance(cover, dict):
+            raise ValueError(f"{item.get('id')} is missing cover art")
+        cover_relative = cover.get("path", "")
+        cover_path = root / cover_relative
+        if (
+            not cover_relative
+            or not cover_path.is_file()
+            or cover_path.is_symlink()
+            or cover_path.stat().st_size != cover.get("bytes")
+            or digest(cover_path) != cover.get("sha256")
+        ):
+            raise ValueError(f"{item.get('id')} cover integrity differs")
+        expected_files.add(cover_relative.replace("\\", "/"))
+        total += cover_path.stat().st_size
     if counts != Counter({activity: 20 for activity in ACTIVITIES}):
         raise ValueError(f"public activity counts differ: {dict(counts)}")
     actual_files = {

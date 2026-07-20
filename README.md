@@ -13,8 +13,7 @@
   <a href="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml"><img src="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue" alt="MIT OR Apache-2.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-0078D4" alt="Windows and macOS">
-  <a href="https://github.com/zanganeh/aria-focus/releases"><img src="https://img.shields.io/badge/%F0%9F%93%A6%20Releases-download-2EA44F?style=flat-square&logo=github&logoColor=white" alt="Download releases"></a>
-  <a href="https://github.com/zanganeh/aria-focus/releases"><img src="https://img.shields.io/github/downloads/zanganeh/aria-focus/total?label=downloads&color=2EA44F&style=flat-square&logo=github" alt="Release downloads"></a>
+  <a href="https://github.com/zanganeh/aria-focus/releases"><img src="https://img.shields.io/github/v/release/zanganeh/aria-focus?display_name=tag&sort=semver&label=latest%20stable%20release&logo=github" alt="Latest stable release"></a>
 </p>
 
 <p align="center">
