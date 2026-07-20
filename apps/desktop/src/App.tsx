@@ -415,7 +415,7 @@ export default function App() {
 
       <div
         ref={scrollRegion}
-        className={`app-scroll-region${page === "home" ? " home-scroll-region" : ""}${page === "home" && expandedPlayer ? " player-scroll-region" : ""}`}
+        className={`app-scroll-region page-${page}-scroll-region${page === "home" ? " home-scroll-region" : ""}${page === "home" && expandedPlayer ? " player-scroll-region" : ""}`}
       >
         <ErrorBanner message={session.error} onDismiss={session.dismissError} />
         {updateNotice}
@@ -731,111 +731,137 @@ export default function App() {
           />
         )}
         {page === "settings" && (
-          <section className="settings-menu" aria-labelledby="settings-heading">
-            <div className="screen-heading">
-              <p className="eyebrow">Settings</p>
-              <h2 id="settings-heading">Make it comfortable</h2>
-              <p>These stay on this device.</p>
-            </div>
-            {reviewCandidates.length > 0 && (
-              <button type="button" className="settings-row" onClick={() => setPage("review")}>
-                <AppIcon name="sliders" />
-                <span>
-                  <strong>Review local music</strong>
-                  <small>Blind candidate review</small>
-                </span>
-                <span aria-hidden="true">›</span>
-              </button>
+          <>
+            <section className="settings-menu" aria-labelledby="settings-heading">
+              <div className="screen-heading">
+                <p className="eyebrow">Settings</p>
+                <h2 id="settings-heading">Make it comfortable</h2>
+                <p>These stay on this device.</p>
+              </div>
+              {reviewCandidates.length > 0 && (
+                <button type="button" className="settings-row" onClick={() => setPage("review")}>
+                  <AppIcon name="sliders" />
+                  <span>
+                    <strong>Review local music</strong>
+                    <small>Blind candidate review</small>
+                  </span>
+                  <span aria-hidden="true">›</span>
+                </button>
+              )}
+            </section>
+
+            <IntensitySelector
+              value={session.intensity}
+              disabled={!coreAvailable}
+              onChange={(i) => void session.changeIntensity(i)}
+            />
+            <MasterVolume
+              value={session.masterVolume}
+              pending={session.volumePending}
+              disabled={!coreAvailable}
+              onChange={session.changeMasterVolume}
+            />
+
+            <details className="settings-collapsible">
+              <summary>
+                <strong>Sound and timer</strong>
+                <small>Genre, mood, and session timing</small>
+              </summary>
+              <h2 className="visually-hidden">Sound and timer</h2>
+              <section className="settings-session-options" aria-label="Sound and timer options">
+                <details className="settings-option-collapsible">
+                  <summary>
+                    <strong>Music genre</strong>
+                    <small>Choose the sound style</small>
+                  </summary>
+                  <GenreSelector
+                    state={genres}
+                    disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+                    onChange={(genreId) =>
+                      void setActivityGenre(genreId)
+                        .then(setGenres)
+                        .catch((error: unknown) =>
+                          session.reportError(
+                            `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
+                          ),
+                        )
+                    }
+                  />
+                </details>
+                <details className="settings-option-collapsible">
+                  <summary>
+                    <strong>Mood</strong>
+                    <small>Choose the emotional direction</small>
+                  </summary>
+                  <MoodSelector
+                    state={moods}
+                    disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+                    onChange={(moodId) =>
+                      void setActivityMood(moodId)
+                        .then(setMoods)
+                        .catch((error: unknown) =>
+                          session.reportError(
+                            `Unable to change music mood: ${error instanceof Error ? error.message : String(error)}`,
+                          ),
+                        )
+                    }
+                  />
+                </details>
+                <details className="settings-option-collapsible">
+                  <summary>
+                    <strong>Session timer</strong>
+                    <small>Infinite, countdown, or interval</small>
+                  </summary>
+                  <SessionTypeSelector
+                    value={session.snapshot?.kind ?? { kind: "infinite" }}
+                    disabled={!coreAvailable || session.starting || reviewActive}
+                    onChange={(kind) => void session.changeSessionType(kind)}
+                  />
+                </details>
+              </section>
+            </details>
+
+            {provenance && source?.fallback && (
+              <details className="provenance">
+                <summary>Test tone provenance &amp; licence</summary>
+                <dl>
+                  <dt>Asset</dt>
+                  <dd>{provenance.title}</dd>
+                  <dt>Generator</dt>
+                  <dd>
+                    {provenance.generator} v{provenance.generator_version}
+                  </dd>
+                  <dt>Source</dt>
+                  <dd>{provenance.source}</dd>
+                  <dt>Licence</dt>
+                  <dd>{provenance.licence}</dd>
+                  <dt>Voice / lyrics</dt>
+                  <dd>
+                    {provenance.contains_voice_or_speech ? "yes" : "no"} /{" "}
+                    {provenance.contains_lyrics ? "yes" : "no"}
+                  </dd>
+                  <dt>Looping</dt>
+                  <dd>
+                    {provenance.loops_seamlessly ? "seamless" : "crossfaded"},{" "}
+                    {provenance.duration_seconds}s @ {provenance.sample_rate_hz}Hz
+                  </dd>
+                </dl>
+                <p className="provenance-notes">{provenance.notes}</p>
+              </details>
             )}
-          </section>
-        )}
 
-        {page === "settings" && (
-          <IntensitySelector
-            value={session.intensity}
-            disabled={!coreAvailable}
-            onChange={(i) => void session.changeIntensity(i)}
-          />
+            <details className="settings-collapsible settings-about-collapsible">
+              <summary>
+                <strong>About &amp; help</strong>
+                <small>Version, feedback links, and safety note</small>
+              </summary>
+              <div className="settings-collapsible-content">
+                <AboutAriaFocus />
+                <Disclaimer />
+              </div>
+            </details>
+          </>
         )}
-        {page === "settings" && (
-          <MasterVolume
-            value={session.masterVolume}
-            pending={session.volumePending}
-            disabled={!coreAvailable}
-            onChange={session.changeMasterVolume}
-          />
-        )}
-        {page === "settings" && (
-          <section className="settings-session-options" aria-labelledby="session-options-heading">
-            <div className="screen-heading">
-              <p className="eyebrow">Optional</p>
-              <h2 id="session-options-heading">Sound and timer</h2>
-              <p>Leave these alone to use the app defaults.</p>
-            </div>
-            <GenreSelector
-              state={genres}
-              disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-              onChange={(genreId) =>
-                void setActivityGenre(genreId)
-                  .then(setGenres)
-                  .catch((error: unknown) =>
-                    session.reportError(
-                      `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
-                    ),
-                  )
-              }
-            />
-            <MoodSelector
-              state={moods}
-              disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-              onChange={(moodId) =>
-                void setActivityMood(moodId)
-                  .then(setMoods)
-                  .catch((error: unknown) =>
-                    session.reportError(
-                      `Unable to change music mood: ${error instanceof Error ? error.message : String(error)}`,
-                    ),
-                  )
-              }
-            />
-            <SessionTypeSelector
-              value={session.snapshot?.kind ?? { kind: "infinite" }}
-              disabled={!coreAvailable || session.starting || reviewActive}
-              onChange={(kind) => void session.changeSessionType(kind)}
-            />
-          </section>
-        )}
-
-        {page === "settings" && provenance && source?.fallback && (
-          <details className="provenance">
-            <summary>Test tone provenance &amp; licence</summary>
-            <dl>
-              <dt>Asset</dt>
-              <dd>{provenance.title}</dd>
-              <dt>Generator</dt>
-              <dd>
-                {provenance.generator} v{provenance.generator_version}
-              </dd>
-              <dt>Source</dt>
-              <dd>{provenance.source}</dd>
-              <dt>Licence</dt>
-              <dd>{provenance.licence}</dd>
-              <dt>Voice / lyrics</dt>
-              <dd>
-                {provenance.contains_voice_or_speech ? "yes" : "no"} /{" "}
-                {provenance.contains_lyrics ? "yes" : "no"}
-              </dd>
-              <dt>Looping</dt>
-              <dd>
-                {provenance.loops_seamlessly ? "seamless" : "crossfaded"},{" "}
-                {provenance.duration_seconds}s @ {provenance.sample_rate_hz}Hz
-              </dd>
-            </dl>
-            <p className="provenance-notes">{provenance.notes}</p>
-          </details>
-        )}
-
-        {page === "settings" && <AboutAriaFocus />}
 
         {page === "review" && (
           <section className="review-page" aria-label="Local music review">
@@ -865,8 +891,6 @@ export default function App() {
             />
           </section>
         )}
-
-        {page === "settings" && <Disclaimer />}
 
         <footer className="footer">
           <span>Offline focus music · Focus / {activityLabel}</span>

@@ -2113,6 +2113,198 @@ button:focus-visible,
 .session-active .home-scroll-region > .footer {
   display: none;
 }
+.page-studio-scroll-region,
+.page-settings-scroll-region {
+  scrollbar-width: none;
+}
+.page-studio-scroll-region::-webkit-scrollbar,
+.page-settings-scroll-region::-webkit-scrollbar {
+  display: none;
+}
+.page-studio-scroll-region {
+  gap: 10px;
+}
+.page-settings-scroll-region {
+  gap: 10px;
+}
+.page-settings-scroll-region .settings-menu,
+.page-settings-scroll-region .settings-session-options {
+  gap: 10px;
+}
+.page-settings-scroll-region .settings-menu .screen-heading {
+  margin: 0 4px;
+}
+.page-settings-scroll-region .intensity {
+  padding: 10px;
+}
+.page-settings-scroll-region .intensity-options {
+  gap: 6px;
+  margin-top: 6px;
+}
+.page-settings-scroll-region .intensity-btn {
+  min-height: 42px;
+  padding: 8px 10px;
+}
+.page-settings-scroll-region .intensity-note {
+  margin-top: 6px;
+  font-size: 0.7rem;
+  line-height: 1.25;
+}
+.page-settings-scroll-region .master-volume {
+  padding: 10px 12px;
+}
+.page-settings-scroll-region .master-volume input {
+  margin: 7px 0 1px;
+}
+.settings-collapsible {
+  border: 1px solid rgba(236, 214, 255, 0.16);
+  border-radius: 16px;
+  background: var(--panel);
+}
+.settings-collapsible > summary {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style-position: inside;
+}
+.settings-collapsible > summary strong {
+  color: var(--text);
+}
+.settings-collapsible > summary small {
+  padding-left: 1.2rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+.settings-collapsible[open] > summary {
+  border-bottom: 1px solid rgba(236, 214, 255, 0.12);
+}
+.settings-collapsible-content {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+.settings-collapsible-content .about-card {
+  padding: 12px;
+}
+.settings-collapsible-content .about-card dl {
+  gap: 5px;
+  margin: 10px 0;
+}
+.settings-collapsible-content .about-help {
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.settings-option-collapsible {
+  border: 1px solid rgba(236, 214, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(10, 8, 17, 0.22);
+}
+.settings-option-collapsible > summary {
+  display: grid;
+  gap: 1px;
+  padding: 9px 10px;
+  cursor: pointer;
+  list-style-position: inside;
+}
+.settings-option-collapsible > summary strong {
+  color: var(--text);
+  font-size: 0.86rem;
+}
+.settings-option-collapsible > summary small {
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.settings-option-collapsible[open] > summary {
+  border-bottom: 1px solid rgba(236, 214, 255, 0.1);
+}
+.settings-option-collapsible > .genre-selector,
+.settings-option-collapsible > .session-type {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.settings-option-collapsible[open] > .genre-selector,
+.settings-option-collapsible[open] > .session-type {
+  position: fixed;
+  z-index: 20;
+  left: max(18px, calc(50% - 340px));
+  right: max(18px, calc(50% - 340px));
+  bottom: 88px;
+  max-height: calc(100dvh - 190px);
+  overflow: hidden;
+  border: 1px solid rgba(236, 214, 255, 0.24);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel) 96%, black);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.48);
+}
+.settings-option-collapsible[open] > .genre-selector {
+  padding: 12px;
+}
+.settings-option-collapsible[open] > .session-type {
+  padding: 12px;
+}
+.settings-about-collapsible > summary {
+  min-height: 52px;
+}
+.page-studio-scroll-region .studio-page {
+  gap: 10px;
+  padding: 12px;
+}
+.page-studio-scroll-region .studio-page .back-action {
+  min-height: 28px;
+  margin-bottom: 0;
+}
+.page-studio-scroll-region .studio-page h2 {
+  font-size: clamp(1.3rem, 4vw, 1.7rem);
+}
+.page-studio-scroll-region .studio-page > p {
+  font-size: 0.82rem;
+  line-height: 1.28;
+}
+.page-studio-scroll-region .studio-page .studio-muted {
+  font-size: 0.76rem;
+  line-height: 1.28;
+}
+.page-studio-scroll-region .studio-page .studio-requirements {
+  gap: 4px;
+  padding: 8px 10px;
+  font-size: 0.76rem;
+}
+.page-studio-scroll-region .studio-page .studio-requirements > div {
+  gap: 2px 8px;
+  margin: 2px 0;
+}
+.page-studio-scroll-region .studio-page > button {
+  min-height: 40px;
+  padding: 8px 12px;
+}
+.page-studio-scroll-region .studio-controls {
+  gap: 7px 8px;
+}
+.page-studio-scroll-region .studio-controls label,
+.page-studio-scroll-region .studio-note {
+  gap: 4px;
+  font-size: 0.78rem;
+}
+.page-studio-scroll-region .studio-controls select,
+.page-studio-scroll-region .studio-note textarea {
+  padding: 7px 8px;
+}
+.page-studio-scroll-region .studio-note textarea {
+  min-height: 48px;
+}
+.page-studio-scroll-region .studio-more-toggle {
+  padding: 9px 10px;
+}
+.page-studio-scroll-region .studio-more-toggle small {
+  font-size: 0.7rem;
+}
+.page-studio-scroll-region .studio-saved {
+  padding: 10px;
+}
 .home-scroll-region > .home-choice,
 .home-scroll-region > .guided-setup,
 .home-scroll-region > .home-playing-note {
