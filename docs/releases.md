@@ -6,6 +6,10 @@ Aria Focus uses two separate GitHub Actions paths:
   unsigned source-only Windows and macOS artifacts for inspection. Windows
   remains MSI/NSIS; macOS is app/DMG for Apple Silicon (`aarch64`) and Intel
   (`x86_64`), with separate CI artifacts for each architecture.
+- `.github/workflows/unsigned-release.yml` builds those source-only packages and
+  can publish an unsigned stable GitHub release. This is the current simple
+  distribution path while trusted signing and reviewed content are being
+  completed.
 - `.github/workflows/public-release.yml` is a tag-triggered, protected release workflow
   for reviewed content and signed public Windows/macOS installers. Manual dispatch
   remains available as a recovery path and can optionally publish the verified draft.
@@ -23,9 +27,12 @@ Windows installer metadata uses the numeric version because MSI does not accept
 text prerelease identifiers. Because releases are now stable, the app, packages,
 About panel, Git tag, and Tauri installer version all carry the same `0.3.0`.
 
-Code signing, notarization, the reviewed-library archive, and the Music Studio
-runtime are protected release gates. The workflow fails closed until those gates
-are satisfied; it does not claim signing or approval has already occurred.
+The signed workflow fails closed until code signing, notarization, the
+reviewed-library archive, and the Music Studio runtime gates are satisfied. The
+unsigned workflow deliberately does not use those protected gates. It builds the
+source-only app, which uses the app's development audio fallback and does not
+include the separately reviewed production library or the optional Music Studio
+runtime.
 
 The updater is also fail-closed until its metadata is configured. The checked-in
 Tauri configuration contains the literal placeholder
@@ -129,6 +136,18 @@ cargo test --workspace
 python scripts/check_repository_hygiene.py
 python scripts/verify_release_tag.py v0.3.0
 ```
+
+## Unsigned stable workflow
+
+For the simple release path, open **Actions → Unsigned stable release → Run
+workflow**, enter the stable tag (for example `v0.3.0`), select `main` as the
+source ref, and enable `publish_release`. GitHub Actions validates the repository,
+builds Windows MSI/NSIS and macOS Apple Silicon/Intel DMG packages, computes
+`SHA256SUMS`, creates the stable Git tag, and uploads the packages to GitHub.
+
+The installers are not Authenticode-signed or notarized. Verify the checksums and
+download only from the official repository. Keep the repository's MIT/Apache-2.0
+source licenses; unsigned does not mean unlicensed.
 
 ## Automatic protected workflow
 
