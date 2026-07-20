@@ -743,3 +743,25 @@ it("starts directly from a tile and keeps optional controls in bottom settings",
   expect(screen.getByRole("group", { name: "Music genre" })).toBeTruthy();
   expect(screen.getByRole("group", { name: "Session timer" })).toBeTruthy();
 });
+
+it("opens the destination player immediately while an activity start is still preparing", async () => {
+  mockSession.snapshot = { ...mockSession.snapshot, status: "idle" };
+  let resolveStart!: () => void;
+  mockSession.start.mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        resolveStart = resolve;
+      }),
+  );
+
+  render(<App />);
+  await act(async () => Promise.resolve());
+  fireEvent.click(screen.getByRole("button", { name: "Start Motivation" }));
+  await act(async () => Promise.resolve());
+
+  expect(screen.getByRole("region", { name: "Focus player" })).toBeTruthy();
+  expect(screen.getByText("Loading Motivation")).toBeTruthy();
+  expect(screen.queryByText("First Track")).toBeNull();
+
+  await act(async () => resolveStart());
+});

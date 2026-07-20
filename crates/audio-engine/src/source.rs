@@ -9,7 +9,9 @@ use crate::media::{
 use crate::playback::RealtimeControl;
 use crate::tone::ToneSource;
 
-pub const MAX_TRANSITION_SECONDS: f32 = 8.0;
+// Manual Next/Previous should feel immediate while retaining a short, safe
+// equal-power handoff between authored tracks.
+pub const MAX_TRANSITION_SECONDS: f32 = 2.0;
 
 #[derive(Debug, Clone)]
 pub enum PlaybackSource {

@@ -83,6 +83,7 @@ export default function App() {
   const [homeScreen, setHomeScreen] = useState<HomeScreen>("choose");
   const [navigationPending, setNavigationPending] = useState(false);
   const [activityPending, setActivityPending] = useState(false);
+  const [pendingActivity, setPendingActivity] = useState<Activity | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [onboardingLoadError, setOnboardingLoadError] = useState<string | null>(null);
   const [recentSessions, setRecentSessions] = useState<SessionHistoryRecord[]>([]);
@@ -95,6 +96,7 @@ export default function App() {
   const retryInFlight = useRef(false);
   const healthRequest = useRef(0);
   const updateCheckStarted = useRef(false);
+  const previousTransportActive = useRef(false);
   const loadOnboardingPreferences = useCallback(async () => {
     setOnboardingComplete(null);
     setOnboardingLoadError(null);
@@ -196,6 +198,8 @@ export default function App() {
   const transportActive = status === "playing" || status === "paused";
   const activity = session.snapshot?.activity ?? "deep_work";
   const activityLabel = ACTIVITY_COPY[activity].label;
+  const playerActivity = pendingActivity ?? activity;
+  const playerActivityLabel = ACTIVITY_COPY[playerActivity].label;
   // A missing health response is deliberately not treated as a failure: the health command can
   // itself be temporarily unavailable. Only an explicit failed subsystem gates its controls.
   const coreAvailable = startupHealth?.core_ready !== false;
@@ -241,17 +245,22 @@ export default function App() {
 
   const requestNavigation = async (command: () => Promise<void>) => {
     if (navigationPending || source?.navigation_available !== true) return;
+    const previousItemId = source?.item_id;
     setNavigationPending(true);
     try {
-      const previousItemId = source?.item_id;
       await command();
-      // Navigation is a request to the audio callback; wait for the atomic track identity to
-      // commit before clearing the pending state or updating the label.
+    } catch (error) {
+      setNavigationPending(false);
+      session.reportError(
+        `Unable to change track: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
+    }
+
+    // The native command only queues a callback-safe transition. Keep the player responsive
+    // while the audio callback crossfades and publishes the new identity in the background.
+    void (async () => {
       let current = await getCurrentSource();
-      // A bundled Opus track may need several seconds to decode before the audio
-      // callback publishes the new identity. Keep the controls pending until
-      // that atomic commit instead of reporting success while the old track is
-      // still visible.
       const deadline = Date.now() + 20_000;
       while (current.item_id === previousItemId && Date.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -262,13 +271,13 @@ export default function App() {
         await resetSessionTimer();
         await session.refresh();
       }
-    } catch (error) {
-      session.reportError(
-        `Unable to change track: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    } finally {
       setNavigationPending(false);
-    }
+    })().catch((error: unknown) => {
+      setNavigationPending(false);
+      session.reportError(
+        `Unable to finish changing track: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
   };
 
   const selectActivity = async (next: Activity) => {
@@ -280,31 +289,37 @@ export default function App() {
       return;
     }
 
+    // Show the destination player before stop/reconfigure/decode begins. The native command
+    // still prepares only the selected bounded program, but the interaction is immediate.
+    setPendingActivity(next);
     setActivityPending(true);
+    setPage("home");
+    setHomeScreen("choose");
+    setExpandedPlayer(true);
+    resetContentScroll();
     try {
       if (transportActive) await session.stop();
       const changed = await session.changeActivity(next);
       if (changed === false) return;
       await session.start();
-      setPage("home");
-      setHomeScreen("choose");
-      setExpandedPlayer(true);
-      resetContentScroll();
     } catch (error) {
       session.reportError(
         `Unable to start ${ACTIVITY_COPY[next].label}: ${error instanceof Error ? error.message : String(error)}`,
       );
     } finally {
       setActivityPending(false);
+      setPendingActivity(null);
     }
   };
 
   useEffect(() => {
-    if (!transportActive) {
+    const transportChanged = previousTransportActive.current !== transportActive;
+    previousTransportActive.current = transportActive;
+    if (transportChanged && !transportActive && !activityPending) {
       setFocusView(false);
       setExpandedPlayer(false);
     }
-  }, [transportActive]);
+  }, [activityPending, transportActive]);
 
   const exitFocusView = () => {
     setFocusView(false);
@@ -482,7 +497,7 @@ export default function App() {
               }}
             >
               <div className="mini-player-info">
-                {coverArt ? (
+                {coverArt && !activityPending ? (
                   <img
                     className="mini-player-cover"
                     src={coverArt}
@@ -643,7 +658,7 @@ export default function App() {
                 ) : (
                   <ActivityArtwork
                     className="player-background player-background--fallback"
-                    activity={activity}
+                    activity={playerActivity}
                   />
                 )}
                 <div className="player-overlay" aria-hidden="true" />
@@ -658,22 +673,26 @@ export default function App() {
                     </button>
                   </div>
                   <p className="eyebrow">
-                    {transportActive ? `${activityLabel} session` : "Ready when you are"}
+                    {activityPending
+                      ? `Loading ${playerActivityLabel}`
+                      : transportActive
+                        ? `${activityLabel} session`
+                        : "Ready when you are"}
                   </p>
-                  <SessionTimer snapshot={session.snapshot} />
+                  <SessionTimer snapshot={activityPending ? null : session.snapshot} />
 
-                  {coverArt ? (
+                  {coverArt && !activityPending ? (
                     <img className="player-cover" src={coverArt} alt={coverAlt} decoding="async" />
                   ) : (
                     <ActivityArtwork
                       className="player-cover player-cover--fallback"
-                      activity={activity}
-                      label={`${activityLabel} artwork`}
+                      activity={playerActivity}
+                      label={`${playerActivityLabel} artwork`}
                       decorative={false}
                     />
                   )}
 
-                  {source && (
+                  {source && !activityPending && (
                     <p className="source-label" aria-live="polite">
                       <strong>Audio source:</strong> {source.item_title}
                       {source.fallback
@@ -685,11 +704,13 @@ export default function App() {
                   )}
 
                   <TransportControls
-                    status={status}
-                    starting={session.starting}
-                    activityLabel={activityLabel}
-                    startDisabled={!coreAvailable || !packsAvailable || reviewActive}
-                    actionsDisabled={!coreAvailable}
+                    status={activityPending ? "idle" : status}
+                    starting={session.starting || activityPending}
+                    activityLabel={playerActivityLabel}
+                    startDisabled={
+                      activityPending || !coreAvailable || !packsAvailable || reviewActive
+                    }
+                    actionsDisabled={!coreAvailable || activityPending}
                     onStart={() => void session.start()}
                     onPause={() => void session.pause()}
                     onResume={() => void session.resume()}
