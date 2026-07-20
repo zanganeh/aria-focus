@@ -174,6 +174,10 @@ export async function previousTrack(): Promise<void> {
   await invoke("previous_track");
 }
 
+export async function resetSessionTimer(): Promise<void> {
+  await invoke("reset_session_timer");
+}
+
 export async function setActivity(activity: Activity): Promise<void> {
   await invoke("set_activity", { activity });
 }

@@ -39,6 +39,7 @@ import {
   startReviewCandidate,
   nextTrack,
   previousTrack,
+  resetSessionTimer,
   completeOnboarding,
   getOnboardingPreferences,
   listRecentSessions,
@@ -247,12 +248,20 @@ export default function App() {
       // Navigation is a request to the audio callback; wait for the atomic track identity to
       // commit before clearing the pending state or updating the label.
       let current = await getCurrentSource();
-      const deadline = Date.now() + 5000;
+      // A bundled Opus track may need several seconds to decode before the audio
+      // callback publishes the new identity. Keep the controls pending until
+      // that atomic commit instead of reporting success while the old track is
+      // still visible.
+      const deadline = Date.now() + 20_000;
       while (current.item_id === previousItemId && Date.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, 100));
         current = await getCurrentSource();
       }
       setSource(current);
+      if (current.item_id !== previousItemId) {
+        await resetSessionTimer();
+        await session.refresh();
+      }
     } catch (error) {
       session.reportError(
         `Unable to change track: ${error instanceof Error ? error.message : String(error)}`,
@@ -458,7 +467,10 @@ export default function App() {
         {updateNotice}
 
         {transportActive && !expandedPlayer && (
-          <section className="mini-player" aria-label="Active focus session">
+          <section
+            className={`mini-player mini-player-${status}`}
+            aria-label="Active focus session"
+          >
             <button
               type="button"
               className="mini-player-main"
@@ -489,7 +501,6 @@ export default function App() {
                       ? `${activityLabel} preview`
                       : (source?.item_title ?? `${activityLabel} session`)}
                   </strong>
-                  <span>{status === "paused" ? "Paused" : "Playing"}</span>
                 </div>
               </div>
             </button>
@@ -522,9 +533,7 @@ export default function App() {
               <>
                 <section className="home-choice" aria-label="Choose a focus activity">
                   <div className="home-heading">
-                    <p className="eyebrow">Start</p>
                     <h2>Choose your focus space</h2>
-                    <p>Pick a soundscape and begin in one tap.</p>
                   </div>
                   <ActivitySelector
                     disabled={
@@ -934,7 +943,6 @@ export default function App() {
 
         <footer className="footer">
           <span>Offline focus music · Focus / {activityLabel}</span>
-          {transportActive && <span aria-hidden="true"> · playing</span>}
         </footer>
       </div>
 

@@ -150,6 +150,28 @@ fn restart_after_stop_or_expiry_resets_timing_and_round() {
 }
 
 #[test]
+fn reset_timer_restarts_the_active_track_clock_without_stopping_transport() {
+    let mut playing = session(interval());
+    playing.start(0).unwrap();
+    assert_eq!(playing.tick(150).phase, Some(SessionPhase::Break));
+
+    playing.reset_timer(1_000).unwrap();
+    let restarted = playing.tick(1_010);
+    assert_eq!(playing.status(), SessionStatus::Playing);
+    assert_eq!(restarted.phase, Some(SessionPhase::Work));
+    assert_eq!(restarted.current_round, Some(1));
+    assert_eq!(restarted.focus_elapsed_seconds, 10);
+    assert_eq!(restarted.current_phase_remaining_seconds, Some(110));
+
+    playing.pause(1_020).unwrap();
+    playing.reset_timer(2_000).unwrap();
+    let paused = playing.snapshot(u64::MAX);
+    assert_eq!(playing.status(), SessionStatus::Paused);
+    assert_eq!(paused.focus_elapsed_seconds, 0);
+    assert_eq!(paused.current_phase_remaining_seconds, Some(120));
+}
+
+#[test]
 fn timer_configs_are_bounded_and_overflow_safe() {
     assert!(matches!(
         Session::new(

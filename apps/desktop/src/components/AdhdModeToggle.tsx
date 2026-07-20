@@ -20,7 +20,6 @@ export function AdhdModeToggle({ value, disabled, onChange }: Props) {
     >
       <span className="adhd-mode-copy">
         <strong>ADHD mode</strong>
-        <small>{enabled ? "High stimulation" : "Off"}</small>
       </span>
       <span className="adhd-mode-switch" aria-hidden="true">
         <span />

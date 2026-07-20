@@ -113,18 +113,21 @@ body {
   background: linear-gradient(135deg, rgba(84, 48, 110, 0.9), rgba(31, 25, 45, 0.94));
 }
 
-.mini-player div {
-  display: grid;
-  gap: 2px;
+.mini-player-playing {
+  border-color: rgba(131, 234, 168, 0.56);
 }
 
-.mini-player strong {
+.mini-player-paused {
+  border-color: rgba(237, 179, 255, 0.56);
+}
+
+.mini-player-info strong {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
   color: var(--text);
-}
-
-.mini-player span {
-  color: var(--muted);
-  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mini-player-actions {
@@ -2367,7 +2370,6 @@ button:focus-visible,
   font-size: clamp(1.45rem, 4vw, 1.85rem);
   letter-spacing: -0.05em;
 }
-.home-heading p:last-child,
 .home-playing-note {
   margin: 0;
   color: var(--muted);

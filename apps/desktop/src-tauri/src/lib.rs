@@ -1124,6 +1124,12 @@ fn previous_track(state: State<AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn reset_session_timer(state: State<AppState>) -> Result<(), String> {
+    let now = state.now_secs();
+    state.with_core(|core| core.reset_timer(now))
+}
+
+#[tauri::command]
 fn set_activity(activity: String, state: State<AppState>) -> Result<(), String> {
     let activity = parse_activity(&activity)?;
     state.with_core(|core| core.select_activity(activity))
@@ -2024,6 +2030,7 @@ pub fn run() {
             stop_session,
             next_track,
             previous_track,
+            reset_session_timer,
             set_activity,
             get_activity_genres,
             set_activity_genre,
