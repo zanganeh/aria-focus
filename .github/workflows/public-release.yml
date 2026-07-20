@@ -15,6 +15,11 @@ on:
         required: true
         default: main
         type: string
+      publish_release:
+        description: Publish the verified release immediately; leave unchecked for a draft
+        required: true
+        default: false
+        type: boolean
 
 concurrency:
   group: public-release-${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
@@ -37,6 +42,8 @@ jobs:
       SOURCE_REF: ${{ github.event_name == 'push' && github.ref_name || inputs.source_ref }}
       TAURI_BUILD_CONFIG: src-tauri/tauri.release.conf.json
       UPDATER_CONFIGURED: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY != '' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD != '' && vars.TAURI_UPDATER_PUBLIC_KEY != '' }}
+      SIGNPATH_CONFIGURED: ${{ secrets.SIGNPATH_API_TOKEN != '' && vars.SIGNPATH_ORGANIZATION_ID != '' && vars.SIGNPATH_PROJECT_SLUG != '' && vars.SIGNPATH_SIGNING_POLICY_SLUG != '' && vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG != '' }}
+      APPLE_CONFIGURED: ${{ secrets.APPLE_CERTIFICATE != '' && secrets.APPLE_CERTIFICATE_PASSWORD != '' && secrets.APPLE_ID != '' && secrets.APPLE_PASSWORD != '' && secrets.KEYCHAIN_PASSWORD != '' && vars.APPLE_TEAM_ID != '' && vars.APPLE_SIGNING_IDENTITY != '' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -53,6 +60,37 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+      - name: Validate protected release configuration
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $missing = @()
+          if ($env:SIGNPATH_CONFIGURED -ne 'true') {
+            $missing += 'SignPath environment secret/variables'
+          }
+          if ($env:APPLE_CONFIGURED -ne 'true') {
+            $missing += 'Apple Developer signing/notarization environment secrets/variables'
+          }
+          if ($missing.Count -gt 0) {
+            throw "The public-release environment is incomplete: $($missing -join ', '). See docs/releases.md before running a stable release."
+          }
+          $config = Get-Content -Raw release/public-release-assets.json | ConvertFrom-Json
+          if ($config.library_asset_sha256 -notmatch '^[0-9a-f]{64}$') {
+            throw 'release/public-release-assets.json does not contain an approved lowercase library SHA-256.'
+          }
+          gh release view $config.library_release_tag --json isDraft,isPrerelease,assets | Set-Content release-library-state.json
+          if ($LASTEXITCODE -ne 0) {
+            throw "The pinned reviewed-library release '$($config.library_release_tag)' does not exist."
+          }
+          $libraryRelease = Get-Content -Raw release-library-state.json | ConvertFrom-Json
+          if ($libraryRelease.isDraft -or $libraryRelease.isPrerelease) {
+            throw "The pinned reviewed-library release '$($config.library_release_tag)' must be published and non-preview."
+          }
+          $asset = @($libraryRelease.assets | Where-Object name -eq $config.library_asset_name)
+          if ($asset.Count -ne 1) {
+            throw "The pinned reviewed-library asset '$($config.library_asset_name)' is missing or ambiguous."
+          }
       - run: pnpm install --frozen-lockfile
       - name: Verify release identity
         shell: pwsh
@@ -98,17 +136,6 @@ jobs:
           cargo fmt --all -- --check
           cargo clippy --workspace --all-targets -- -D warnings
           cargo test --workspace
-      - name: Create release tag from Actions
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $tagRef = "refs/tags/$($env:RELEASE_TAG)"
-          gh api --method POST "repos/$env:GITHUB_REPOSITORY/git/refs" `
-            -f ref=$tagRef `
-            -f sha=$env:RELEASE_SOURCE_SHA
-          if ($LASTEXITCODE -ne 0) { throw "GitHub Actions could not create the release tag." }
       - name: Configure signed updater build when updater secrets are configured
         if: ${{ env.UPDATER_CONFIGURED == 'true' }}
         env:
@@ -169,7 +196,12 @@ jobs:
             if ($signature.Status -ne 'Valid') {
               throw "Invalid Authenticode signature: $($file.Name)"
             }
-            Copy-Item -LiteralPath $file.FullName -Destination release-output/
+            $assetName = if ($file.Extension -eq '.msi') {
+              'aria-focus-windows-x86_64.msi'
+            } else {
+              'aria-focus-windows-x86_64-setup.exe'
+            }
+            Copy-Item -LiteralPath $file.FullName -Destination "release-output/$assetName"
           }
           Get-ChildItem release-output -File | Sort-Object Name | ForEach-Object {
             $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()
@@ -184,10 +216,12 @@ jobs:
           if ($nsisZip.Count -ne 1 -or $nsisSig.Count -ne 1) {
             throw "Expected one signed NSIS updater archive and signature."
           }
-          Copy-Item -LiteralPath $nsisZip[0].FullName -Destination release-output/
-          Copy-Item -LiteralPath $nsisSig[0].FullName -Destination release-output/
+          $updaterName = 'aria-focus-windows-x86_64.nsis.zip'
+          $updaterSignatureName = "$updaterName.sig"
+          Copy-Item -LiteralPath $nsisZip[0].FullName -Destination "release-output/$updaterName"
+          Copy-Item -LiteralPath $nsisSig[0].FullName -Destination "release-output/$updaterSignatureName"
           $version = $env:RELEASE_TAG.TrimStart('v')
-          $signature = Get-Content -Raw -LiteralPath $nsisSig[0].FullName
+          $signature = Get-Content -Raw -LiteralPath "release-output/$updaterSignatureName"
           $latest = [ordered]@{
             version = $version
             notes = "Aria Focus $env:RELEASE_TAG"
@@ -195,7 +229,7 @@ jobs:
             platforms = [ordered]@{
               'windows-x86_64' = [ordered]@{
                 signature = $signature.Trim()
-                url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:RELEASE_TAG/$($nsisZip[0].Name)"
+                url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:RELEASE_TAG/$updaterName"
               }
             }
           }
@@ -208,6 +242,17 @@ jobs:
             $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()
             "$hash  $($_.Name)"
           } | Set-Content -Encoding ascii release-output/SHA256SUMS
+      - name: Create release tag from Actions after signing
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tagRef = "refs/tags/$($env:RELEASE_TAG)"
+          gh api --method POST "repos/$env:GITHUB_REPOSITORY/git/refs" `
+            -f ref=$tagRef `
+            -f sha=$env:RELEASE_SOURCE_SHA
+          if ($LASTEXITCODE -ne 0) { throw "GitHub Actions could not create the release tag after signing." }
       - name: Create or update draft release
         shell: pwsh
         env:
@@ -218,6 +263,9 @@ jobs:
             $release = Get-Content -Raw release-state.json | ConvertFrom-Json
             if (-not $release.isDraft) {
               throw "Refusing to replace assets on a published release. Cut a new version."
+            }
+            if ($release.isPrerelease) {
+              throw "Refusing to reuse a prerelease release for a stable build. Cut a new version."
             }
           } else {
             gh release create $env:RELEASE_TAG `
@@ -231,9 +279,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Signed release upload failed." }
 
   build-macos-release-assets:
-    name: Source-only macOS release assets (${{ matrix.arch }})
+    name: Signed and notarized macOS release assets (${{ matrix.arch }})
     needs: build-sign-publish
     runs-on: ${{ matrix.runner }}
+    environment: public-release
     strategy:
       fail-fast: false
       matrix:
@@ -246,6 +295,13 @@ jobs:
       contents: write
     env:
       RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.release_tag }}
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      APPLE_SIGNING_IDENTITY: ${{ vars.APPLE_SIGNING_IDENTITY }}
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -257,16 +313,76 @@ jobs:
         with:
           node-version: 24.11.1
           cache: pnpm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
       - run: pnpm install --frozen-lockfile
-      - name: Build source-only app and DMG
-        run: pnpm -C apps/desktop tauri build --config src-tauri/tauri.macos.conf.json
-      - name: Upload source-only DMG to the draft release
+      - name: Stage the pinned reviewed library
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-input
+          library_tag=$(python -c "import json; print(json.load(open('release/public-release-assets.json', encoding='utf-8'))['library_release_tag'])")
+          library_name=$(python -c "import json; print(json.load(open('release/public-release-assets.json', encoding='utf-8'))['library_asset_name'])")
+          gh release download "$library_tag" --pattern "$library_name" --dir release-input
+          python scripts/stage_public_library.py \
+            release/public-release-assets.json \
+            "release-input/$library_name" \
+            apps/desktop/src-tauri/private-beta-pack
+          python scripts/verify_public_library.py
+      - name: Import Apple Developer certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/aria-focus-build.keychain-db"
+          certificate="$RUNNER_TEMP/aria-focus-developer-id.p12"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$certificate"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain"
+          security default-keychain -s "$keychain"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security import "$certificate" -k "$keychain" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$keychain"
+          identity=$(security find-identity -v -p codesigning "$keychain" | awk -F'"' '/Developer ID Application/ { print $2; exit }')
+          test -n "$identity"
+          test "$identity" = "$APPLE_SIGNING_IDENTITY"
+          echo "APPLE_SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
+      - name: Build, sign, notarize, and staple app DMG
+        run: pnpm -C apps/desktop tauri build --features bundled-library --config src-tauri/tauri.macos.release.conf.json
+      - name: Verify signed macOS assets and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          app=$(find target/release/bundle/macos -maxdepth 1 -name '*.app' -print -quit)
+          dmg=$(find target/release/bundle/dmg -maxdepth 1 -name '*.dmg' -print -quit)
+          test -n "$app" && test -n "$dmg"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          xcrun stapler validate "$dmg"
+          mkdir -p release-output
+          cp "$dmg" "release-output/aria-focus-macos-${{ matrix.arch }}.dmg"
+          shasum -a 256 release-output/*.dmg > release-output/SHA256SUMS-${{ matrix.arch }}
+      - name: Upload signed macOS assets to the draft release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p release-output
-          cp target/release/bundle/dmg/*.dmg release-output/
-          shasum -a 256 release-output/*.dmg > release-output/SHA256SUMS-${{ matrix.arch }}
           gh release upload "$RELEASE_TAG" release-output/* --clobber
+
+  publish-release:
+    name: Publish verified stable release
+    needs: [build-sign-publish, build-macos-release-assets]
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release }}
+    runs-on: ubuntu-latest
+    environment: public-release
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Publish the verified draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$RELEASE_TAG" --draft=false
