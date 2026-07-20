@@ -51,7 +51,10 @@ export function FocusView({
       {coverArt ? (
         <img className="focus-view-background" src={coverArt} alt="" aria-hidden="true" />
       ) : (
-        <ActivityArtwork className="focus-view-background focus-view-background--fallback" activity={activity} />
+        <ActivityArtwork
+          className="focus-view-background focus-view-background--fallback"
+          activity={activity}
+        />
       )}
       <div className="focus-view-overlay" aria-hidden="true" />
       <section
@@ -65,7 +68,11 @@ export function FocusView({
           <button type="button" className="back-action" onClick={onExit}>
             <AppIcon name="chevron-left" /> Back
           </button>
-          <AdhdModeToggle value={intensity} disabled={intensityDisabled} onChange={onChangeIntensity} />
+          <AdhdModeToggle
+            value={intensity}
+            disabled={intensityDisabled}
+            onChange={onChangeIntensity}
+          />
         </div>
         <h1 id="focus-view-activity">{activityLabel}</h1>
         {isInterval && snapshot.phase && (

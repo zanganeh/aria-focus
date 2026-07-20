@@ -109,7 +109,10 @@ export function SessionTypeSelector({ value, disabled, onChange }: Props) {
       <legend>Session timer</legend>
       <div className="session-type-options">
         {options.map(({ kind, label, description, icon }) => (
-          <label key={kind} className={`session-type-card${value.kind === kind ? " selected" : ""}`}>
+          <label
+            key={kind}
+            className={`session-type-card${value.kind === kind ? " selected" : ""}`}
+          >
             <input
               className="session-type-input"
               type="radio"

@@ -411,7 +411,11 @@ export default function App() {
                 />
               )}
               <div>
-                <strong>{source?.fallback ? `${activityLabel} preview` : source?.item_title ?? `${activityLabel} session`}</strong>
+                <strong>
+                  {source?.fallback
+                    ? `${activityLabel} preview`
+                    : (source?.item_title ?? `${activityLabel} session`)}
+                </strong>
                 <span>{status === "paused" ? "Paused" : "Playing"}</span>
               </div>
             </div>
@@ -436,7 +440,11 @@ export default function App() {
               >
                 Open player
               </button>
-              <button type="button" className="mini-player-stop" onClick={() => void session.stop()}>
+              <button
+                type="button"
+                className="mini-player-stop"
+                onClick={() => void session.stop()}
+              >
                 <AppIcon name="stop" />
                 <span className="visually-hidden">Stop session</span>
               </button>
@@ -453,7 +461,13 @@ export default function App() {
                 <p>Pick a soundscape and begin in one tap.</p>
               </div>
               <ActivitySelector
-                disabled={!coreAvailable || !packsAvailable || session.starting || reviewActive || transportActive}
+                disabled={
+                  !coreAvailable ||
+                  !packsAvailable ||
+                  session.starting ||
+                  reviewActive ||
+                  transportActive
+                }
                 onSelect={async (next) => {
                   setExpandedPlayer(false);
                   await session.changeActivity(next);
@@ -465,7 +479,8 @@ export default function App() {
             </section>
             {transportActive && !expandedPlayer && (
               <p className="home-playing-note">
-                {activityLabel} is playing. Use the player above for controls or choose another page.
+                {activityLabel} is playing. Use the player above for controls or choose another
+                page.
               </p>
             )}
 

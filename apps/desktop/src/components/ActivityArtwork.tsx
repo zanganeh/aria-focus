@@ -9,12 +9,7 @@ interface Props {
 }
 
 /** Reuses the approved activity artwork wherever a track has no cover art. */
-export function ActivityArtwork({
-  activity,
-  className = "",
-  label,
-  decorative = true,
-}: Props) {
+export function ActivityArtwork({ activity, className = "", label, decorative = true }: Props) {
   return (
     <span
       className={`activity-artwork${className ? ` ${className}` : ""}`}
