@@ -23,7 +23,11 @@ function renderFocus(snapshot = playingInfinite) {
   render(
     <FocusView
       snapshot={snapshot}
+      activity="deep_work"
       activityLabel="Deep Work"
+      intensity="medium"
+      intensityDisabled={false}
+      onChangeIntensity={vi.fn()}
       onPause={onPause}
       onResume={onResume}
       onExit={onExit}
@@ -58,7 +62,11 @@ it("uses remaining-time labels for countdown and interval sessions", () => {
         current_phase_remaining_seconds: 1200,
         total_remaining_seconds: 1200,
       }}
+      activity="deep_work"
       activityLabel="Deep Work"
+      intensity="medium"
+      intensityDisabled={false}
+      onChangeIntensity={vi.fn()}
       onPause={vi.fn()}
       onResume={vi.fn()}
       onExit={vi.fn()}
@@ -75,7 +83,11 @@ it("uses remaining-time labels for countdown and interval sessions", () => {
         current_phase_remaining_seconds: 240,
         total_remaining_seconds: 3240,
       }}
+      activity="deep_work"
       activityLabel="Deep Work"
+      intensity="medium"
+      intensityDisabled={false}
+      onChangeIntensity={vi.fn()}
       onPause={vi.fn()}
       onResume={vi.fn()}
       onExit={vi.fn()}

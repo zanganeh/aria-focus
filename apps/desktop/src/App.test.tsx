@@ -232,6 +232,7 @@ it("refreshes the callback-published source identity while playback is active", 
 it("uses approved cover art as player and focus-view background only", async () => {
   render(<App />);
   await act(async () => Promise.resolve());
+  fireEvent.click(screen.getByRole("button", { name: "Open player" }));
   expect(
     screen.getByRole("region", { name: "Focus player" }).querySelector(".player-background"),
   ).toBeTruthy();
@@ -246,6 +247,7 @@ it.each(["stopped", "expired"] as const)(
   async (status) => {
     const { rerender } = render(<App />);
     await act(async () => Promise.resolve());
+    fireEvent.click(screen.getByRole("button", { name: "Open player" }));
     const entry = screen.getByRole("button", { name: "Enter focus view" });
     fireEvent.click(entry);
     expect(screen.getByRole("main", { name: "Focus view" })).toBeTruthy();
@@ -260,6 +262,7 @@ it.each(["stopped", "expired"] as const)(
 it("restores focus to the entry control when leaving focus view", async () => {
   render(<App />);
   await act(async () => Promise.resolve());
+  fireEvent.click(screen.getByRole("button", { name: "Open player" }));
   const entry = screen.getByRole("button", { name: "Enter focus view" });
   fireEvent.click(entry);
   fireEvent.keyDown(screen.getByRole("button", { name: "Pause" }), { key: "Escape" });
@@ -389,6 +392,7 @@ it("renders the active installed item's cover art in the player surface", async 
   mockSession.snapshot = { ...mockSession.snapshot, status: "playing" };
   render(<App />);
   await act(async () => Promise.resolve());
+  fireEvent.click(screen.getByRole("button", { name: "Open player" }));
 
   const player = screen.getByRole("region", { name: "Focus player" });
   const cover = within(player).getByRole("img", { name: "First Track cover art" });
@@ -409,9 +413,10 @@ it("shows a graceful no-cover fallback and never renders cover art for a fallbac
   mockSession.snapshot = { ...mockSession.snapshot, status: "playing" };
   render(<App />);
   await act(async () => Promise.resolve());
+  fireEvent.click(screen.getByRole("button", { name: "Open player" }));
 
   const player = screen.getByRole("region", { name: "Focus player" });
-  expect(within(player).queryByRole("img")).toBeNull();
+  expect(within(player).getByRole("img", { name: "Deep Work artwork" })).toBeTruthy();
   expect(within(player).getByText(/Procedural test tone/)).toBeTruthy();
 });
 
@@ -655,6 +660,7 @@ it("exposes the live master volume on the active player and routes changes throu
   mockSession.masterVolume = 64;
   render(<App />);
   await act(async () => Promise.resolve());
+  fireEvent.click(screen.getByRole("button", { name: "Open player" }));
 
   const slider = screen.getByRole("slider", { name: /Master volume/ }) as HTMLInputElement;
   expect(slider.value).toBe("64");

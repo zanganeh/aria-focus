@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Stable version tag to create (for example v0.3.0)
+        description: Stable version tag to create (for example v0.4.0)
         required: true
         type: string
       source_ref:

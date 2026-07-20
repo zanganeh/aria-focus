@@ -19,12 +19,12 @@ const BREAK: SessionSnapshot = {
 };
 
 describe("SessionTimer", () => {
-  it("shows phase, round, focus elapsed, phase remaining, and total remaining", () => {
+  it("shows one primary timer with phase and round context", () => {
     render(<SessionTimer snapshot={BREAK} />);
     expect(screen.getByLabelText("Break remaining").textContent).toBe("4:30");
     expect(screen.getByText("Silent break · Round 2 of 4")).toBeTruthy();
-    expect(screen.getByLabelText("Elapsed focus work").textContent).toContain("50:00");
-    expect(screen.getByLabelText("Total session remaining").textContent).toContain("1:04:30");
+    expect(screen.queryByLabelText("Elapsed focus work")).toBeNull();
+    expect(screen.queryByLabelText("Total session remaining")).toBeNull();
   });
 
   it("announces gentle completion", () => {

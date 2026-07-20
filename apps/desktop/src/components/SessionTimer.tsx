@@ -8,7 +8,6 @@ interface Props {
 export function SessionTimer({ snapshot }: Props) {
   const focusElapsed = snapshot?.focus_elapsed_seconds ?? 0;
   const phaseRemaining = snapshot?.current_phase_remaining_seconds ?? null;
-  const totalRemaining = snapshot?.total_remaining_seconds ?? null;
   const status = snapshot?.status ?? "idle";
   const phase = snapshot?.phase ?? null;
   const isInterval = snapshot?.kind.kind === "interval";
@@ -36,16 +35,8 @@ export function SessionTimer({ snapshot }: Props) {
           )}
         </div>
       )}
-      <div className="focus-elapsed" aria-label="Elapsed focus work">
-        Focus {formatDuration(focusElapsed)}
-      </div>
-      {totalRemaining !== null && (
-        <div className="remaining" aria-label="Total session remaining">
-          Total remaining {formatDuration(totalRemaining)}
-        </div>
-      )}
       {status === "expired" && <div className="completion">Session complete.</div>}
-      <div className="status" data-status={status}>
+      <div className="status visually-hidden" data-status={status}>
         {status}
       </div>
     </section>
