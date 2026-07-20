@@ -133,6 +133,33 @@ body {
   gap: 8px;
 }
 
+.mini-player-main {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 12px;
+  min-height: 50px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+.mini-player button.mini-player-main {
+  flex: 1 1 auto;
+}
+
+.mini-player-main:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.mini-player-main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .mini-player button {
   flex: 0 0 auto;
   border-radius: 999px;
@@ -590,6 +617,14 @@ button.danger {
 
 .source-label strong {
   color: var(--text);
+}
+
+.transport-status {
+  margin: -4px 0 0;
+  color: var(--accent-strong);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-align: center;
 }
 
 .track-feedback {
@@ -2439,12 +2474,6 @@ button:focus-visible,
   border-color: rgba(255, 190, 200, 0.45);
   color: #ffdbe1;
 }
-.mini-player-open {
-  padding-inline: 12px;
-  font-size: 0.78rem;
-  font-weight: 750;
-}
-
 .player-background--fallback,
 .focus-view-background--fallback {
   display: block;
@@ -2482,6 +2511,9 @@ button:focus-visible,
   justify-content: space-between;
   gap: 12px;
   width: 100%;
+}
+.player-toolbar {
+  justify-content: flex-start;
 }
 .player-back-action,
 .focus-view-topbar .back-action {
@@ -2648,8 +2680,5 @@ button:focus-visible,
   }
   .session-type-copy {
     gap: 1px;
-  }
-  .mini-player-open {
-    padding-inline: 9px;
   }
 }

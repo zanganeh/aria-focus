@@ -50,6 +50,7 @@ import { findAvailableUpdate, installAndRelaunch } from "./lib/updater";
 import type {
   ActivityGenreState,
   ActivityMoodState,
+  Activity,
   CurrentSource,
   Provenance,
   StartupHealth,
@@ -80,6 +81,7 @@ export default function App() {
   const [page, setPage] = useState<AppPage>("home");
   const [homeScreen, setHomeScreen] = useState<HomeScreen>("choose");
   const [navigationPending, setNavigationPending] = useState(false);
+  const [activityPending, setActivityPending] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [onboardingLoadError, setOnboardingLoadError] = useState<string | null>(null);
   const [recentSessions, setRecentSessions] = useState<SessionHistoryRecord[]>([]);
@@ -240,9 +242,16 @@ export default function App() {
     if (navigationPending || source?.navigation_available !== true) return;
     setNavigationPending(true);
     try {
+      const previousItemId = source?.item_id;
       await command();
-      // The label remains renderer-owned; polling observes only the committed atomic track.
-      const current = await getCurrentSource();
+      // Navigation is a request to the audio callback; wait for the atomic track identity to
+      // commit before clearing the pending state or updating the label.
+      let current = await getCurrentSource();
+      const deadline = Date.now() + 5000;
+      while (current.item_id === previousItemId && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        current = await getCurrentSource();
+      }
       setSource(current);
     } catch (error) {
       session.reportError(
@@ -250,6 +259,34 @@ export default function App() {
       );
     } finally {
       setNavigationPending(false);
+    }
+  };
+
+  const selectActivity = async (next: Activity) => {
+    if (activityPending || session.starting) return;
+    if (transportActive && activity === next) {
+      setPage("home");
+      setHomeScreen("choose");
+      setExpandedPlayer(true);
+      return;
+    }
+
+    setActivityPending(true);
+    try {
+      if (transportActive) await session.stop();
+      const changed = await session.changeActivity(next);
+      if (changed === false) return;
+      await session.start();
+      setPage("home");
+      setHomeScreen("choose");
+      setExpandedPlayer(true);
+      resetContentScroll();
+    } catch (error) {
+      session.reportError(
+        `Unable to start ${ACTIVITY_COPY[next].label}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    } finally {
+      setActivityPending(false);
     }
   };
 
@@ -422,24 +459,40 @@ export default function App() {
 
         {transportActive && !expandedPlayer && (
           <section className="mini-player" aria-label="Active focus session">
-            <div className="mini-player-info">
-              {coverArt ? (
-                <img className="mini-player-cover" src={coverArt} alt={coverAlt} decoding="async" />
-              ) : (
-                <ActivityArtwork
-                  activity={activity}
-                  className="mini-player-cover mini-player-cover--fallback"
-                />
-              )}
-              <div>
-                <strong>
-                  {source?.fallback
-                    ? `${activityLabel} preview`
-                    : (source?.item_title ?? `${activityLabel} session`)}
-                </strong>
-                <span>{status === "paused" ? "Paused" : "Playing"}</span>
+            <button
+              type="button"
+              className="mini-player-main"
+              aria-label="Open player"
+              onClick={() => {
+                setPage("home");
+                setHomeScreen("choose");
+                setExpandedPlayer(true);
+              }}
+            >
+              <div className="mini-player-info">
+                {coverArt ? (
+                  <img
+                    className="mini-player-cover"
+                    src={coverArt}
+                    alt={coverAlt}
+                    decoding="async"
+                  />
+                ) : (
+                  <ActivityArtwork
+                    activity={activity}
+                    className="mini-player-cover mini-player-cover--fallback"
+                  />
+                )}
+                <div>
+                  <strong>
+                    {source?.fallback
+                      ? `${activityLabel} preview`
+                      : (source?.item_title ?? `${activityLabel} session`)}
+                  </strong>
+                  <span>{status === "paused" ? "Paused" : "Playing"}</span>
+                </div>
               </div>
-            </div>
+            </button>
             <div className="mini-player-actions">
               <button
                 type="button"
@@ -450,17 +503,6 @@ export default function App() {
               >
                 <AppIcon name={status === "paused" ? "play" : "pause"} />
                 <span className="visually-hidden">{status === "paused" ? "Resume" : "Pause"}</span>
-              </button>
-              <button
-                type="button"
-                className="mini-player-open"
-                onClick={() => {
-                  setPage("home");
-                  setHomeScreen("choose");
-                  setExpandedPlayer(true);
-                }}
-              >
-                Open player
               </button>
               <button
                 type="button"
@@ -490,16 +532,9 @@ export default function App() {
                       !packsAvailable ||
                       session.starting ||
                       reviewActive ||
-                      transportActive
+                      activityPending
                     }
-                    onSelect={async (next) => {
-                      await session.changeActivity(next);
-                      await session.start();
-                      setPage("home");
-                      setHomeScreen("choose");
-                      setExpandedPlayer(true);
-                      resetContentScroll();
-                    }}
+                    onSelect={selectActivity}
                   />
                 </section>
                 {!transportActive && homeScreen === "sound" && (
@@ -612,11 +647,6 @@ export default function App() {
                     >
                       <AppIcon name="chevron-left" /> Back to Start
                     </button>
-                    <AdhdModeToggle
-                      value={session.intensity}
-                      disabled={!coreAvailable}
-                      onChange={(value) => void session.changeIntensity(value)}
-                    />
                   </div>
                   <p className="eyebrow">
                     {transportActive ? `${activityLabel} session` : "Ready when you are"}
@@ -659,6 +689,16 @@ export default function App() {
                     navigationPending={navigationPending}
                     onNext={() => void requestNavigation(nextTrack)}
                     onPrevious={() => void requestNavigation(previousTrack)}
+                  />
+                  {navigationPending && (
+                    <p className="transport-status" role="status" aria-live="polite">
+                      Changing track…
+                    </p>
+                  )}
+                  <AdhdModeToggle
+                    value={session.intensity}
+                    disabled={!coreAvailable}
+                    onChange={(value) => void session.changeIntensity(value)}
                   />
                   <MasterVolume
                     variant="compact"
