@@ -1,0 +1,222 @@
+name: Unsigned stable release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Stable version tag to create (for example v0.3.0)
+        required: true
+        type: string
+      source_ref:
+        description: Branch or commit to release
+        required: true
+        default: main
+        type: string
+      publish_release:
+        description: Publish the release immediately; leave unchecked for a draft
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: unsigned-release-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source:
+    name: Validate source for unsigned release
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.source_ref }}
+      - uses: dtolnay/rust-toolchain@1.92.0
+        with:
+          components: rustfmt, clippy
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.11.1
+          cache: pnpm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Validate stable tag and repository
+        shell: pwsh
+        run: |
+          $tag = '${{ inputs.release_tag }}'
+          if ($tag -notmatch '^v(?<version>0|[1-9][0-9]*)\.(?<minor>0|[1-9][0-9]*)\.(?<patch>0|[1-9][0-9]*)$') {
+            throw "Release tag '$tag' is not a canonical stable vMAJOR.MINOR.PATCH tag."
+          }
+          $packageVersion = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $desktopVersion = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).version
+          $cargoVersion = (Select-String -Path Cargo.toml -Pattern '^version = "([^"]+)"' | Select-Object -First 1).Matches.Groups[1].Value
+          $tagVersion = "$($Matches.version).$($Matches.minor).$($Matches.patch)"
+          $versions = @($packageVersion, $desktopVersion, $cargoVersion)
+          if (($versions -contains '') -or (($versions | Where-Object { $_ -ne $tagVersion }).Count -gt 0)) {
+            throw "Release tag '$tag' does not match the repository package versions."
+          }
+          python scripts/check_repository_hygiene.py
+          python -m unittest discover -s scripts -p 'test_*.py'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+
+  build-windows:
+    name: Build unsigned Windows installers
+    needs: validate-source
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_ref }}
+      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.11.1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build source-only Windows packages
+        run: pnpm tauri build
+      - name: Prepare release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release-output | Out-Null
+          $msi = @(Get-ChildItem target/release/bundle/msi/*.msi -File)
+          $nsis = @(Get-ChildItem target/release/bundle/nsis/*.exe -File)
+          if ($msi.Count -ne 1 -or $nsis.Count -ne 1) {
+            throw 'Expected exactly one unsigned MSI and one unsigned NSIS installer.'
+          }
+          Copy-Item -LiteralPath $msi[0].FullName -Destination 'release-output/aria-focus-windows-x86_64.msi'
+          Copy-Item -LiteralPath $nsis[0].FullName -Destination 'release-output/aria-focus-windows-x86_64-setup.exe'
+          Get-ChildItem release-output -File | Sort-Object Name | ForEach-Object {
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          } | Set-Content -Encoding ascii release-output/SHA256SUMS-windows
+      - uses: actions/upload-artifact@v7
+        with:
+          name: unsigned-release-windows
+          path: release-output/*
+          if-no-files-found: error
+          retention-days: 14
+
+  build-macos:
+    name: Build unsigned macOS DMG (${{ matrix.arch }})
+    needs: validate-source
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            arch: aarch64
+          - runner: macos-15-intel
+            arch: x86_64
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.source_ref }}
+      - uses: dtolnay/rust-toolchain@1.92.0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.11.1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build source-only macOS package
+        run: pnpm tauri build --config src-tauri/tauri.macos.conf.json
+      - name: Prepare release asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          dmg=$(find target/release/bundle/dmg -maxdepth 1 -name '*.dmg' -print -quit)
+          test -n "$dmg"
+          mkdir -p release-output
+          cp "$dmg" "release-output/aria-focus-macos-${{ matrix.arch }}.dmg"
+          shasum -a 256 "release-output/aria-focus-macos-${{ matrix.arch }}.dmg" \
+            > "release-output/SHA256SUMS-macos-${{ matrix.arch }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: unsigned-release-macos-${{ matrix.arch }}
+          path: release-output/*
+          if-no-files-found: error
+          retention-days: 14
+
+  create-release:
+    name: Create unsigned stable GitHub release
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      SOURCE_REF: ${{ inputs.source_ref }}
+      PUBLISH_RELEASE: ${{ inputs.publish_release }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: unsigned-release-windows
+          path: release-assets/windows
+      - uses: actions/download-artifact@v7
+        with:
+          name: unsigned-release-macos-aarch64
+          path: release-assets/macos-aarch64
+      - uses: actions/download-artifact@v7
+        with:
+          name: unsigned-release-macos-x86_64
+          path: release-assets/macos-x86_64
+      - name: Assemble release assets and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-output
+          find release-assets -type f \( -name '*.exe' -o -name '*.msi' -o -name '*.dmg' \) \
+            -exec cp {} release-output/ \;
+          test -f release-output/aria-focus-windows-x86_64-setup.exe
+          test -f release-output/aria-focus-windows-x86_64.msi
+          test -f release-output/aria-focus-macos-aarch64.dmg
+          test -f release-output/aria-focus-macos-x86_64.dmg
+          (cd release-output && sha256sum \
+            aria-focus-windows-x86_64-setup.exe \
+            aria-focus-windows-x86_64.msi \
+            aria-focus-macos-aarch64.dmg \
+            aria-focus-macos-x86_64.dmg) > release-output/SHA256SUMS
+      - name: Create and upload release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; refusing to replace it."
+            exit 1
+          fi
+          cat > RELEASE_NOTES.md <<EOF
+          ## Aria Focus $RELEASE_TAG
+
+          This stable release was built by GitHub Actions from $SOURCE_REF.
+
+          The installers are currently unsigned while trusted code-signing setup is being completed. Verify the downloaded files against SHA256SUMS and download only from this official GitHub repository. Windows and macOS may show an operating-system security warning for an unsigned download.
+
+          The repository source remains available under the MIT or Apache-2.0 license. The current source-only packages do not include the separately reviewed production music library or the optional Music Studio runtime.
+          EOF
+          gh release create "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$SOURCE_REF" \
+            --draft \
+            --title "Aria Focus $RELEASE_TAG" \
+            --notes-file RELEASE_NOTES.md
+          gh release upload "$RELEASE_TAG" release-output/* --repo "$GITHUB_REPOSITORY"
+          if [[ "$PUBLISH_RELEASE" == 'true' ]]; then
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false
+          fi

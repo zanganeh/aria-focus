@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml"><img src="https://github.com/zanganeh/aria-focus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/zanganeh/aria-focus/actions/workflows/unsigned-release.yml"><img src="https://github.com/zanganeh/aria-focus/actions/workflows/unsigned-release.yml/badge.svg" alt="Unsigned stable release workflow"></a>
   <a href="LICENSE-MIT"><img src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue" alt="MIT OR Apache-2.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS-0078D4" alt="Windows and macOS">
   <a href="https://github.com/zanganeh/aria-focus/releases"><img src="https://img.shields.io/github/v/release/zanganeh/aria-focus?display_name=tag&sort=semver&label=latest%20stable%20release&logo=github" alt="Latest stable release"></a>
@@ -32,8 +33,8 @@ instrumental tracks entirely on your machine.
 
 The project is open for source review and contribution. GitHub Actions builds and
 publishes release assets; this repository does not rely on locally built installers.
-Until the first stable tag is published, the Releases link may contain only clearly
-labelled preview builds.
+The first stable release is currently distributed as an unsigned source-only
+package while trusted code-signing and reviewed-content work are completed.
 
 ## Download from GitHub Releases
 
@@ -45,10 +46,10 @@ labelled preview builds.
   <a href="https://github.com/zanganeh/aria-focus/releases/latest/download/aria-focus-macos-x86_64.dmg">📦 macOS Intel DMG</a>
 </p>
 
-The links above always target the newest non-preview GitHub release. They become
-active when the first stable release is published. Preview builds are clearly
-marked, and CI artifacts are source-only inspection builds, not official customer
-releases.
+The links above always target the newest non-preview GitHub release. The current
+stable packages are unsigned; verify `SHA256SUMS` and download only from this
+official repository. Preview builds are clearly marked, and ordinary CI artifacts
+remain source-only inspection builds rather than releases.
 
 Aria Focus is independent and is not affiliated with Brain.fm. It does not
 reproduce Brain.fm audio, assets, branding, or screenshots; the project uses
@@ -81,21 +82,20 @@ focus-music product or service.
 
 Aria Focus has packages for **Windows 11 x64** (MSI and NSIS) and **macOS** (DMG
 containing an app bundle) for both **Apple Silicon/aarch64** and
-**Intel/x86_64**. Stable release packages are produced by GitHub Actions only;
-the public workflow signs Windows installers with SignPath and signs/notarizes
-macOS DMGs with Apple Developer credentials.
+**Intel/x86_64**. Stable release packages are produced by GitHub Actions only.
+The current stable release is unsigned; signing and notarization will be added
+later without changing the download links.
 
-When a stable release has been published, use the download area above. Before
-publication, this README does not claim that a stable installer exists.
+When a stable release has been published, use the download area above.
 
 1. Download the appropriate package from the
    [Releases page](https://github.com/zanganeh/aria-focus/releases).
    Windows releases provide MSI and NSIS installers; macOS releases provide a
-   DMG. Prefer a signed release when one is available. Unsigned source-only
-   builds are clearly labelled and are not official releases.
+   DMG. The current stable release is unsigned, so verify `SHA256SUMS` before
+   opening it and expect a security warning from the operating system.
 2. On Windows, run the downloaded setup file. On macOS, open the DMG and drag
    Aria Focus to Applications. Unsigned builds may require an explicit macOS
-   Privacy & Security approval; check `SHA256SUMS` when present.
+   Privacy & Security approval.
 3. Open Aria Focus, choose a focus activity, optionally pick a genre and mood,
    choose a timer, and press Play. Everything stays on your device.
 
@@ -261,10 +261,14 @@ Start with [`docs/architecture.md`](docs/architecture.md) for system boundaries 
 
 ## Releases
 
-GitHub Actions performs ordinary CI on every pull request. From **Actions → Signed
-public release → Run workflow**, a maintainer chooses a stable `vMAJOR.MINOR.PATCH`
-tag and a source ref (normally `main`). After every protected gate passes, GitHub
-Actions creates the tag and starts the release workflow that:
+GitHub Actions performs ordinary CI on every pull request. The current simple
+path is **Actions → Unsigned stable release → Run workflow**. It chooses a stable
+`vMAJOR.MINOR.PATCH` tag and a source ref (normally `main`), builds source-only
+packages, and publishes the release without requiring signing credentials.
+
+The later protected path is **Actions → Signed public release → Run workflow**.
+After every protected gate passes, GitHub Actions creates the tag and starts the
+release workflow that:
 
 1. checks out the selected source ref;
 2. downloads the exact pinned reviewed-library archive;
@@ -282,7 +286,7 @@ upgrade matrix. The release-tag validator accepts only canonical stable tags and
 rejects prerelease suffixes. See [`docs/releases.md`](docs/releases.md) and
 [`docs/content-pack-upgrades.md`](docs/content-pack-upgrades.md).
 
-The repository workflow performs the build, Windows and macOS signing,
+The signed repository workflow performs the build, Windows and macOS signing,
 notarization, checksums, and draft-release upload. For a manual run, it creates
 the stable tag only after all protected gates pass. The `publish_release`
 checkbox can publish the verified draft after all assets are uploaded; otherwise
