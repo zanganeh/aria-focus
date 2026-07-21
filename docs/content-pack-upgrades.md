@@ -53,6 +53,9 @@ Run:
 $env:ARIA_FOCUS_BUNDLED_PACK_DIR = '../../../content/opus-release/private-beta-pack'
 cargo test -p aria-focus-desktop --features bundled-listening-test `
   retired_owner_waived_pack_with_historical_app_range_does_not_block_startup --lib
+$env:ARIA_FOCUS_BUNDLED_PACK_DIR = 'apps/desktop/src-tauri/private-beta-pack'
+cargo test -p aria-focus-desktop --features bundled-listening-test `
+  legacy_registry_row_does_not_block_current_bundled_library_startup --lib
 cargo test -p aria-focus-desktop --lib `
   retired_private_beta_pack_ids_cover_legacy_and_future_versions
 cargo test -p aria-focus-desktop --features bundled-listening-test --lib
@@ -62,6 +65,13 @@ cargo clippy -p aria-focus-desktop --all-targets `
 
 A release is blocked if the feature-specific regression test is skipped because
 the build has no pinned successor pack.
+
+The unsigned stable workflow stages the real library before the Windows package
+build and runs `legacy_registry_row_does_not_block_current_bundled_library_startup`
+against that staged directory. This keeps the release gate tied to the same
+100-track pack that will be installed for users, rather than only to a small
+synthetic fixture. The protected signed workflow runs the same profile after
+staging its reviewed library.
 
 ## Windows upgrade test matrix
 

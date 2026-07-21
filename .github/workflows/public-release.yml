@@ -126,6 +126,12 @@ jobs:
             apps/desktop/src-tauri/private-beta-pack
         env:
           GH_TOKEN: ${{ github.token }}
+      - name: Verify legacy registry upgrade profile
+        shell: pwsh
+        env:
+          ARIA_FOCUS_BUNDLED_PACK_DIR: apps/desktop/src-tauri/private-beta-pack
+        run: cargo test -p aria-focus-desktop --features bundled-library `
+          legacy_registry_row_does_not_block_current_bundled_library_startup --lib -- --nocapture
       - name: Verify source and release content
         shell: pwsh
         run: |
