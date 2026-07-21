@@ -3481,6 +3481,68 @@ mod tests {
     }
 
     #[test]
+    fn legacy_registry_row_does_not_block_current_bundled_library_startup() {
+        let Some(trust) = TRUST else {
+            // This upgrade profile requires the real staged successor pack.
+            return;
+        };
+        let resource_pack = std::env::var_os("ARIA_FOCUS_BUNDLED_PACK_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("private-beta-pack"));
+        let resource_dir = resource_pack
+            .parent()
+            .expect("staged private-beta pack should have a parent directory")
+            .to_path_buf();
+
+        let temp = TempDir::new().unwrap();
+        let content_root = temp.path().join("content");
+        let asset = b"retired-upgrade-profile-fixture";
+        let mut retired = fixture_manifest(asset);
+        retired.pack.id = "local-activity-library-v2".into();
+        retired.pack.version = "0.1.0-test.1".into();
+        retired.pack.app_version_requirement = ">=0.1.0, <0.2.0".into();
+        retired.items[0].human_qa.status = catalogue::manifest::HumanQaStatus::Draft;
+        retired.items[0].human_qa.reviews.clear();
+        retired = retired.canonicalized();
+
+        let (registry, state) = MockRegistry::new(false);
+        let mut service =
+            PackService::new(registry, content_root).with_resource_dir(Some(resource_dir));
+        let retired_path = service.expected_install_path(&retired);
+        write_installed_tree(&retired_path, &retired, asset);
+        let canonical = canonical_manifest_bytes(&retired).unwrap();
+        state
+            .lock()
+            .unwrap()
+            .registrations
+            .push(registration_from_manifest_with_status(
+                &retired,
+                &retired_path,
+                String::from_utf8(canonical.clone()).unwrap(),
+                catalogue::import::hash_bytes(&canonical),
+                "a".repeat(64),
+                OWNER_WAIVED_BUNDLED_STATUS,
+            ));
+
+        let summaries = service.list().unwrap();
+        assert_eq!(summaries.len(), 1);
+        assert_eq!(summaries[0].id, trust.pack_id);
+        assert_eq!(summaries[0].item_count as usize, trust.item_ids.len());
+        assert!(retired_path.exists());
+        assert!(state
+            .lock()
+            .unwrap()
+            .registrations
+            .iter()
+            .any(|entry| entry.pack.pack_id == trust.pack_id));
+        let prepared = service
+            .prepare_playback(Activity::Motivation, None, None)
+            .unwrap()
+            .expect("the current bundled library should remain playable");
+        assert!(trust.item_ids.contains(&prepared.primary_item_id.as_str()));
+    }
+
+    #[test]
     fn retired_private_beta_pack_ids_cover_legacy_and_future_versions() {
         for pack_id in [
             "local-activity-library-v1",

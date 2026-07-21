@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Stable version tag to create (for example v1.0.0)
+        description: Stable version tag to create (for example v1.2.3)
         required: true
         type: string
       source_ref:
@@ -116,6 +116,12 @@ jobs:
             release/unsigned-library-assets.json `
             $archive `
             apps/desktop/src-tauri/private-beta-pack
+      - name: Verify legacy registry upgrade profile
+        shell: pwsh
+        env:
+          ARIA_FOCUS_BUNDLED_PACK_DIR: apps/desktop/src-tauri/private-beta-pack
+        run: cargo test -p aria-focus-desktop --features bundled-listening-test `
+          legacy_registry_row_does_not_block_current_bundled_library_startup --lib -- --nocapture
       - name: Build unsigned Windows packages with music library
         run: pnpm -C apps/desktop tauri build --features bundled-listening-test --config src-tauri/tauri.listening-test.conf.json
       - name: Prepare release assets
