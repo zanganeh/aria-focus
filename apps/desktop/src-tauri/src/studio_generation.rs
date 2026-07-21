@@ -1037,8 +1037,25 @@ mod tests {
     ) -> StudioJobRecord {
         let deadline = Instant::now() + Duration::from_secs(2);
         loop {
-            let mut store = PreferencesRepository::open(&paths.database_path).unwrap();
-            let record = store.load_studio_job(id).unwrap().unwrap();
+            let mut store = match PreferencesRepository::open(&paths.database_path) {
+                Ok(store) => store,
+                Err(error) if is_retryable_database_lock(&error) => {
+                    assert!(Instant::now() < deadline, "database stayed locked");
+                    std::thread::sleep(Duration::from_millis(5));
+                    continue;
+                }
+                Err(error) => panic!("opening studio test database failed: {error}"),
+            };
+            let record = match store.load_studio_job(id) {
+                Ok(Some(record)) => record,
+                Ok(None) => panic!("studio job disappeared while waiting"),
+                Err(error) if is_retryable_database_lock(&error) => {
+                    assert!(Instant::now() < deadline, "database stayed locked");
+                    std::thread::sleep(Duration::from_millis(5));
+                    continue;
+                }
+                Err(error) => panic!("loading studio test job failed: {error}"),
+            };
             if record.state == expected {
                 return record;
             }
@@ -1049,6 +1066,11 @@ mod tests {
             );
             std::thread::sleep(Duration::from_millis(5));
         }
+    }
+
+    fn is_retryable_database_lock(error: &persistence::PersistenceError) -> bool {
+        let message = error.to_string();
+        message.contains("database is locked") || message.contains("database is busy")
     }
 
     #[test]
