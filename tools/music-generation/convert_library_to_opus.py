@@ -140,6 +140,17 @@ def source_assets(source: Path, manifest: dict[str, Any]) -> list[tuple[dict[str
         if asset.get("bytes") != asset_path.stat().st_size or asset.get("sha256") != sha256(asset_path):
             raise ConversionError(f"{item_id} source asset does not match its manifest hash or size")
         expected.add(relative.as_posix())
+        cover = item.get("cover")
+        if cover is not None:
+            if not isinstance(cover, dict):
+                raise ConversionError(f"{item_id} cover must be an object")
+            cover_relative = safe_relative(cover.get("path"), f"{item_id} cover asset")
+            cover_path = (source / cover_relative).resolve(strict=True)
+            if not within(cover_path, source) or not cover_path.is_file() or cover_path.is_symlink():
+                raise ConversionError(f"{item_id} cover asset is missing, linked, or outside the pack")
+            if cover.get("bytes") != cover_path.stat().st_size or cover.get("sha256") != sha256(cover_path):
+                raise ConversionError(f"{item_id} cover asset does not match its manifest hash or size")
+            expected.add(cover_relative.as_posix())
         found.append((item, asset_path))
     actual = {path.relative_to(source).as_posix() for path in source.rglob("*") if path.is_file()}
     if actual != expected:
@@ -311,10 +322,23 @@ def convert(
                     "safe_region_clamps": safe_region_changes,
                 },
             })
+        for item in manifest["items"]:
+            cover = item.get("cover")
+            if not isinstance(cover, dict):
+                continue
+            cover_relative = safe_relative(cover["path"], f"{item['id']} cover asset")
+            destination = stage / cover_relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source / cover_relative, destination)
         updated["format_version"] = 2
         (stage / "manifest.json").write_bytes(canonical_json(updated))
         canonicalize_manifest(stage / "manifest.json")
         expected = {"manifest.json", *(record["distribution"]["path"] for record in records)}
+        expected.update(
+            item["cover"]["path"].replace("\\", "/")
+            for item in manifest["items"]
+            if isinstance(item.get("cover"), dict)
+        )
         actual = {path.relative_to(stage).as_posix() for path in stage.rglob("*") if path.is_file()}
         total = sum(path.stat().st_size for path in stage.rglob("*") if path.is_file())
         if actual != expected:

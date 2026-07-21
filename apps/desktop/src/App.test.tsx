@@ -206,7 +206,7 @@ beforeEach(() => {
 
 it("shows an available update without installing until the user consents", async () => {
   const update = {
-    version: "0.4.0",
+    version: "1.0.0",
     body: "A safer, smoother release.",
   } as never;
   vi.mocked(findAvailableUpdate).mockResolvedValue(update);
@@ -214,7 +214,7 @@ it("shows an available update without installing until the user consents", async
   render(<App />);
   await act(async () => Promise.resolve());
 
-  expect(screen.getByRole("heading", { name: "Aria Focus 0.4.0 is ready" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "Aria Focus 1.0.0 is ready" })).toBeTruthy();
   expect(installAndRelaunch).not.toHaveBeenCalled();
 
   fireEvent.click(screen.getByRole("button", { name: "Download and restart" }));

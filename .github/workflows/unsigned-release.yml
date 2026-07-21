@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Stable version tag to create (for example v0.4.0)
+        description: Stable version tag to create (for example v1.0.0)
         required: true
         type: string
       source_ref:
@@ -88,8 +88,36 @@ jobs:
           node-version: 24.11.1
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build source-only Windows packages
-        run: pnpm tauri build
+      - name: Stage unsigned music library
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $config = Get-Content -Raw release/unsigned-library-assets.json | ConvertFrom-Json
+          New-Item -ItemType Directory -Force release-input | Out-Null
+          foreach ($part in @($config.library_asset_parts)) {
+            gh release download $config.library_release_tag `
+              --repo $env:GITHUB_REPOSITORY `
+              --pattern $part `
+              --dir release-input
+            if ($LASTEXITCODE -ne 0) { throw "Unsigned music library part download failed: $part" }
+          }
+          $archive = Join-Path (Resolve-Path release-input) $config.library_asset_name
+          $output = [System.IO.File]::Open($archive, [System.IO.FileMode]::Create)
+          try {
+            foreach ($part in @($config.library_asset_parts)) {
+              $input = [System.IO.File]::OpenRead((Join-Path (Resolve-Path release-input) $part))
+              try { $input.CopyTo($output) } finally { $input.Dispose() }
+            }
+          } finally { $output.Dispose() }
+          $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
+          if ($actual -ne $config.library_asset_sha256) { throw 'Unsigned music library SHA-256 mismatch.' }
+          python scripts/stage_public_library.py `
+            release/unsigned-library-assets.json `
+            $archive `
+            apps/desktop/src-tauri/private-beta-pack
+      - name: Build unsigned Windows packages with music library
+        run: pnpm -C apps/desktop tauri build --features bundled-listening-test --config src-tauri/tauri.listening-test.conf.json
       - name: Prepare release assets
         shell: pwsh
         run: |
@@ -136,8 +164,42 @@ jobs:
           node-version: 24.11.1
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build source-only macOS package
-        run: pnpm tauri build --config src-tauri/tauri.macos.conf.json
+      - name: Stage unsigned music library
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-input
+          library_tag=$(python -c "import json; print(json.load(open('release/unsigned-library-assets.json', encoding='utf-8'))['library_release_tag'])")
+          library_name=$(python -c "import json; print(json.load(open('release/unsigned-library-assets.json', encoding='utf-8'))['library_asset_name'])")
+          parts=$(python -c "import json; print(' '.join(json.load(open('release/unsigned-library-assets.json', encoding='utf-8'))['library_asset_parts']))")
+          for part in $parts; do
+            gh release download "$library_tag" --repo "$GITHUB_REPOSITORY" --pattern "$part" --dir release-input
+          done
+          export ARIA_LIBRARY_ARCHIVE="$PWD/release-input/$library_name"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          config = json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8'))
+          with Path(os.environ['ARIA_LIBRARY_ARCHIVE']).open('wb') as output:
+              for part in config['library_asset_parts']:
+                  output.write(Path('release-input', part).read_bytes())
+          PY
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          config = json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8'))
+          actual = hashlib.sha256(Path(os.environ['ARIA_LIBRARY_ARCHIVE']).read_bytes()).hexdigest()
+          if actual != config['library_asset_sha256']:
+              raise SystemExit('Unsigned music library SHA-256 mismatch.')
+          PY
+          python scripts/stage_public_library.py \
+            release/unsigned-library-assets.json \
+            "$ARIA_LIBRARY_ARCHIVE" \
+            apps/desktop/src-tauri/private-beta-pack
+      - name: Build unsigned macOS package with music library
+        run: pnpm -C apps/desktop tauri build --features bundled-listening-test --config src-tauri/tauri.macos.listening-test.conf.json
       - name: Prepare release asset
         shell: bash
         run: |
@@ -209,9 +271,9 @@ jobs:
 
           This stable release was built by GitHub Actions from $SOURCE_REF.
 
-          The installers are currently unsigned while trusted code-signing setup is being completed. Verify the downloaded files against SHA256SUMS and download only from this official GitHub repository. Windows and macOS may show an operating-system security warning for an unsigned download.
+          The installers and bundled music library are unsigned. Verify the downloaded installer files against SHA256SUMS and download only from this official GitHub repository. Windows and macOS may show an operating-system security warning for an unsigned download.
 
-          The repository source remains available under the MIT or Apache-2.0 license. The current source-only packages do not include the separately reviewed production music library or the optional Music Studio runtime.
+          The repository source remains available under the MIT or Apache-2.0 license. This release includes the pinned Aria Focus music library; the optional Music Studio runtime is not included.
           EOF
           gh release create "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \

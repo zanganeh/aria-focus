@@ -153,7 +153,7 @@ dependencies = [
 
 [[package]]
 name = "aria-focus-desktop"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "audio-analyzer",
  "audio-engine",
@@ -386,7 +386,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "audio-analyzer"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "ebur128",
  "rustfft",
@@ -405,7 +405,7 @@ checksum = "f93ebbf82d06013f4c41fe71303feb980cddd78496d904d06be627972de51a24"
 
 [[package]]
 name = "audio-engine"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "cpal",
  "opus2",
@@ -696,7 +696,7 @@ dependencies = [
 
 [[package]]
 name = "candidate-ledger"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "catalogue",
  "domain",
@@ -745,7 +745,7 @@ dependencies = [
 
 [[package]]
 name = "catalogue"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "domain",
  "proptest",
@@ -916,7 +916,7 @@ checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
 name = "content-ingest"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "catalogue",
  "serde_json",
@@ -1413,7 +1413,7 @@ dependencies = [
 
 [[package]]
 name = "domain"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "thiserror 2.0.11",
@@ -3299,7 +3299,7 @@ dependencies = [
 
 [[package]]
 name = "music-admin"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "audio-engine",
  "eframe",
@@ -3310,7 +3310,7 @@ dependencies = [
 
 [[package]]
 name = "music-studio-domain"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "domain",
  "serde",
@@ -4071,7 +4071,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "persistence"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "domain",
  "music-studio-domain",
