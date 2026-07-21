@@ -103,6 +103,22 @@ Offline playback works after the content library is installed. No network
 connection is needed for listening or for generation once the Music Studio runtime
 is installed.
 
+### If all activity tiles are disabled after an update
+
+This means startup integrity recovery found a problem in installed content. In
+current releases, legacy pre-release registry records named
+`local-activity-library-v<decimal>` are retired automatically: their files are
+kept under the closed-world safety audit, but they are excluded from playback.
+Your preferences, feedback, and session history do not need to be deleted.
+
+Close and reopen the app, then confirm that the current stable installer was
+downloaded from [GitHub Releases](https://github.com/zanganeh/aria-focus/releases)
+and that its `SHA256SUMS` entry matches. If the issue remains, open **Settings**
+and include the displayed startup error, app version, and operating system in a
+bug report. Maintainers should follow the upgrade matrix in
+[`docs/content-pack-upgrades.md`](docs/content-pack-upgrades.md); a clean install
+alone is not sufficient release evidence.
+
 ## AI Music Studio
 
 The AI Music Studio is a first-class feature. It lets you describe the music you
