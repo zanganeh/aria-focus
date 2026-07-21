@@ -32,7 +32,7 @@ export interface SessionController {
   pause: () => Promise<void>;
   resume: () => Promise<void>;
   stop: () => Promise<void>;
-  changeActivity: (activity: Activity) => Promise<void>;
+  changeActivity: (activity: Activity) => Promise<boolean>;
   changeIntensity: (i: Intensity) => Promise<void>;
   changeMasterVolume: (volume: number) => void;
   changeSessionType: (kind: SessionType) => Promise<void>;
@@ -154,8 +154,10 @@ export function useSession(): SessionController {
       try {
         await apiSetActivity(activity);
         await refresh();
+        return true;
       } catch (e) {
         setError({ message: `Unable to change activity: ${errorDetail(e)}`, sessionLoad: false });
+        return false;
       }
     },
     [refresh],

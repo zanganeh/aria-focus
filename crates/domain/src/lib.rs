@@ -454,6 +454,25 @@ impl Session {
         }
     }
 
+    /// Restart the active session clock without changing its activity, timer
+    /// configuration, stimulation, or audio transport state. Track navigation
+    /// uses this so each selected track starts at zero on the player clock.
+    pub fn reset_timer(&mut self, now: u64) -> Result<(), SessionError> {
+        match self.status {
+            SessionStatus::Playing => {
+                self.phase_start = Some(now);
+                self.accrued_active = 0;
+                Ok(())
+            }
+            SessionStatus::Paused => {
+                self.phase_start = None;
+                self.accrued_active = 0;
+                Ok(())
+            }
+            _ => Err(SessionError::NotActive),
+        }
+    }
+
     pub fn pause(&mut self, now: u64) -> Result<(), SessionError> {
         match self.status {
             SessionStatus::Playing => {

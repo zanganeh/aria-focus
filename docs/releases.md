@@ -6,10 +6,9 @@ Aria Focus uses two separate GitHub Actions paths:
   unsigned source-only Windows and macOS artifacts for inspection. Windows
   remains MSI/NSIS; macOS is app/DMG for Apple Silicon (`aarch64`) and Intel
   (`x86_64`), with separate CI artifacts for each architecture.
-- `.github/workflows/unsigned-release.yml` builds those source-only packages and
-  can publish an unsigned stable GitHub release. This is the current simple
-  distribution path while trusted signing and reviewed content are being
-  completed.
+- `.github/workflows/unsigned-release.yml` builds the unsigned stable packages
+  with the pinned Aria Focus music library. This is the current simple
+  distribution path while trusted signing is being completed.
 - `.github/workflows/public-release.yml` is a tag-triggered, protected release workflow
   for reviewed content and signed public Windows/macOS installers. Manual dispatch
   remains available as a recovery path and can optionally publish the verified draft.
@@ -20,20 +19,19 @@ CI artifacts are never official releases.
 
 Aria Focus releases are stable `vMAJOR.MINOR.PATCH` tags. The release validator
 (`scripts/verify_release_tag.py`) accepts only canonical stable tags and rejects
-prerelease suffixes such as `-beta.1`, `-alpha.2`, or `-rc.3`. The 0.4.0 line is the
-current stable release track; 0.3.0 was the first stable release. Do not reuse
+prerelease suffixes such as `-beta.1`, `-alpha.2`, or `-rc.3`. The 1.0.0 line is the
+current stable release track; 0.4.0 was the previous stable release. Do not reuse
 earlier `0.2.x` beta tags for stable builds.
 
 Windows installer metadata uses the numeric version because MSI does not accept
 text prerelease identifiers. Because releases are now stable, the app, packages,
-About panel, Git tag, and Tauri installer version all carry the same `0.4.0`.
+About panel, Git tag, and Tauri installer version all carry the same `1.0.0`.
 
 The signed workflow fails closed until code signing, notarization, the
 reviewed-library archive, and the Music Studio runtime gates are satisfied. The
-unsigned workflow deliberately does not use those protected gates. It builds the
-source-only app, which uses the app's development audio fallback and does not
-include the separately reviewed production library or the optional Music Studio
-runtime.
+unsigned workflow deliberately does not use those protected gates. It builds
+the app with the pinned unsigned music library and does not include the optional
+Music Studio runtime.
 
 The updater is also fail-closed until its metadata is configured. The checked-in
 Tauri configuration contains the literal placeholder
@@ -123,9 +121,9 @@ Use one version consistently in root `package.json`, the desktop `package.json`,
 and `[workspace.package]` in `Cargo.toml`. Tauri's Windows bundle version is the
 numeric core; for a stable release it equals the package version. For example:
 
-- source version: `0.4.0`;
-- Git tag: `v0.4.0`;
-- Tauri installer version: `0.4.0`.
+- source version: `1.0.0`;
+- Git tag: `v1.0.0`;
+- Tauri installer version: `1.0.0`.
 
 Update release notes and run:
 
@@ -135,13 +133,13 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 python scripts/check_repository_hygiene.py
-python scripts/verify_release_tag.py v0.4.0
+python scripts/verify_release_tag.py v1.0.0
 ```
 
 ## Unsigned stable workflow
 
 For the simple release path, open **Actions → Unsigned stable release → Run
-workflow**, enter the stable tag (for example `v0.4.0`), select `main` as the
+workflow**, enter the stable tag (for example `v1.0.0`), select `main` as the
 source ref, and enable `publish_release`. GitHub Actions validates the repository,
 builds Windows MSI/NSIS and macOS Apple Silicon/Intel DMG packages, computes
 `SHA256SUMS`, creates the stable Git tag, and uploads the packages to GitHub.
@@ -165,7 +163,7 @@ gh run watch
 Pushing an already-reviewed stable version tag also starts `public-release.yml`:
 
 ```powershell
-git push origin v0.4.0
+git push origin v1.0.0
 ```
 
 The workflow fails closed if the trigger tag, project

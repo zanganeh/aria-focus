@@ -497,6 +497,13 @@ impl<A: AudioFacade, P: PreferenceStore + OnboardingStore + SessionHistoryStore>
     pub(crate) fn previous_track(&mut self) -> Result<(), CoordinatorError> {
         Ok(self.audio.navigate_previous()?)
     }
+
+    pub(crate) fn reset_timer(&mut self, now: u64) -> Result<(), CoordinatorError> {
+        let mut candidate = self.session.clone();
+        candidate.reset_timer(now)?;
+        self.session = candidate;
+        Ok(())
+    }
 }
 
 fn to_audio(intensity: Intensity) -> AudioIntensity {

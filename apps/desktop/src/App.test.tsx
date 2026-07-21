@@ -7,6 +7,9 @@ import {
   getActivityGenres,
   getActivityMoods,
   getCurrentSource,
+  nextTrack,
+  previousTrack,
+  resetSessionTimer,
   getItemFeedback,
   getProvenance,
   getStartupHealth,
@@ -72,6 +75,9 @@ vi.mock("./lib/api", () => ({
   renameMyMusic: vi.fn().mockResolvedValue(undefined),
   deleteMyMusic: vi.fn().mockResolvedValue(undefined),
   getCurrentSource: vi.fn(),
+  nextTrack: vi.fn(),
+  previousTrack: vi.fn(),
+  resetSessionTimer: vi.fn(),
   getProvenance: vi.fn(),
   getActivityGenres: vi.fn(),
   getActivityMoods: vi.fn(),
@@ -138,6 +144,9 @@ beforeEach(() => {
   vi.mocked(getActivityGenres).mockReset();
   vi.mocked(getActivityMoods).mockReset();
   vi.mocked(getCurrentSource).mockReset();
+  vi.mocked(nextTrack).mockReset();
+  vi.mocked(previousTrack).mockReset();
+  vi.mocked(resetSessionTimer).mockReset();
   vi.mocked(getItemFeedback).mockReset();
   vi.mocked(getProvenance).mockResolvedValue(null as never);
   vi.mocked(getActivityGenres).mockResolvedValue(EMPTY_GENRES);
@@ -197,7 +206,7 @@ beforeEach(() => {
 
 it("shows an available update without installing until the user consents", async () => {
   const update = {
-    version: "0.4.0",
+    version: "1.0.0",
     body: "A safer, smoother release.",
   } as never;
   vi.mocked(findAvailableUpdate).mockResolvedValue(update);
@@ -205,7 +214,7 @@ it("shows an available update without installing until the user consents", async
   render(<App />);
   await act(async () => Promise.resolve());
 
-  expect(screen.getByRole("heading", { name: "Aria Focus 0.4.0 is ready" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "Aria Focus 1.0.0 is ready" })).toBeTruthy();
   expect(installAndRelaunch).not.toHaveBeenCalled();
 
   fireEvent.click(screen.getByRole("button", { name: "Download and restart" }));
@@ -227,6 +236,49 @@ it("refreshes the callback-published source identity while playback is active", 
   await act(async () => vi.advanceTimersByTimeAsync(500));
   expect(screen.getByText(/Second Track/)).toBeTruthy();
   expect(getCurrentSource).toHaveBeenCalledTimes(2);
+});
+
+it("navigates in both directions and resets the timer after the committed track changes", async () => {
+  const trackA = {
+    pack_id: "pack-a",
+    pack_title: "Pack A",
+    item_id: "item-a",
+    item_title: "First Track",
+    variant_id: "base",
+    fallback: false,
+    navigation_available: true,
+  };
+  const trackB = { ...trackA, item_id: "item-b", item_title: "Second Track" };
+  let current = trackA;
+
+  vi.mocked(getCurrentSource).mockReset();
+  vi.mocked(getCurrentSource).mockImplementation(async () => current);
+  vi.mocked(nextTrack).mockImplementation(async () => {
+    current = trackB;
+  });
+  vi.mocked(previousTrack).mockImplementation(async () => {
+    current = trackA;
+  });
+
+  render(<App />);
+  await act(async () => Promise.resolve());
+  fireEvent.click(screen.getByRole("button", { name: "Open player" }));
+  const next = screen.getByRole("button", { name: "Next installed track" });
+  const previous = screen.getByRole("button", { name: "Previous installed track" });
+
+  await act(async () => {
+    fireEvent.click(next);
+    await Promise.resolve();
+  });
+  expect(screen.getByText(/Second Track/)).toBeTruthy();
+  expect(resetSessionTimer).toHaveBeenCalledOnce();
+
+  await act(async () => {
+    fireEvent.click(previous);
+    await Promise.resolve();
+  });
+  expect(screen.getByText(/First Track/)).toBeTruthy();
+  expect(resetSessionTimer).toHaveBeenCalledTimes(2);
 });
 
 it("uses approved cover art as player and focus-view background only", async () => {
@@ -604,6 +656,7 @@ it("uses clear pages and keeps an active-session route back to the player", asyn
 
   fireEvent.click(screen.getByRole("button", { name: "Open player" }));
   expect(screen.getByRole("region", { name: "Focus player" })).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Active focus session" })).toBeNull();
 });
 
 it("opens Music Studio from the simple Library card", async () => {
@@ -682,9 +735,33 @@ it("starts directly from a tile and keeps optional controls in bottom settings",
   await act(async () => Promise.resolve());
   expect(mockSession.changeActivity).toHaveBeenCalledWith("creativity");
   expect(mockSession.start).toHaveBeenCalledOnce();
+  expect(screen.getByRole("region", { name: "Focus player" })).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Choose a focus activity" })).toBeNull();
 
   fireEvent.click(screen.getByRole("button", { name: "Settings" }));
   expect(screen.getByRole("heading", { name: "Sound and timer" })).toBeTruthy();
   expect(screen.getByRole("group", { name: "Music genre" })).toBeTruthy();
   expect(screen.getByRole("group", { name: "Session timer" })).toBeTruthy();
+});
+
+it("opens the destination player immediately while an activity start is still preparing", async () => {
+  mockSession.snapshot = { ...mockSession.snapshot, status: "idle" };
+  let resolveStart!: () => void;
+  mockSession.start.mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        resolveStart = resolve;
+      }),
+  );
+
+  render(<App />);
+  await act(async () => Promise.resolve());
+  fireEvent.click(screen.getByRole("button", { name: "Start Motivation" }));
+  await act(async () => Promise.resolve());
+
+  expect(screen.getByRole("region", { name: "Focus player" })).toBeTruthy();
+  expect(screen.getByText("Loading Motivation")).toBeTruthy();
+  expect(screen.queryByText("First Track")).toBeNull();
+
+  await act(async () => resolveStart());
 });
