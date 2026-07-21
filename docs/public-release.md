@@ -1,14 +1,13 @@
 # Aria Focus public release
 
-The 1.0.0 line is the current stable release track; 0.4.0 was the previous stable
-release. A tag must be a canonical
-stable `vMAJOR.MINOR.PATCH` tag; prerelease suffixes are rejected by
+The stable release track is always a canonical stable `vMAJOR.MINOR.PATCH` tag;
+prerelease suffixes are rejected by
 `scripts/verify_release_tag.py`. The first reviewed and signed public candidate
 is blocked until every gate in this document passes.
 
-Windows installer metadata uses the numeric version `1.0.0` because MSI does not
-accept text prerelease identifiers; the app, packages, About panel, and Git tag all
-carry `1.0.0`.
+Windows installer metadata uses the numeric version because MSI does not accept
+text prerelease identifiers; the app, packages, About panel, and Git tag must all
+carry the same stable version.
 
 ## External approvals
 
@@ -60,7 +59,8 @@ dependency licence report, perform clean-install and legacy-data-migration E2E,
 then attach only the signed artifacts to the public GitHub release.
 
 The legacy-data E2E must follow the complete matrix in
-[`content-pack-upgrades.md`](content-pack-upgrades.md), including the retired-v1/current-v2 case.
+[`content-pack-upgrades.md`](content-pack-upgrades.md), including a retired
+`local-activity-library-v2` record alongside the current Aria Focus library.
 Do not publish a build whose content tests ran only against an empty profile.
 
 The repository workflow performs the tag creation, build, SignPath submission,

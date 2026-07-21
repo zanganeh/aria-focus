@@ -19,13 +19,14 @@ CI artifacts are never official releases.
 
 Aria Focus releases are stable `vMAJOR.MINOR.PATCH` tags. The release validator
 (`scripts/verify_release_tag.py`) accepts only canonical stable tags and rejects
-prerelease suffixes such as `-beta.1`, `-alpha.2`, or `-rc.3`. The 1.0.0 line is the
-current stable release track; 0.4.0 was the previous stable release. Do not reuse
-earlier `0.2.x` beta tags for stable builds.
+prerelease suffixes such as `-beta.1`, `-alpha.2`, or `-rc.3`. Do not reuse
+historical beta tags or copy an old version into a new release. GitHub's latest
+stable release page is the source of truth for the currently published version.
 
 Windows installer metadata uses the numeric version because MSI does not accept
-text prerelease identifiers. Because releases are now stable, the app, packages,
-About panel, Git tag, and Tauri installer version all carry the same `1.0.0`.
+text prerelease identifiers. Because releases are stable, the app, packages,
+About panel, Git tag, and Tauri installer version must all carry the same numeric
+version.
 
 The signed workflow fails closed until code signing, notarization, the
 reviewed-library archive, and the Music Studio runtime gates are satisfied. The
@@ -121,9 +122,9 @@ Use one version consistently in root `package.json`, the desktop `package.json`,
 and `[workspace.package]` in `Cargo.toml`. Tauri's Windows bundle version is the
 numeric core; for a stable release it equals the package version. For example:
 
-- source version: `1.0.0`;
-- Git tag: `v1.0.0`;
-- Tauri installer version: `1.0.0`.
+- source version: `<VERSION>`;
+- Git tag: `v<VERSION>`;
+- Tauri installer version: `<VERSION>`.
 
 Update release notes and run:
 
@@ -133,13 +134,13 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 python scripts/check_repository_hygiene.py
-python scripts/verify_release_tag.py v1.0.0
+python scripts/verify_release_tag.py v1.2.3
 ```
 
 ## Unsigned stable workflow
 
 For the simple release path, open **Actions → Unsigned stable release → Run
-workflow**, enter the stable tag (for example `v1.0.0`), select `main` as the
+workflow**, enter the stable tag (for example `v1.2.3`), select `main` as the
 source ref, and enable `publish_release`. GitHub Actions validates the repository,
 builds Windows MSI/NSIS and macOS Apple Silicon/Intel DMG packages, computes
 `SHA256SUMS`, creates the stable Git tag, and uploads the packages to GitHub.
@@ -163,7 +164,7 @@ gh run watch
 Pushing an already-reviewed stable version tag also starts `public-release.yml`:
 
 ```powershell
-git push origin v1.0.0
+git push origin v1.2.3
 ```
 
 The workflow fails closed if the trigger tag, project
@@ -189,8 +190,9 @@ it before uploading.
 
 Do not publish immediately after automation finishes. Download the signed draft
 assets and complete the Windows matrix in `docs/content-pack-upgrades.md`,
-including a clean profile and an upgrade profile containing retired v1 plus
-current v2. Confirm offline activity-tile playback on a real audio device.
+including a clean profile and an upgrade profile containing a retired
+`local-activity-library-v2` record plus the current Aria Focus library. Confirm
+offline activity-tile playback on a real audio device.
 
 Compare downloaded file hashes with `SHA256SUMS`, record the manual results in
 the release notes, then publish the draft through GitHub. If any gate fails,
