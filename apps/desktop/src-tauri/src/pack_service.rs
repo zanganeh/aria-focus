@@ -28,7 +28,12 @@ use serde::{Deserialize, Serialize};
 const VALIDATED_STATUS: &str = "validated_metadata";
 const OWNER_WAIVED_BUNDLED_STATUS: &str = "owner_waived_bundled_private_beta";
 const GENERATED_LOCAL_STATUS: &str = "generated_local";
+// These packs were bundled by pre-release builds. They may still be present in
+// an existing registry after an upgrade, but they are no longer trusted or
+// playable by the current build. Keep their directories registered so the
+// closed-world audit can still protect them from unsafe/untracked files.
 const RETIRED_PRIVATE_BETA_PACK_IDS: &[&str] = &["local-activity-library-v1"];
+const RETIRED_PRIVATE_BETA_PACK_PREFIX: &str = "local-activity-library-v";
 const RECEIPT_FORMAT_VERSION: u32 = 1;
 const MAX_RECEIPT_BYTES: u64 = 8 * 1024 * 1024;
 
@@ -1909,7 +1914,7 @@ impl<R: CatalogueRegistry> PackService<R> {
             })?;
             if record.pack_id == trust.pack_id {
                 self.verify_private_beta_trust(&manifest, trust)?;
-            } else if !RETIRED_PRIVATE_BETA_PACK_IDS.contains(&record.pack_id.as_str()) {
+            } else if !is_retired_private_beta_pack_id(&record.pack_id) {
                 return Err(registry_preflight_error(
                     &record.pack_id,
                     "private-beta pack is not trusted by this build",
@@ -1958,7 +1963,10 @@ impl<R: CatalogueRegistry> PackService<R> {
             ));
         }
         let pinned_listening_test = record.status == OWNER_WAIVED_BUNDLED_STATUS
-            && TRUST.is_some_and(|trust| !trust.published && trust.pack_id == record.pack_id);
+            && TRUST.is_some_and(|trust| {
+                (!trust.published && trust.pack_id == record.pack_id)
+                    || is_retired_private_beta(record)
+            });
         if !pinned_listening_test {
             manifest
                 .validate_app_compatibility(env!("CARGO_PKG_VERSION"))
@@ -2021,7 +2029,16 @@ fn verify_trusted_bundled_pack(
 fn is_retired_private_beta(record: &InstalledPackRecord) -> bool {
     record.status == OWNER_WAIVED_BUNDLED_STATUS
         && TRUST.is_some_and(|trust| record.pack_id != trust.pack_id)
-        && RETIRED_PRIVATE_BETA_PACK_IDS.contains(&record.pack_id.as_str())
+        && is_retired_private_beta_pack_id(&record.pack_id)
+}
+
+fn is_retired_private_beta_pack_id(pack_id: &str) -> bool {
+    RETIRED_PRIVATE_BETA_PACK_IDS.contains(&pack_id)
+        || pack_id
+            .strip_prefix(RETIRED_PRIVATE_BETA_PACK_PREFIX)
+            .is_some_and(|version| {
+                !version.is_empty() && version.chars().all(|c| c.is_ascii_digit())
+            })
 }
 
 impl<R: CatalogueRegistry + GenrePreferenceStore + MoodPreferenceStore + ItemFeedbackStore>
@@ -3429,7 +3446,8 @@ mod tests {
             // Retirement is meaningful only in a build that pins a successor.
             return;
         };
-        let retired_id = RETIRED_PRIVATE_BETA_PACK_IDS[0];
+        // v2 is the legacy pack that was observed blocking the released app.
+        let retired_id = "local-activity-library-v2";
         assert_ne!(trust.pack_id, retired_id);
 
         let temp = TempDir::new().unwrap();
@@ -3460,6 +3478,21 @@ mod tests {
 
         assert!(service.validated_records().unwrap().is_empty());
         assert!(retired_path.exists());
+    }
+
+    #[test]
+    fn retired_private_beta_pack_ids_cover_legacy_and_future_versions() {
+        for pack_id in [
+            "local-activity-library-v1",
+            "local-activity-library-v2",
+            "local-activity-library-v999",
+        ] {
+            assert!(is_retired_private_beta_pack_id(pack_id), "{pack_id}");
+        }
+        assert!(!is_retired_private_beta_pack_id("local-activity-library"));
+        assert!(!is_retired_private_beta_pack_id(
+            "local-activity-library-v2-extra"
+        ));
     }
 
     #[test]
