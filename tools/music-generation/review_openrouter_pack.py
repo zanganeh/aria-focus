@@ -22,7 +22,7 @@ class ReviewError(ValueError):
     """A review cannot be safely applied to this manifest."""
 
 
-REVIEWER_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{1,63}$")
+REVIEWER_ID = re.compile(r"^[a-z0-9][a-z0-9_.-]{1,63}$")
 
 
 def strict_json(path: Path) -> dict[str, Any]:
@@ -88,7 +88,7 @@ def apply_review(
     reviewed_at: str,
 ) -> dict[str, Any]:
     if not REVIEWER_ID.fullmatch(reviewer_id):
-        raise ReviewError("reviewer-id must be 2-64 characters using letters, numbers, _, -, or .")
+        raise ReviewError("reviewer-id must be 2-64 lowercase characters using letters, numbers, _, -, or .")
     if status not in {"approved", "rejected"}:
         raise ReviewError("status must be approved or rejected")
     notes = notes.strip()
