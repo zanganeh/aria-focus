@@ -3719,9 +3719,32 @@ mod tests {
             // This upgrade profile requires the real staged successor pack.
             return;
         };
-        let resource_pack = std::env::var_os("ARIA_FOCUS_BUNDLED_PACK_DIR")
+        let configured = std::env::var_os("ARIA_FOCUS_BUNDLED_PACK_DIR")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("private-beta-pack"));
+            .unwrap_or_else(|| PathBuf::from("private-beta-pack"));
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let resource_pack = if configured.is_absolute() {
+            configured
+        } else {
+            // Cargo tests may execute with either the workspace root or the
+            // crate directory as their current directory. Resolve the same
+            // repository-relative path accepted by build.rs so the upgrade
+            // profile tests the staged resource instead of a missing path.
+            let workspace_root = manifest_dir
+                .parent()
+                .and_then(Path::parent)
+                .and_then(Path::parent)
+                .map(PathBuf::from)
+                .unwrap_or_else(|| manifest_dir.clone());
+            [
+                configured.clone(),
+                manifest_dir.join(&configured),
+                workspace_root.join(&configured),
+            ]
+            .into_iter()
+            .find(|candidate| candidate.join("manifest.json").is_file())
+            .unwrap_or_else(|| manifest_dir.join(configured))
+        };
         let resource_dir = resource_pack
             .parent()
             .expect("staged private-beta pack should have a parent directory")
