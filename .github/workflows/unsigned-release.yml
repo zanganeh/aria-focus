@@ -201,7 +201,7 @@ jobs:
           else
             gh release download "$library_tag" --repo "$GITHUB_REPOSITORY" --pattern "$library_name" --dir release-input
           fi
-          python -c "import hashlib, json, os; from pathlib import Path; config=json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8')); actual=hashlib.sha256(Path(os.environ['ARIA_LIBRARY_ARCHIVE']).read_bytes()).hexdigest(); raise SystemExit('Unsigned music library SHA-256 mismatch.') if actual != config['library_asset_sha256'] else None"
+          python -c "import hashlib, json, os, sys; from pathlib import Path; config=json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8')); actual=hashlib.sha256(Path(os.environ['ARIA_LIBRARY_ARCHIVE']).read_bytes()).hexdigest(); sys.exit('Unsigned music library SHA-256 mismatch.' if actual != config['library_asset_sha256'] else 0)"
           python scripts/stage_public_library.py \
             release/unsigned-library-assets.json \
             "$ARIA_LIBRARY_ARCHIVE" \

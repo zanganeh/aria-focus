@@ -119,6 +119,7 @@ fn fixture_manifest(bytes: &[u8]) -> ContentPackManifest {
                         notes: "Generated fixture metadata review.".to_owned(),
                         representative_work_session: true,
                         session_minutes: None,
+                        status: HumanQaStatus::Approved,
                     },
                     HumanReview {
                         reviewer_id: "reviewer-two".to_owned(),
@@ -126,6 +127,7 @@ fn fixture_manifest(bytes: &[u8]) -> ContentPackManifest {
                         notes: "Second generated fixture metadata review.".to_owned(),
                         representative_work_session: false,
                         session_minutes: None,
+                        status: HumanQaStatus::Approved,
                     },
                 ],
                 protocol_version: None,
