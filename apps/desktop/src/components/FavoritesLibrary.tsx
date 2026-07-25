@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listFavorites, removeFavorite, startFavorite } from "../lib/api";
 import type { FavoriteLibraryItem } from "../lib/types";
 
@@ -17,6 +17,8 @@ export function FavoritesLibrary({
 }) {
   const [items, setItems] = useState<FavoriteLibraryItem[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const pageSize = 3;
 
   useEffect(() => {
     let current = true;
@@ -63,6 +65,13 @@ export function FavoritesLibrary({
       .finally(() => setBusy(null));
   };
 
+  const pageCount = Math.max(1, Math.ceil((items?.length ?? 0) / pageSize));
+  const visibleItems = useMemo(
+    () => (items ?? []).slice(page * pageSize, (page + 1) * pageSize),
+    [items, page],
+  );
+  useEffect(() => setPage((current) => Math.min(current, pageCount - 1)), [pageCount]);
+
   return (
     <details className="favorites-library">
       <summary>Favorites library</summary>
@@ -71,7 +80,7 @@ export function FavoritesLibrary({
       )}
       {items && items.length > 0 && (
         <ul>
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <li key={`${item.activity}:${item.item_id}`}>
               <strong>{item.title}</strong> · {item.activity.replace("_", " ")} ·{" "}
               {item.genre.join(", ") || "No genre"} · {item.moods.join(", ") || "No mood"}
@@ -90,6 +99,27 @@ export function FavoritesLibrary({
             </li>
           ))}
         </ul>
+      )}
+      {pageCount > 1 && (
+        <div className="library-pagination" aria-label="Favourite pages">
+          <button
+            type="button"
+            disabled={page === 0}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+          >
+            Previous
+          </button>
+          <span>
+            Page {page + 1} of {pageCount}
+          </span>
+          <button
+            type="button"
+            disabled={page + 1 >= pageCount}
+            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+          >
+            Next
+          </button>
+        </div>
       )}
     </details>
   );

@@ -1,0 +1,68 @@
+{
+  "schema": "aria-focus.music-generation-experiment",
+  "schema_version": 1,
+  "experiment_id": "motivation-prompt-pilot-2026-07-22",
+  "goal": "Compare prompt structures for instrumental motivation music without changing the generator.",
+  "activity": "motivation",
+  "generator_baseline": "ACE-Step 1.5 or the currently approved local generator; pin the exact snapshot before running",
+  "fixed_parameters": {
+    "duration_seconds": 180,
+    "sample_rate_hz": 48000,
+    "codec": "flac",
+    "tempo_bpm": 108,
+    "meter": "4/4",
+    "seeds": [101, 202, 303, 404],
+    "instrumental_only": true,
+    "same_model_for_all_conditions": true
+  },
+  "conditions": [
+    {
+      "id": "a-baseline",
+      "hypothesis": "A concise description is a useful baseline but may produce generic or less controllable results.",
+      "positive_prompt": "Instrumental electronic motivation music for starting focused work, driving and energizing but optimistic and uplifting, arp synth, synth bass, electric keys, electronic percussion, organic percussion, processed strings, textural soundscape, bright full production.",
+      "negative_prompt": "vocals, voice, speech, chanting, whispers"
+    },
+    {
+      "id": "b-structured",
+      "hypothesis": "Ordered musical blocks improve genre, mood, tempo, and instrumentation adherence.",
+      "positive_prompt": "Instrumental electronic melodic focus groove for starting focused work. Mood: energized, optimistic, determined, uplifting. Tempo: 108 BPM, steady 4/4. Roles: restrained background arp synth pulse, warm synth bass, soft electric keys, light electronic percussion with sparse organic accents. Texture: wide processed strings and a soft atmospheric pad, clean modern mix. Arrangement: neutral intro, stable groove, gradual timbral evolution, gentle lift without a drop, neutral outro.",
+      "negative_prompt": "vocals, voice, speech, chanting, whispers, lead hook, solo, alarm, notification sound, dramatic build, breakdown, riser, sudden silence"
+    },
+    {
+      "id": "c-structured-focus",
+      "hypothesis": "Explicit low-distraction constraints improve focus utility and repeat willingness without making the result flat.",
+      "positive_prompt": "Instrumental electronic motivation soundtrack for beginning a focused work session. Steady 108 BPM 4/4 pulse, energized and optimistic with restrained playful uplift. Background arp synth and warm synth bass carry a stable groove; soft electric keys, sparse organic percussion, light electronic percussion, processed strings, and an atmospheric texture remain supportive rather than foregrounded. Use a neutral intro, small timbral changes every 16 to 32 bars, controlled density, gentle continuous lift, no dramatic sections, and a calm crossfade-friendly outro. Clean, spacious, non-fatiguing production.",
+      "negative_prompt": "vocals, voice, speech, chanting, whispers, memorable melody, foreground lead, solo, fill-heavy drums, alarm, notification sound, sharp transient, riser, drop, breakdown, dramatic build, sudden silence, harsh high frequencies, abrupt key change"
+    }
+  ],
+  "review": {
+    "blind": true,
+    "reviewers_minimum": 2,
+    "short_listening_seconds": 90,
+    "task_review_minutes": 15,
+    "rating_scale": "1-7",
+    "dimensions": [
+      "focus_utility",
+      "prompt_adherence",
+      "musical_coherence",
+      "pleasantness",
+      "low_distraction",
+      "repeat_willingness"
+    ],
+    "record_skip_reasons": true,
+    "record_pairwise_preference": true
+  },
+  "artifact_requirements": [
+    "candidate_id",
+    "condition_id",
+    "seed",
+    "positive_prompt",
+    "negative_prompt",
+    "generator_and_model_snapshot",
+    "generation_parameters",
+    "generation_timestamp_utc",
+    "machine_and_gpu",
+    "asset_sha256",
+    "analysis_report_sha256"
+  ]
+}

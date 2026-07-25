@@ -21,32 +21,21 @@ export function GenreSelector({ state, disabled, onChange }: Props) {
           option.
         </p>
       )}
-      <div className="genre-options">
-        <label className={`genre-option${selected === null ? " selected" : ""}`}>
-          <input
-            type="radio"
-            name="music-genre"
-            checked={selected === null}
-            onChange={() => onChange(null)}
-          />
-          Any compatible genre
-        </label>
-        {state?.available_genres.map((genre) => (
-          <label
-            key={genre.id}
-            className={`genre-option${selected === genre.id ? " selected" : ""}`}
-          >
-            <input
-              type="radio"
-              name="music-genre"
-              value={genre.id}
-              checked={selected === genre.id}
-              onChange={() => onChange(genre.id)}
-            />
-            {genre.label}
-          </label>
-        ))}
-      </div>
+      <label className="genre-select-label">
+        <span className="visually-hidden">Choose a music genre</span>
+        <select
+          aria-label="Choose a music genre"
+          value={selected ?? ""}
+          onChange={(event) => onChange(event.target.value || null)}
+        >
+          <option value="">Any compatible genre</option>
+          {state?.available_genres.map((genre) => (
+            <option key={genre.id} value={genre.id}>
+              {genre.label}
+            </option>
+          ))}
+        </select>
+      </label>
     </fieldset>
   );
 }

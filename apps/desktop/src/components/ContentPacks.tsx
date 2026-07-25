@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { chooseAndImportContentPack, listContentPacks } from "../lib/api";
 import type { ContentPackSummary } from "../lib/types";
 
@@ -12,6 +12,8 @@ export function ContentPacks({ onCatalogueChange, disabled = false }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const pageSize = 3;
 
   useEffect(() => {
     let active = true;
@@ -45,6 +47,13 @@ export function ContentPacks({ onCatalogueChange, disabled = false }: Props) {
     }
   }
 
+  const pageCount = Math.max(1, Math.ceil(packs.length / pageSize));
+  const visiblePacks = useMemo(
+    () => packs.slice(page * pageSize, (page + 1) * pageSize),
+    [packs, page],
+  );
+  useEffect(() => setPage((current) => Math.min(current, pageCount - 1)), [pageCount]);
+
   return (
     <section className="content-packs" aria-labelledby="content-packs-title">
       <div className="content-packs-heading">
@@ -74,7 +83,7 @@ export function ContentPacks({ onCatalogueChange, disabled = false }: Props) {
         <p className="empty-packs">No validated content packs installed.</p>
       ) : (
         <ul className="pack-list">
-          {packs.map((pack) => (
+          {visiblePacks.map((pack) => (
             <li key={pack.id}>
               <span>
                 {pack.title}
@@ -88,6 +97,27 @@ export function ContentPacks({ onCatalogueChange, disabled = false }: Props) {
             </li>
           ))}
         </ul>
+      )}
+      {pageCount > 1 && (
+        <div className="library-pagination" aria-label="Content pack pages">
+          <button
+            type="button"
+            disabled={page === 0}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+          >
+            Previous
+          </button>
+          <span>
+            Page {page + 1} of {pageCount}
+          </span>
+          <button
+            type="button"
+            disabled={page + 1 >= pageCount}
+            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+          >
+            Next
+          </button>
+        </div>
       )}
     </section>
   );

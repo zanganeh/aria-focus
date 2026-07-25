@@ -50,11 +50,26 @@ def verify(root: Path) -> None:
         reviews = qa.get("reviews", [])
         if qa.get("status") != "approved" or len(reviews) < 2:
             raise ValueError(f"{item.get('id')} lacks two-reviewer approval")
+        reviewer_ids = []
+        for review in reviews:
+            if not isinstance(review, dict) or review.get("status") != "approved":
+                raise ValueError(f"{item.get('id')} contains a non-approved review")
+            reviewer_id = review.get("reviewer_id")
+            if not isinstance(reviewer_id, str) or not reviewer_id:
+                raise ValueError(f"{item.get('id')} contains a review without reviewer identity")
+            reviewer_ids.append(reviewer_id)
+        if len(set(reviewer_ids)) < 2:
+            raise ValueError(f"{item.get('id')} needs two distinct reviewers")
+        if not any(review.get("representative_work_session") for review in reviews):
+            raise ValueError(f"{item.get('id')} lacks representative work-session evidence")
         provenance = item.get("provenance", {})
         if not provenance.get("licence_id") or not provenance.get("licence_url"):
             raise ValueError(f"{item.get('id')} lacks licence evidence")
         if provenance.get("contains_lyrics") or provenance.get("contains_speech"):
             raise ValueError(f"{item.get('id')} is not instrumental")
+        analysis = item.get("analysis", {})
+        if not isinstance(analysis, dict) or analysis.get("hard_rejections"):
+            raise ValueError(f"{item.get('id')} has unresolved technical analyzer rejections")
         suitable = [
             entry["activity"]
             for entry in item.get("activity_suitability", [])
@@ -78,6 +93,9 @@ def verify(root: Path) -> None:
         cover = item.get("cover")
         if not isinstance(cover, dict):
             raise ValueError(f"{item.get('id')} is missing cover art")
+        cover_provenance = cover.get("provenance", {})
+        if not isinstance(cover_provenance, dict) or not cover_provenance.get("licence_id") or not cover_provenance.get("licence_url"):
+            raise ValueError(f"{item.get('id')} cover lacks licence evidence")
         cover_relative = cover.get("path", "")
         cover_path = root / cover_relative
         if (

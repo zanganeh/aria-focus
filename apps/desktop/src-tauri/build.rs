@@ -34,13 +34,41 @@ fn collect_plain_files(root: &std::path::Path) -> Vec<String> {
     files
 }
 
+fn staged_pack_path() -> PathBuf {
+    let configured = env::var_os("ARIA_FOCUS_BUNDLED_PACK_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from("private-beta-pack"));
+
+    if configured.is_absolute() {
+        return configured;
+    }
+
+    // Tauri is commonly invoked through `pnpm -C apps/desktop`, while CI may
+    // invoke it from the repository root. Accept both working directories so
+    // a relative CI path cannot silently disable the embedded trust metadata.
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let candidates = [
+        configured.clone(),
+        manifest_dir.join(&configured),
+        manifest_dir
+            .parent()
+            .and_then(std::path::Path::parent)
+            .and_then(std::path::Path::parent)
+            .map(|root| root.join(&configured))
+            .unwrap_or_default(),
+    ];
+
+    candidates
+        .into_iter()
+        .find(|candidate| candidate.join("manifest.json").is_file())
+        .unwrap_or_else(|| manifest_dir.join(configured))
+}
+
 // Lossless -1 dB derivative of the owner-authorized Track E source. Its
 // immutable lineage points back to candidate SHA-256 945c74c1...50a727d.
 fn main() {
     println!("cargo:rerun-if-env-changed=ARIA_FOCUS_BUNDLED_PACK_DIR");
-    let staged = env::var_os("ARIA_FOCUS_BUNDLED_PACK_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("private-beta-pack"));
+    let staged = staged_pack_path();
     println!("cargo:rerun-if-changed={}", staged.display());
     let generated =
         PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR missing")).join("private_beta_trust.rs");
@@ -50,7 +78,15 @@ fn main() {
         !(published && listening_test),
         "bundled-library and bundled-listening-test are mutually exclusive"
     );
-    let source = if (published || listening_test) && staged.join("manifest.json").is_file() {
+    let bundling_pack = published || listening_test;
+    if bundling_pack {
+        assert!(
+            staged.join("manifest.json").is_file(),
+            "a bundled-library build requires a staged pack manifest; resolved path: {}",
+            staged.display()
+        );
+    }
+    let source = if bundling_pack {
         let bytes =
             fs::read(staged.join("manifest.json")).expect("read staged private-beta manifest");
         let manifest: catalogue::ContentPackManifest = serde_json::from_slice(&bytes)

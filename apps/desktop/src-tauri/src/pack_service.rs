@@ -3,6 +3,7 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use crate::music_batch::{cloud_cover_data_url, load_active_library};
 use crate::private_beta::{PrivateBetaTrust, TRUST};
 use audio_engine::{
     decode_track_with_limit, AuthoredRegion, AuthoredRegionKind, DecodeExpectation, DecodedProgram,
@@ -32,7 +33,10 @@ const GENERATED_LOCAL_STATUS: &str = "generated_local";
 // an existing registry after an upgrade, but they are no longer trusted or
 // playable by the current build. Keep their directories registered so the
 // closed-world audit can still protect them from unsafe/untracked files.
-const RETIRED_PRIVATE_BETA_PACK_IDS: &[&str] = &["local-activity-library-v1"];
+const RETIRED_PRIVATE_BETA_PACK_IDS: &[&str] = &[
+    "local-activity-library-v1",
+    "aria-focus-library-unsigned-v1",
+];
 const RETIRED_PRIVATE_BETA_PACK_PREFIX: &str = "local-activity-library-v";
 const RECEIPT_FORMAT_VERSION: u32 = 1;
 const MAX_RECEIPT_BYTES: u64 = 8 * 1024 * 1024;
@@ -154,6 +158,7 @@ pub(crate) struct PackService<R: CatalogueRegistry> {
     recent_item_id: Option<String>,
     resource_dir: Option<PathBuf>,
     private_beta_enabled: bool,
+    verified_media_records: HashSet<String>,
 }
 
 impl<R: CatalogueRegistry> PackService<R> {
@@ -165,6 +170,7 @@ impl<R: CatalogueRegistry> PackService<R> {
             recent_item_id: None,
             resource_dir: None,
             private_beta_enabled: false,
+            verified_media_records: HashSet::new(),
         }
     }
 
@@ -183,6 +189,7 @@ impl<R: CatalogueRegistry> PackService<R> {
             recent_item_id: None,
             resource_dir: None,
             private_beta_enabled: false,
+            verified_media_records: HashSet::new(),
         }
     }
 
@@ -207,6 +214,14 @@ impl<R: CatalogueRegistry> PackService<R> {
     where
         R: ItemFeedbackStore,
     {
+        // A validated cloud activation is the preferred library. If the
+        // activation is unavailable or a media integrity check fails, fall
+        // through to the durable offline catalogue instead of breaking
+        // listening for the user.
+        if let Ok(Some(prepared)) = self.prepare_active_cloud_playback(activity, genre_id, mood_id)
+        {
+            return Ok(Some(prepared));
+        }
         self.install_bundled_private_beta()?;
         let records = self.validated_records()?;
         let manifests = records
@@ -235,6 +250,100 @@ impl<R: CatalogueRegistry> PackService<R> {
         let primary_item_id = selection.primary().item_id.clone();
         self.decode_selection(&manifests, selection.tracks, primary_item_id)
             .map(Some)
+    }
+
+    fn prepare_active_cloud_playback(
+        &self,
+        activity: Activity,
+        genre_id: Option<&str>,
+        mood_id: Option<&str>,
+    ) -> Result<Option<PreparedPackPlayback>, PackServiceError> {
+        let Some(library) =
+            load_active_library(&self.content_root).map_err(PackServiceError::Audio)?
+        else {
+            return Ok(None);
+        };
+        let activity_key = activity.storage_key();
+        let mut candidates = library
+            .items
+            .iter()
+            .filter(|item| {
+                item.activity == activity_key
+                    && genre_id.is_none_or(|selected| {
+                        item.genre_id
+                            .as_deref()
+                            .is_none_or(|value| value == selected)
+                    })
+                    && mood_id.is_none_or(|selected| {
+                        item.mood_id
+                            .as_deref()
+                            .is_none_or(|value| value == selected)
+                    })
+            })
+            .collect::<Vec<_>>();
+        if candidates.is_empty() {
+            return Ok(None);
+        }
+        let start = self
+            .recent_item_id
+            .as_deref()
+            .and_then(|recent| candidates.iter().position(|item| item.item_id == recent))
+            .map_or(0, |index| (index + 1) % candidates.len());
+        candidates.rotate_left(start);
+        candidates.truncate(audio_engine::media::MAX_PROGRAM_TRACKS);
+
+        let mut decoded = Vec::with_capacity(candidates.len());
+        let mut remaining_samples = MAX_PROGRAM_SAMPLES;
+        for item in candidates {
+            let bytes = fs::metadata(&item.audio_path)
+                .map_err(|error| PackServiceError::Audio(error.to_string()))?
+                .len();
+            let codec = item
+                .audio_codec
+                .as_deref()
+                .and_then(MediaCodec::from_storage_name)
+                .unwrap_or(MediaCodec::Wav);
+            let expectation = DecodeExpectation {
+                path: PathBuf::from(&item.audio_path),
+                codec,
+                bytes,
+                sha256: item.audio_sha256.clone(),
+                sample_rate_hz: item.sample_rate_hz,
+                channels: item.channels,
+                bit_depth: item.bit_depth,
+                duration_seconds: item.duration_seconds,
+                regions: vec![AuthoredRegion {
+                    kind: AuthoredRegionKind::Loop,
+                    start_seconds: 0.0,
+                    end_seconds: item.duration_seconds,
+                }],
+                label: SourceLabel {
+                    pack_id: format!("cloud.{}", library.version),
+                    pack_title: "Aria Focus Cloud Library".to_owned(),
+                    item_id: item.item_id.clone(),
+                    item_title: item.title.clone(),
+                    variant_id: format!("cloud-{}", codec.storage_name()),
+                },
+            };
+            let track = decode_track_with_limit(&expectation, remaining_samples)
+                .map_err(|error| PackServiceError::Audio(error.to_string()))?;
+            remaining_samples = remaining_samples
+                .checked_sub(track.samples.len())
+                .ok_or_else(|| PackServiceError::Audio("playback sample limit exhausted".into()))?;
+            decoded.push(track);
+        }
+        let primary_item_id = decoded
+            .first()
+            .map(|track| track.label.item_id.clone())
+            .ok_or_else(|| {
+                PackServiceError::Audio("cloud library has no playable tracks".into())
+            })?;
+        let program = DecodedProgram::new(decoded)
+            .map_err(|error| PackServiceError::Audio(error.to_string()))?;
+        Ok(Some(PreparedPackPlayback {
+            program,
+            primary_item_id,
+        }))
     }
 
     /// Revalidates the installed catalogue and decodes the exact requested
@@ -472,6 +581,10 @@ impl<R: CatalogueRegistry> PackService<R> {
         pack_id: &str,
         item_id: &str,
     ) -> Result<Option<String>, PackServiceError> {
+        if pack_id.starts_with("cloud.") {
+            return cloud_cover_data_url(&self.content_root, item_id)
+                .map_err(PackServiceError::CoverArt);
+        }
         let records = self.validated_records()?;
         let Some((record, manifest)) = records.iter().find(|(record, manifest)| {
             record.pack_id == pack_id && manifest.items.iter().any(|item| item.id == item_id)
@@ -592,12 +705,20 @@ impl<R: CatalogueRegistry> PackService<R> {
     }
 
     fn ensure_validated_item(&mut self, item_id: &str) -> Result<(), PackServiceError> {
-        if !is_stable_identifier(item_id)
-            || !self
-                .validated_records()?
-                .iter()
-                .any(|(_, manifest)| manifest.items.iter().any(|item| item.id == item_id))
-        {
+        if !is_stable_identifier(item_id) {
+            return Err(PackServiceError::Audio(format!(
+                "The installed track '{item_id}' is unavailable. Refresh or reinstall its content pack before saving feedback."
+            )));
+        }
+        let installed = self
+            .validated_records()?
+            .iter()
+            .any(|(_, manifest)| manifest.items.iter().any(|item| item.id == item_id));
+        let active_cloud = load_active_library(&self.content_root)
+            .ok()
+            .flatten()
+            .is_some_and(|library| library.items.iter().any(|item| item.item_id == item_id));
+        if !installed && !active_cloud {
             return Err(PackServiceError::Audio(format!(
                 "The installed track '{item_id}' is unavailable. Refresh or reinstall its content pack before saving feedback."
             )));
@@ -672,6 +793,27 @@ impl<R: CatalogueRegistry> PackService<R> {
         let Some(trust) = TRUST else {
             return Ok(());
         };
+        // The resource is verified once when this executable installs the
+        // pinned library. On later commands the registry identity is enough
+        // to establish that the installed tree is the same build; the
+        // selected audio decoder still rechecks the selected file hash before
+        // it is sent to the device. Avoid hashing the 1.6 GB listening pack
+        // on every mood change or transport start.
+        if let Some(record) = self.registry.find_installed_pack(trust.pack_id)? {
+            let expected_status = if trust.published {
+                VALIDATED_STATUS
+            } else {
+                OWNER_WAIVED_BUNDLED_STATUS
+            };
+            if record.status == expected_status
+                && record.version == trust.version
+                && record.manifest_sha256 == trust.manifest_sha256
+                && record.archive_sha256 == trust.bundle_sha256
+            {
+                self.validate_record_manifest_metadata(&record)?;
+                return Ok(());
+            }
+        }
         let resource = self.resource_dir.as_ref().ok_or_else(|| PackServiceError::Recovery {
             pack_id: trust.pack_id.to_owned(),
             reason: "this build pins private-beta content but its bundled resource directory is unavailable".to_owned(),
@@ -772,6 +914,39 @@ impl<R: CatalogueRegistry> PackService<R> {
             .iter()
             .map(|item| item.id.clone())
             .collect::<Vec<_>>();
+        let source_ids = item_ids.iter().collect::<HashSet<_>>();
+        let legacy_record = self
+            .registry
+            .list_installed_packs()?
+            .into_iter()
+            .filter(|record| {
+                record.pack_id != trust.pack_id
+                    && record.status == OWNER_WAIVED_BUNDLED_STATUS
+                    && is_retired_private_beta_pack_id(&record.pack_id)
+            })
+            .find(|record| {
+                serde_json::from_str::<ContentPackManifest>(&record.canonical_manifest)
+                    .ok()
+                    .is_some_and(|manifest| {
+                        manifest
+                            .items
+                            .iter()
+                            .map(|item| &item.id)
+                            .collect::<HashSet<_>>()
+                            == source_ids
+                    })
+            });
+        if let Some(record) = legacy_record {
+            self.upgrade_owner_waived_bundled_library(
+                &record,
+                &source_manifest,
+                &resource,
+                &target,
+                &registration,
+                trust,
+            )?;
+            return Ok(());
+        }
         let collisions = self.registry.find_existing_item_ids(&item_ids)?;
         if !collisions.is_empty() {
             return Err(PackServiceError::ItemCollision(collisions));
@@ -849,7 +1024,8 @@ impl<R: CatalogueRegistry> PackService<R> {
             || record.title != legacy.pack.title
             || record.item_count as usize != legacy.items.len()
             || Path::new(&record.install_path) != legacy_path
-            || legacy.pack.id != source_manifest.pack.id
+            || (legacy.pack.id != source_manifest.pack.id
+                && !is_retired_private_beta_pack_id(&legacy.pack.id))
             || legacy
                 .items
                 .iter()
@@ -919,7 +1095,7 @@ impl<R: CatalogueRegistry> PackService<R> {
         };
         if let Err(database) = self
             .registry
-            .replace_owner_waived_pack_preserving_feedback(registration)
+            .replace_owner_waived_pack_preserving_feedback_from(&record.pack_id, registration)
         {
             if created_target {
                 if let Err(rollback) = fs::remove_dir_all(target) {
@@ -927,6 +1103,17 @@ impl<R: CatalogueRegistry> PackService<R> {
                 }
             }
             return Err(database.into());
+        }
+        if legacy_path != target && legacy_path.exists() {
+            fs::remove_dir_all(&legacy_path).map_err(|error| {
+                recovery_error(
+                    &record.pack_id,
+                    format!("legacy library registry was upgraded but its old files could not be removed: {error}"),
+                )
+            })?;
+            if let Some(parent) = legacy_path.parent() {
+                let _ = fs::remove_dir(parent);
+            }
         }
         self.cleanup_superseded_owner_waived(source_manifest, target)
     }
@@ -1885,6 +2072,21 @@ impl<R: CatalogueRegistry> PackService<R> {
         &mut self,
         record: &InstalledPackRecord,
     ) -> Result<ContentPackManifest, PackServiceError> {
+        self.validate_record_manifest_with_media(record, true)
+    }
+
+    fn validate_record_manifest_metadata(
+        &mut self,
+        record: &InstalledPackRecord,
+    ) -> Result<ContentPackManifest, PackServiceError> {
+        self.validate_record_manifest_with_media(record, false)
+    }
+
+    fn validate_record_manifest_with_media(
+        &mut self,
+        record: &InstalledPackRecord,
+        verify_media: bool,
+    ) -> Result<ContentPackManifest, PackServiceError> {
         if record.canonical_manifest.len() as u64 > self.limits.max_manifest_bytes {
             return Err(registry_preflight_error(
                 &record.pack_id,
@@ -1993,17 +2195,26 @@ impl<R: CatalogueRegistry> PackService<R> {
                 "registry metadata, path, status, or hashes differ from the validated manifest",
             ));
         }
-        let verify = if record.status == OWNER_WAIVED_BUNDLED_STATUS {
-            verify_bundled_owner_waived_pack(&expected, &record.manifest_sha256)
-        } else if record.status == GENERATED_LOCAL_STATUS {
-            verify_generated_local_pack(&expected, &record.manifest_sha256)
-        } else {
-            verify_installed_pack(&expected, &record.manifest_sha256)
-        };
-        verify.map_err(|error| PackServiceError::CorruptRegistry {
-            pack_id: record.pack_id.clone(),
-            reason: error.to_string(),
-        })?;
+        if verify_media {
+            let cache_key = format!(
+                "{}:{}:{}:{}",
+                record.pack_id, record.version, record.manifest_sha256, record.install_path
+            );
+            if !self.verified_media_records.contains(&cache_key) {
+                let verify = if record.status == OWNER_WAIVED_BUNDLED_STATUS {
+                    verify_bundled_owner_waived_pack(&expected, &record.manifest_sha256)
+                } else if record.status == GENERATED_LOCAL_STATUS {
+                    verify_generated_local_pack(&expected, &record.manifest_sha256)
+                } else {
+                    verify_installed_pack(&expected, &record.manifest_sha256)
+                };
+                verify.map_err(|error| PackServiceError::CorruptRegistry {
+                    pack_id: record.pack_id.clone(),
+                    reason: error.to_string(),
+                })?;
+                self.verified_media_records.insert(cache_key);
+            }
+        }
         Ok(manifest)
     }
 
@@ -2027,8 +2238,14 @@ fn verify_trusted_bundled_pack(
 }
 
 fn is_retired_private_beta(record: &InstalledPackRecord) -> bool {
+    // Retired owner-waived rows are historical bookkeeping. They must not
+    // prevent a regular build (which intentionally has no private-beta trust
+    // metadata) from starting, and they must never become playback-eligible.
+    // A successor build may also carry trust metadata, but retirement is
+    // determined by the explicit historical id/prefix rather than by the
+    // presence of that successor metadata.
     record.status == OWNER_WAIVED_BUNDLED_STATUS
-        && TRUST.is_some_and(|trust| record.pack_id != trust.pack_id)
+        && TRUST.is_none_or(|trust| trust.pack_id != record.pack_id)
         && is_retired_private_beta_pack_id(&record.pack_id)
 }
 
@@ -2558,14 +2775,35 @@ mod tests {
             &mut self,
             registration: &PackRegistration,
         ) -> Result<(), PersistenceError> {
+            self.replace_owner_waived_pack_preserving_feedback_from(
+                &registration.pack.pack_id,
+                registration,
+            )
+        }
+
+        fn replace_owner_waived_pack_preserving_feedback_from(
+            &mut self,
+            previous_pack_id: &str,
+            registration: &PackRegistration,
+        ) -> Result<(), PersistenceError> {
             let mut state = self.0.lock().unwrap();
             if state.fail_register {
                 return Err(PersistenceError::Storage("injected failure".to_owned()));
             }
+            if previous_pack_id != registration.pack.pack_id
+                && state
+                    .registrations
+                    .iter()
+                    .any(|entry| entry.pack.pack_id == registration.pack.pack_id)
+            {
+                return Err(PersistenceError::Storage(
+                    "replacement target already exists".into(),
+                ));
+            }
             let current = state
                 .registrations
                 .iter_mut()
-                .find(|entry| entry.pack.pack_id == registration.pack.pack_id)
+                .find(|entry| entry.pack.pack_id == previous_pack_id)
                 .ok_or_else(|| PersistenceError::Storage("missing legacy pack".into()))?;
             let mut old_ids = current
                 .items
@@ -3442,13 +3680,8 @@ mod tests {
 
     #[test]
     fn retired_owner_waived_pack_with_historical_app_range_does_not_block_startup() {
-        let Some(trust) = TRUST else {
-            // Retirement is meaningful only in a build that pins a successor.
-            return;
-        };
         // v2 is the legacy pack that was observed blocking the released app.
         let retired_id = "local-activity-library-v2";
-        assert_ne!(trust.pack_id, retired_id);
 
         let temp = TempDir::new().unwrap();
         let content_root = temp.path().join("content");
@@ -3942,5 +4175,58 @@ mod tests {
         assert!(service
             .cover_art_data_url("test.pack", "test-item")
             .is_err());
+    }
+
+    #[test]
+    fn activated_cloud_library_is_used_for_offline_playback_and_navigation() {
+        let temp = TempDir::new().unwrap();
+        let content_root = temp.path().join("content");
+        let media_root = content_root.join("cloud-generation").join("batches");
+        fs::create_dir_all(&media_root).unwrap();
+        let audio_path = media_root.join("track.wav");
+        let audio = include_bytes!(
+            "../../../../crates/audio-engine/tests/fixtures/wav_pcm16_mono_44100.wav"
+        );
+        fs::write(&audio_path, audio).unwrap();
+        let active = json!({
+            "version":"cloud-test",
+            "batch_id":"cloud_batch_test",
+            "activated_at_ms":1,
+            "previous_version":null,
+            "items":[{
+                "item_id":"cloud-item-test",
+                "title":"Cloud soundscape",
+                "activity":"deep_work",
+                "audio_path":audio_path,
+                "cover_path":null,
+                "cover_mime_type":null,
+                "cover_sha256":null,
+                "audio_sha256":catalogue::import::hash_bytes(audio),
+                "sample_rate_hz":44100,
+                "channels":1,
+                "bit_depth":16,
+                "duration_seconds":1.0,
+                "genre_id":null,
+                "mood_id":null
+            }]
+        });
+        fs::write(
+            content_root.join("cloud-generation").join("active.json"),
+            serde_json::to_vec(&active).unwrap(),
+        )
+        .unwrap();
+
+        let (registry, _) = MockRegistry::new(false);
+        let mut service = PackService::new(registry, content_root);
+        let prepared = service
+            .prepare_playback(Activity::DeepWork, None, None)
+            .unwrap()
+            .expect("activated cloud track should be playable");
+        assert_eq!(prepared.program.tracks.len(), 1);
+        assert_eq!(prepared.primary_item_id, "cloud-item-test");
+        assert_eq!(
+            prepared.program.primary_label().pack_title,
+            "Aria Focus Cloud Library"
+        );
     }
 }

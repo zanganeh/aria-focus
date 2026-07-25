@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorBanner } from "../components/ErrorBanner";
@@ -16,6 +16,12 @@ import {
 } from "../lib/api";
 import type { SessionSnapshot } from "../lib/types";
 import { useSession } from "./useSession";
+
+const eventMocks = vi.hoisted(() => ({ listen: vi.fn() }));
+
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: eventMocks.listen,
+}));
 
 vi.mock("../lib/api", () => ({
   getSnapshot: vi.fn(),
@@ -47,6 +53,7 @@ function Harness() {
   const session = useSession();
   return (
     <>
+      <output data-testid="activity">{session.snapshot?.activity ?? "none"}</output>
       <button type="button" onClick={() => void session.start()}>
         Start
       </button>
@@ -69,6 +76,7 @@ function Harness() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  eventMocks.listen.mockRejectedValue(new Error("Tauri events unavailable in this test"));
   vi.mocked(getSnapshot).mockResolvedValue(IDLE_SNAPSHOT);
   vi.mocked(getMasterVolume).mockResolvedValue(70);
   vi.mocked(pauseSession).mockResolvedValue();
@@ -87,6 +95,21 @@ afterEach(() => {
 });
 
 describe("useSession command errors", () => {
+  it("adopts native playback events without waiting for the polling fallback", async () => {
+    let callback: ((event: { payload: { snapshot: SessionSnapshot } }) => void) | undefined;
+    eventMocks.listen.mockImplementationOnce((_name: string, handler: typeof callback) => {
+      callback = handler;
+      return Promise.resolve(() => undefined);
+    });
+    render(<Harness />);
+    await waitFor(() => expect(callback).toBeTruthy());
+
+    await act(async () => {
+      callback?.({ payload: { snapshot: { ...IDLE_SNAPSHOT, activity: "learning" } } });
+    });
+    expect(screen.getByTestId("activity").textContent).toBe("learning");
+  });
+
   it("refreshes and polls a session started by another local command", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     render(<Harness />);

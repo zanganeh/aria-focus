@@ -97,6 +97,17 @@ vi.mock("./lib/api", () => ({
   listRecentSessions: vi.fn(),
   saveSessionRating: vi.fn(),
   getStudioCapability: vi.fn(),
+  getCloudKeyStatus: vi.fn().mockResolvedValue({ configured: false, masked_suffix: null }),
+  getActiveCloudGeneration: vi.fn().mockResolvedValue(null),
+  saveCloudKey: vi.fn(),
+  removeCloudKey: vi.fn().mockResolvedValue({ configured: false, masked_suffix: null }),
+  listCloudModels: vi.fn().mockResolvedValue([]),
+  estimateCloudGeneration: vi.fn(),
+  createCloudGeneration: vi.fn(),
+  cancelCloudGeneration: vi.fn().mockResolvedValue(undefined),
+  getCloudGeneration: vi.fn(),
+  getCloudGenerationItems: vi.fn().mockResolvedValue([]),
+  restoreCloudGeneration: vi.fn().mockResolvedValue(undefined),
   listRecentStudioJobs: vi.fn().mockResolvedValue([]),
   getRuntimeInstall: vi.fn().mockResolvedValue({ status: "idle", stage: "waiting", detail: "" }),
   getDraftPreviewState: vi.fn().mockResolvedValue("stopped"),
@@ -345,10 +356,10 @@ it("refreshes genres after a catalogue change and ignores a superseded response"
   fireEvent.click(screen.getByRole("button", { name: "Refresh music catalogue" }));
   await act(async () => Promise.resolve());
   fireEvent.click(screen.getByRole("button", { name: "Settings" }));
-  expect(screen.getByRole("radio", { name: "Ambient" })).toBeTruthy();
+  expect(screen.getByRole("option", { name: "Ambient" })).toBeTruthy();
 
   await act(async () => resolveInitial!(EMPTY_GENRES));
-  expect(screen.getByRole("radio", { name: "Ambient" })).toBeTruthy();
+  expect(screen.getByRole("option", { name: "Ambient" })).toBeTruthy();
 });
 
 it("shows startup recovery only for failed services and keeps partial failure visible", async () => {
@@ -642,18 +653,29 @@ it("shows completed sessions in history without asking for feedback", async () =
   expect(screen.getByText(/Deep Work/)).toBeTruthy();
 });
 
-it("uses clear pages and keeps an active-session route back to the player", async () => {
+it("keeps the active-session mini-player on Home and leaves other pages unobstructed", async () => {
   render(<App />);
   await act(async () => Promise.resolve());
 
   expect(screen.getByRole("button", { name: "Home" }).getAttribute("aria-current")).toBe("page");
+  expect(screen.getByRole("button", { name: "Open player" })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Library" }));
 
   expect(screen.getByRole("button", { name: "Library" }).getAttribute("aria-current")).toBe("page");
-  expect(screen.getByRole("button", { name: "Open player" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Pause session" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Open player" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Start Deep Work" })).toBeNull();
 
+  fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+  expect(screen.queryByRole("button", { name: "Open player" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Create" }));
+  expect(screen.queryByRole("button", { name: "Open player" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "History" }));
+  expect(screen.queryByRole("button", { name: "Open player" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Home" }));
+  expect(screen.getByRole("region", { name: "Focus player" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Open player" })).toBeNull();
+
+  fireEvent.click(screen.getByRole("button", { name: "Back to Start" }));
   fireEvent.click(screen.getByRole("button", { name: "Open player" }));
   expect(screen.getByRole("region", { name: "Focus player" })).toBeTruthy();
   expect(screen.queryByRole("region", { name: "Active focus session" })).toBeNull();

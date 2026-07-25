@@ -177,6 +177,68 @@ fn prompt_is_deterministic_locked_and_instrumental() {
 }
 
 #[test]
+fn prompt_uses_real_instrument_roles_and_motivation_context() {
+    let input = StudioPromptInput::new_with_tempo(
+        Activity::Motivation,
+        id("electronic"),
+        Some(id("uplifting")),
+        StudioEnergy::High,
+        vec![id("piano"), id("handpan"), id("percussion")],
+        None,
+        None,
+        Some(130),
+        StudioDuration::Seconds180,
+    )
+    .unwrap();
+    let prompt = build_studio_prompt(&input, 11).unwrap();
+
+    assert!(prompt
+        .creative_prompt
+        .contains("fast, clean forward-driving music for cruising"));
+    assert!(prompt
+        .creative_prompt
+        .contains("real, naturally expressive low-mid or mid-register lead performance in the role of a vocal topline"));
+    assert!(prompt
+        .creative_prompt
+        .contains("contemporary non-jazz instrumental"));
+    assert!(prompt.creative_prompt.contains("avoid short copied loops"));
+    assert!(prompt
+        .creative_prompt
+        .contains("real warm concert acoustic piano performance"));
+    assert!(prompt
+        .creative_prompt
+        .contains("real warm rounded handpan performance"));
+    assert!(prompt
+        .creative_prompt
+        .contains("live acoustic drum kit with deep tuned kick"));
+    assert!(prompt.creative_prompt.contains("humanized dynamics"));
+}
+
+#[test]
+fn cinematic_theme_uses_orchestral_palette_without_vocal_conflict() {
+    let input = StudioPromptInput::new_with_tempo(
+        Activity::Motivation,
+        id("cinematic"),
+        Some(id("cinematic")),
+        StudioEnergy::High,
+        vec![id("piano"), id("strings"), id("brass"), id("percussion")],
+        None,
+        None,
+        Some(110),
+        StudioDuration::Seconds90,
+    )
+    .unwrap();
+    let prompt = build_studio_prompt(&input, 21).unwrap();
+
+    assert!(prompt.creative_prompt.contains("theme: cinematic"));
+    assert!(prompt.creative_prompt.contains("simple functional harmony"));
+    assert!(prompt.creative_prompt.contains("Dm-Bb-F-C"));
+    assert!(prompt.creative_prompt.contains("real French horn or cello"));
+    assert!(prompt.creative_prompt.contains("omit choral voices"));
+    assert_eq!(prompt.locked_negative_prompt, LOCKED_NEGATIVE_PROMPT);
+}
+
+#[test]
 fn tempo_is_bounded_and_included_in_the_deterministic_prompt() {
     let input = StudioPromptInput::new_with_tempo(
         Activity::DeepWork,

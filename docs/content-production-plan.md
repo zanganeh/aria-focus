@@ -5,20 +5,61 @@ Date: 10 July 2026
 Status: provider research and production contract approved for candidate work;
 no generated candidate is release content until technical and human gates pass.
 
+Before producing the full starter catalogue, run the model-neutral prompt pilot
+in [docs/music-generation-rd.md](music-generation-rd.md) using
+[experiments/music-generation/motivation-prompt-pilot.json](../experiments/music-generation/motivation-prompt-pilot.json).
+It establishes a baseline, compares structured prompt variants, and records
+focus-utility and distraction scores before we spend time comparing models.
+
 ## Decision
 
-Use ACE-Step 1.5 locally as the primary candidate generator. Pin the repository
-commit, model identifiers, and downloaded weight hashes before the first batch.
-Generate lossless 48 kHz FLAC masters with explicit seeds. Keep generation out
-of the application and out of the real-time playback path.
+Use the OpenRouter cloud path with Lyria 3 Pro as the current quality candidate
+generator. Keep the provider call behind the user's own key, show the model
+price before every paid batch, and preserve the complete prompt, model IDs,
+provider IDs, hashes, and analyzer report. Generate lossless 48 kHz FLAC
+release masters outside the real-time playback path.
 
-Use Lyria 3 Pro only as an optional paid quality benchmark if API billing is
-made available. Do not make Eleven Music or Stable Audio a release dependency
-until the exact commercial terms for distributing a music library inside this
-application have been reviewed and archived.
+Keep ACE-Step 1.5 as a local, no-charge fallback and research benchmark. Do not
+make Eleven Music or Stable Audio a release dependency until the exact
+commercial terms for distributing a music library inside this application have
+been reviewed and archived.
 
 This is a content-production decision, not a claim that one generator is always
 musically superior. Listener review can replace any candidate or provider.
+
+## Current implementation status (24 July 2026)
+
+The desktop Create flow now uses a user-provided OpenRouter key for the paid
+quality path. It builds a structured, provider-neutral prompt from the
+activity taxonomy, shows model-derived estimates before charging, runs batches
+in the background, saves the complete prompt and provider metadata, and lets
+the user preview candidates. The app ignores old mock/test batches in normal
+builds.
+
+This path has been exercised with a real Motivation request. OpenRouter
+returned a decodable 175.96-second MP3 for the 180-second request. The source
+had 45 full-scale samples, but no material silence or discontinuity; the
+staging exporter now applies a deterministic -3 dB gain to the FLAC release
+master, producing zero clipped samples and a -2.76 dBTP peak. The source and
+repair metadata remain in the draft manifest. The item is still not release
+content because it has not received human listening approvals.
+
+The funded production runs now provide 100 validated candidates: exactly 20
+each for Creativity, Deep Work, Learning, Motivation, and Light Work. Nine
+technical replacements were generated for candidates with silence or
+discontinuity findings, merged under the original stable item IDs, and audited
+again. The final FLAC review pack is staged at
+`.local/openrouter/replacement-v2-flac-final3`; the 112 kbps Opus candidate is
+`.local/openrouter/replacement-v2-opus-v2` (about 416 MB, including covers).
+
+The batch worker preserves completed items on resume, retries transient
+incomplete audio streams with bounded backoff, uses a conservative cover-cost
+estimate, and accepts only the documented 150–210 second provider duration
+range. The candidate remains draft content until two distinct human reviewers
+approve every item with representative app-session evidence, the public
+verifier passes, and the immutable release pin and unsigned stable-release
+workflow are updated. No credit-gated, mock, or rejected source item is being
+silently promoted.
 
 ## Primary-source findings
 
@@ -172,9 +213,11 @@ automated review cannot count as either human reviewer.
    `docs/audio-analyzer.md` against accepted and rejected full-length candidates;
    its current thresholds remain provisional.
 2. Add a candidate ledger and immutable generation-record schema with hashes.
-3. Pin and install ACE-Step 1.5 outside the shipped application, then generate
-   one Deep Work calibration batch.
-4. Analyze and audition the batch; use accepted/rejected examples to calibrate
-   thresholds before generating all five activities.
-5. Edit safe regions non-destructively, build a development pack, and run the
+3. Pin and install ACE-Step 1.5 outside the shipped application, then run the
+   Motivation prompt pilot before generating the full catalogue.
+4. Analyze and audition the pilot; use accepted/rejected examples to calibrate
+   thresholds and select a prompt family.
+5. Repeat the winning prompt family for one additional activity, then compare
+   model candidates using the same prompts and review protocol.
+6. Edit safe regions non-destructively, build a development pack, and run the
    representative-session review protocol.

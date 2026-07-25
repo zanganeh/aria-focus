@@ -5,7 +5,7 @@
 <h1 align="center">Aria Focus</h1>
 
 <p align="center">
-  A free, open-source, offline focus-music alternative for the broad use case of Brain.fm, with a built-in AI Music Studio.<br>
+  A free, open-source, offline focus-music app with a built-in AI Music Studio.<br>
   No account. No subscription. No telemetry.
 </p>
 
@@ -29,12 +29,15 @@ Aria Focus is a standalone desktop app for the broad focus-music use case—deep
 learning, and light work. It plays integrity-checked music from local storage,
 keeps preferences and session history on the device, and presents a deliberately
 small activity-first interface. The optional **AI Music Studio** generates short
-instrumental tracks entirely on your machine.
+instrumental tracks entirely on your machine; its [metadata-driven prompt
+system](docs/music-prompt-system.md) is documented for reproducible R&D.
 
 The project is open for source review and contribution. GitHub Actions builds and
 publishes release assets; this repository does not rely on locally built installers.
-The first stable release is currently distributed as an unsigned source-only
-package while trusted code-signing and reviewed-content work are completed.
+Stable release packages are unsigned and built by GitHub Actions. The unsigned
+release workflow downloads the approved music library archive, verifies its
+SHA-256, and embeds it in the Windows and macOS installers. Source-only builds
+remain available for inspection and development.
 
 ## Download from GitHub Releases
 
@@ -50,10 +53,6 @@ The links above always target the newest non-preview GitHub release. The current
 stable packages are unsigned; verify `SHA256SUMS` and download only from this
 official repository. Preview builds are clearly marked, and ordinary CI artifacts
 remain source-only inspection builds rather than releases.
-
-Aria Focus is independent and is not affiliated with Brain.fm. It does not
-reproduce Brain.fm audio, assets, branding, or screenshots; the project uses
-only its own code and existing Aria Focus visuals.
 
 ## What it includes
 
@@ -121,11 +120,30 @@ alone is not sufficient release evidence.
 
 ## AI Music Studio
 
-The AI Music Studio is a first-class feature. It lets you describe the music you
-want in simple terms—an activity, genre, mood, speed/tempo, duration, energy, and
-optional plain-language details—and generates a short instrumental track
-**locally on your device**. The optional More controls add instruments and fuller
-creative direction. Nothing is uploaded, and no account is required.
+The AI Music Studio is a first-class feature with two clear generation paths:
+
+- **Offline Local Studio** runs the reviewed local runtime on supported Windows/NVIDIA
+  hardware. Prompts and audio stay on the device after the one-time runtime setup.
+- **Optional OpenRouter Cloud Studio** is available from **Create** when you want
+  higher-end hosted music generation. You provide your own OpenRouter key in
+  **Settings**, then choose an audio model, number of tracks, duration, and a hard
+  maximum budget. The app reads the selected models' current OpenRouter pricing,
+  calculates the minimum for the whole batch, and lets you generate one, five,
+  ten, twenty-five, or up to 100 candidate tracks.
+
+Cloud generation is paid online work. The app shows an estimate and asks for
+confirmation before submitting; the provider's final usage is reconciled against
+the budget, and a batch that cannot be validated is never activated. As a current
+reference, OpenRouter lists Lyria 3 Pro Preview at **$0.08 per full-length song**;
+prices and model availability can change, so treat the in-app estimate as the
+source of truth. Your key is stored in the operating-system credential store,
+never in app preferences or generated prompts. Normal listening remains offline,
+and the previous activated library can be restored from Settings.
+
+For either path, the prompt system uses activity, genre, mood, tempo, instrument
+roles, arrangement, evolution, and locked exclusions such as instrumental-only,
+no speech/lyrics, no jazz, and an intro under ten seconds. The advanced controls
+show the exact prompt and generation choices. No Aria Focus account is required.
 
 ### Minimum requirements
 
@@ -159,6 +177,43 @@ starting a generation that cannot succeed.
 3. When setup is complete, choose a genre, mood, speed/tempo, duration, and
    energy, then
    **Generate music**. Preview, save to My Music, regenerate, or discard.
+
+### Optional OpenRouter setup
+
+1. Open **Settings** → **OpenRouter**.
+2. Paste an OpenRouter API key and press **Validate and save key**. The key is
+   checked before it is stored in the operating-system credential store; it is
+   never printed, placed in SQLite, or bundled into a release.
+3. Open **Create**. Choose the audio model, track count, activities, duration,
+   optional prompt refinement and cover art, then review the displayed estimate.
+   The minimum budget is recalculated whenever these choices change; you can
+   raise it to set your own maximum.
+4. Confirm the paid batch. Tracks are generated sequentially, decoded and
+   hashed locally. After every track passes validation, preview the candidates
+   in the app and press **Save and activate tracks** when you are satisfied.
+   Nothing replaces the current library before that explicit save action. If a
+   provider returns an invalid model, insufficient credits, rate limit, timeout,
+   or malformed media, the app shows a safe actionable message and keeps the
+   previous offline library.
+
+Cloud generation is intentionally opt-in. Removing the key disables future
+cloud requests but does not remove already downloaded tracks. Use **Restore
+previous cloud library** if a newly activated batch is not useful.
+
+### Test-only mock generation
+
+To test the Create screen, background progress, preview, and activation flow
+without contacting OpenRouter or spending credits, build the desktop app with
+the explicit Rust feature `cloud-generation-mock`:
+
+```powershell
+pnpm -C apps/desktop tauri dev --features cloud-generation-mock
+```
+
+The mock uses a local fixture audio file and local SVG covers, reports zero
+cost, and is disabled in the default development build and all release builds.
+It is a compile-time test feature rather than a user setting; never enable it
+when producing a release installer.
 
 ### What is bundled
 
@@ -279,8 +334,9 @@ Start with [`docs/architecture.md`](docs/architecture.md) for system boundaries 
 
 GitHub Actions performs ordinary CI on every pull request. The current simple
 path is **Actions → Unsigned stable release → Run workflow**. It chooses a stable
-`vMAJOR.MINOR.PATCH` tag and a source ref (normally `main`), builds source-only
-packages, and publishes the release without requiring signing credentials.
+`vMAJOR.MINOR.PATCH` tag and a source ref (normally `main`), downloads and
+verifies the approved unsigned music library, builds packages with that library,
+and publishes the release without requiring signing credentials.
 
 The later protected path is **Actions → Signed public release → Run workflow**.
 After every protected gate passes, GitHub Actions creates the tag and starts the

@@ -1,0 +1,36 @@
+{
+  "schema": "aria-focus.music-prompt",
+  "schema_version": 1,
+  "profile_id": "profile-001",
+  "selection": {
+    "activity": "Motivation",
+    "genre": "Electronic",
+    "subgenres": ["Dance", "Electronica", "House"],
+    "moods": ["Energizing", "Hopeful", "Inspiring", "Optimistic", "Playful", "Upbeat", "Uplifting"],
+    "instruments": [
+      "Arp Synth",
+      "Electric Keys",
+      "Electronic Percussion",
+      "Organic Percussion",
+      "Processed Strings",
+      "Processed Vocals",
+      "Synth Bass",
+      "Synth Pad",
+      "Textural Soundscape"
+    ],
+    "excluded_instruments": ["Processed Vocals"],
+    "bpm": 116,
+    "brightness": 0.65,
+    "complexity": 0.2
+  },
+  "prompt": {
+    "positive": "[Instrumental] Create a 3-minute premium instrumental track for motivation and sustained focus. Genre: Electronic; subgenres: Dance, Electronica, House. Mood: Energizing, Hopeful, Inspiring, Optimistic, Playful, Upbeat, Uplifting. Tempo: 116 BPM in a steady 4/4 meter. Use a restrained arpeggiated pulse in the background, never a piercing lead, rounded electric-key chords with natural attack and decay, controlled electronic percussion with a steady even pulse, sparse organic percussion accents with humanized dynamics, wide processed string texture with slow evolving movement, a warm controlled synth-bass foundation focused in the low-mid range, a soft atmospheric synth pad that supports the harmony without masking it, a low-contrast textural soundscape that leaves space for the motif. Keep the tonal character balanced and warm, the arrangement sparse, and the mix clear, deep, and mature. Start with a restrained tonal introduction under 10 seconds, establish the main pulse quickly, then develop contrasting 16-to-32-bar phrases with small changes in harmony, register, countermelody, and texture. Build energy through musical development rather than a drop. End with a resolved, crossfade-friendly outro and never repeat one short loop unchanged.",
+    "negative": "blues, chanting, funk, jazz, Processed Vocals, singing, speech, spoken word, swing, vocals, whispers, piercing high frequencies, sub-bass rumble, toy instruments, childish melodies, random notes, white noise, jazz swing, 10-second loop repetition, dramatic riser, breakdown, sudden silence"
+  },
+  "policy": {
+    "instrumental_only": true,
+    "intro_max_seconds": 10,
+    "variation_window_bars": [16, 32],
+    "allow_named_artists_or_existing_works": false
+  }
+}

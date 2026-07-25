@@ -20,7 +20,7 @@ import { FavoritesLibrary } from "./components/FavoritesLibrary";
 import { RecentSessions } from "./components/RecentSessions";
 import { AppIcon } from "./components/AppIcon";
 import { StudioLibraryCard } from "./components/StudioLibraryCard";
-import { StudioPage } from "./components/StudioPage";
+import { CloudGenerationPanel } from "./components/CloudGenerationPanel";
 import { MyMusicLibrary } from "./components/MyMusicLibrary";
 import { BrandMark } from "./components/BrandMark";
 import { LaunchScreen } from "./components/LaunchScreen";
@@ -48,6 +48,7 @@ import { ACTIVITY_COPY } from "./lib/activities";
 import { useSession } from "./hooks/useSession";
 import { useFocusedWindowTransportKeys } from "./hooks/useFocusedWindowTransportKeys";
 import { findAvailableUpdate, installAndRelaunch } from "./lib/updater";
+import { listenPlaybackChanged } from "./lib/events";
 import type {
   ActivityGenreState,
   ActivityMoodState,
@@ -61,7 +62,8 @@ import type {
 import type { Update } from "@tauri-apps/plugin-updater";
 
 type AppPage = "home" | "library" | "history" | "settings" | "review" | "studio";
-type HomeScreen = "choose" | "sound" | "timer";
+type SettingsSection = "sound" | "focus" | "connection" | "help";
+type LibrarySection = "overview" | "my_music" | "favorites" | "packs";
 
 export default function App() {
   const session = useSession();
@@ -80,7 +82,8 @@ export default function App() {
   const [focusView, setFocusView] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState(false);
   const [page, setPage] = useState<AppPage>("home");
-  const [homeScreen, setHomeScreen] = useState<HomeScreen>("choose");
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("sound");
+  const [librarySection, setLibrarySection] = useState<LibrarySection>("overview");
   const [navigationPending, setNavigationPending] = useState(false);
   const [activityPending, setActivityPending] = useState(false);
   const [pendingActivity, setPendingActivity] = useState<Activity | null>(null);
@@ -97,6 +100,8 @@ export default function App() {
   const healthRequest = useRef(0);
   const updateCheckStarted = useRef(false);
   const previousTransportActive = useRef(false);
+  const navigationFromItem = useRef<string | null>(null);
+  const navigationTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadOnboardingPreferences = useCallback(async () => {
     setOnboardingComplete(null);
     setOnboardingLoadError(null);
@@ -196,7 +201,10 @@ export default function App() {
 
   const status = session.snapshot?.status ?? "idle";
   const transportActive = status === "playing" || status === "paused";
+  const refreshSession = session.refresh;
+  const reportSessionError = session.reportError;
   const activity = session.snapshot?.activity ?? "deep_work";
+  const sourceId = source?.item_id;
   const activityLabel = ACTIVITY_COPY[activity].label;
   const playerActivity = pendingActivity ?? activity;
   const playerActivityLabel = ACTIVITY_COPY[playerActivity].label;
@@ -246,45 +254,41 @@ export default function App() {
   const requestNavigation = async (command: () => Promise<void>) => {
     if (navigationPending || source?.navigation_available !== true) return;
     const previousItemId = source?.item_id;
+    navigationFromItem.current = previousItemId ?? null;
     setNavigationPending(true);
     try {
       await command();
     } catch (error) {
+      navigationFromItem.current = null;
       setNavigationPending(false);
+      if (navigationTimeout.current) {
+        clearTimeout(navigationTimeout.current);
+        navigationTimeout.current = null;
+      }
       session.reportError(
         `Unable to change track: ${error instanceof Error ? error.message : String(error)}`,
       );
       return;
     }
-
-    // The native command only queues a callback-safe transition. Keep the player responsive
-    // while the audio callback crossfades and publishes the new identity in the background.
-    void (async () => {
-      let current = await getCurrentSource();
-      const deadline = Date.now() + 20_000;
-      while (current.item_id === previousItemId && Date.now() < deadline) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        current = await getCurrentSource();
-      }
-      setSource(current);
-      if (current.item_id !== previousItemId) {
-        await resetSessionTimer();
-        await session.refresh();
-      }
+    // The native command queues the transition and the event bridge publishes
+    // the committed identity. Do one immediate fallback read for old shells,
+    // but keep the controls guarded until that identity changes.
+    void getCurrentSource()
+      .then((current) => setSource(current))
+      .catch(() => undefined);
+    navigationTimeout.current = setTimeout(() => {
+      if (navigationFromItem.current !== previousItemId) return;
+      navigationFromItem.current = null;
+      navigationTimeout.current = null;
       setNavigationPending(false);
-    })().catch((error: unknown) => {
-      setNavigationPending(false);
-      session.reportError(
-        `Unable to finish changing track: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    });
+      session.reportError("The next track did not become ready. Please try again.");
+    }, 10_000);
   };
 
   const selectActivity = async (next: Activity) => {
     if (activityPending || session.starting) return;
     if (transportActive && activity === next) {
       setPage("home");
-      setHomeScreen("choose");
       setExpandedPlayer(true);
       return;
     }
@@ -294,15 +298,24 @@ export default function App() {
     setPendingActivity(next);
     setActivityPending(true);
     setPage("home");
-    setHomeScreen("choose");
     setExpandedPlayer(true);
     resetContentScroll();
+    const previousActivity = activity;
+    const wasTransportActive = transportActive;
     try {
       if (transportActive) await session.stop();
       const changed = await session.changeActivity(next);
-      if (changed === false) return;
+      if (changed === false) throw new Error("The selected focus space could not be loaded.");
       await session.start();
     } catch (error) {
+      if (wasTransportActive) {
+        try {
+          await session.changeActivity(previousActivity);
+          await session.start();
+        } catch {
+          // Preserve the original actionable error; recovery is best effort.
+        }
+      }
       session.reportError(
         `Unable to start ${ACTIVITY_COPY[next].label}: ${error instanceof Error ? error.message : String(error)}`,
       );
@@ -341,7 +354,7 @@ export default function App() {
 
   useEffect(() => {
     resetContentScroll();
-  }, [expandedPlayer, homeScreen, page, resetContentScroll]);
+  }, [expandedPlayer, page, resetContentScroll]);
 
   useEffect(() => {
     let active = true;
@@ -372,7 +385,26 @@ export default function App() {
   }, [activity, catalogueRevision, genres?.selected_genre_id]);
 
   useEffect(() => {
+    if (!navigationFromItem.current || !sourceId || sourceId === navigationFromItem.current) return;
+    navigationFromItem.current = null;
+    setNavigationPending(false);
+    if (navigationTimeout.current) {
+      clearTimeout(navigationTimeout.current);
+      navigationTimeout.current = null;
+    }
+    void Promise.resolve(resetSessionTimer())
+      .then(() => refreshSession())
+      .catch((error: unknown) =>
+        reportSessionError(
+          `Unable to reset the focus timer: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
+  }, [refreshSession, reportSessionError, sourceId]);
+
+  useEffect(() => {
     let active = true;
+    let unlisten: (() => void) | undefined;
+    let fallbackPoll: ReturnType<typeof setInterval> | null = null;
     const refreshSource = () => {
       void getCurrentSource()
         .then((current) => {
@@ -383,12 +415,36 @@ export default function App() {
         });
     };
     refreshSource();
-    const poll = transportActive ? setInterval(refreshSource, 500) : null;
+    void listenPlaybackChanged((event) => {
+      if (!active) return;
+      setSource(event.source);
+      if (fallbackPoll) {
+        clearInterval(fallbackPoll);
+        fallbackPoll = null;
+      }
+    })
+      .then((cleanup) => {
+        if (!active) cleanup();
+        else unlisten = cleanup;
+      })
+      .catch(() => {
+        // Older preview shells have no event transport; keep a low-frequency
+        // source fallback only for those shells.
+        if (active && transportActive) fallbackPoll = setInterval(refreshSource, 500);
+      });
     return () => {
       active = false;
-      if (poll) clearInterval(poll);
+      unlisten?.();
+      if (fallbackPoll) clearInterval(fallbackPoll);
     };
   }, [status, transportActive]);
+
+  useEffect(
+    () => () => {
+      if (navigationTimeout.current) clearTimeout(navigationTimeout.current);
+    },
+    [],
+  );
 
   if (onboardingComplete === null) {
     if (onboardingLoadError) {
@@ -481,7 +537,7 @@ export default function App() {
         <ErrorBanner message={session.error} onDismiss={session.dismissError} />
         {updateNotice}
 
-        {transportActive && !expandedPlayer && (
+        {page === "home" && transportActive && !expandedPlayer && (
           <section
             className={`mini-player mini-player-${status}`}
             aria-label="Active focus session"
@@ -492,7 +548,6 @@ export default function App() {
               aria-label="Open player"
               onClick={() => {
                 setPage("home");
-                setHomeScreen("choose");
                 setExpandedPlayer(true);
               }}
             >
@@ -561,87 +616,6 @@ export default function App() {
                     onSelect={selectActivity}
                   />
                 </section>
-                {!transportActive && homeScreen === "sound" && (
-                  <section className="setup-flow guided-setup" aria-label="Choose sound">
-                    <div className="screen-heading">
-                      <button
-                        type="button"
-                        className="back-action"
-                        onClick={() => setHomeScreen("choose")}
-                      >
-                        <AppIcon name="chevron-left" /> Back
-                      </button>
-                      <p className="eyebrow">Sound</p>
-                      <h2>Make it feel right</h2>
-                      <p>These choices filter the local music for {activityLabel}.</p>
-                    </div>
-                    <GenreSelector
-                      state={genres}
-                      disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-                      onChange={(genreId) =>
-                        void setActivityGenre(genreId)
-                          .then(setGenres)
-                          .catch((error: unknown) =>
-                            session.reportError(
-                              `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
-                            ),
-                          )
-                      }
-                    />
-                    <MoodSelector
-                      state={moods}
-                      disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-                      onChange={(moodId) =>
-                        void setActivityMood(moodId)
-                          .then(setMoods)
-                          .catch((error: unknown) =>
-                            session.reportError(
-                              `Unable to change mood: ${error instanceof Error ? error.message : String(error)}`,
-                            ),
-                          )
-                      }
-                    />
-                    <button
-                      type="button"
-                      className="primary setup-next"
-                      onClick={() => setHomeScreen("timer")}
-                    >
-                      Choose timer
-                    </button>
-                  </section>
-                )}
-
-                {!transportActive && homeScreen === "timer" && (
-                  <section className="setup-flow guided-setup" aria-label="Choose session timer">
-                    <div className="screen-heading">
-                      <button
-                        type="button"
-                        className="back-action"
-                        onClick={() => setHomeScreen("sound")}
-                      >
-                        <AppIcon name="chevron-left" /> Back
-                      </button>
-                      <p className="eyebrow">Time</p>
-                      <h2>How long?</h2>
-                      <p>Keep the default if you just want to begin.</p>
-                    </div>
-                    <SessionTypeSelector
-                      value={session.snapshot?.kind ?? { kind: "infinite" }}
-                      disabled={!coreAvailable || session.starting || reviewActive}
-                      onChange={(kind) => void session.changeSessionType(kind)}
-                    />
-                    <button
-                      type="button"
-                      className="primary setup-next"
-                      disabled={
-                        !coreAvailable || !packsAvailable || reviewActive || session.starting
-                      }
-                      onClick={() => void session.start()}
-                    >
-                      {session.starting ? "Starting…" : `Start ${activityLabel}`}
-                    </button>
-                  </section>
-                )}
               </>
             )}
 
@@ -753,184 +727,237 @@ export default function App() {
           </>
         )}
 
-        {page === "library" && <StudioLibraryCard onOpen={() => setPage("studio")} />}
         {page === "library" && (
-          <MyMusicLibrary
-            disabled={!coreAvailable || !packsAvailable || transportActive}
-            onError={session.reportError}
-            onStarted={async () => {
-              await session.adoptStartedSession();
-              setPage("home");
-            }}
-            onCatalogueChange={() => {
-              setCatalogueRevision((revision) => revision + 1);
-              setContentPacksRevision((revision) => revision + 1);
-            }}
-          />
-        )}
-        {page === "library" && (
-          <FavoritesLibrary
-            active={transportActive}
-            disabled={!coreAvailable || !packsAvailable || session.starting}
-            revision={favoritesRevision}
-            onStarted={async () => {
-              await session.refresh();
-              setPage("home");
-            }}
-            onError={session.reportError}
-          />
-        )}
-        {page === "library" && (
-          <ContentPacks
-            key={contentPacksRevision}
-            disabled={!packsAvailable}
-            onCatalogueChange={() => setCatalogueRevision((revision) => revision + 1)}
-          />
+          <section className="library-page" aria-labelledby="library-heading">
+            <div className="screen-heading">
+              <p className="eyebrow">Library</p>
+              <h2 id="library-heading">Your music</h2>
+              <p>Generated tracks, favourites, and installed offline packs.</p>
+            </div>
+            <div className="page-section-tabs library-section-tabs" aria-label="Library sections">
+              {(
+                [
+                  ["overview", "Overview"],
+                  ["my_music", "My Music"],
+                  ["favorites", "Favourites"],
+                  ["packs", "Offline packs"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={librarySection === id ? "selected" : ""}
+                  onClick={() => setLibrarySection(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="library-section-content">
+              {(librarySection === "overview" || librarySection === "my_music") && (
+                <MyMusicLibrary
+                  disabled={!coreAvailable || !packsAvailable || transportActive}
+                  onError={session.reportError}
+                  onStarted={async () => {
+                    await session.adoptStartedSession();
+                    setPage("home");
+                  }}
+                  onCatalogueChange={() => {
+                    setCatalogueRevision((revision) => revision + 1);
+                    setContentPacksRevision((revision) => revision + 1);
+                  }}
+                />
+              )}
+              {(librarySection === "overview" || librarySection === "favorites") && (
+                <FavoritesLibrary
+                  active={transportActive}
+                  disabled={!coreAvailable || !packsAvailable || session.starting}
+                  revision={favoritesRevision}
+                  onStarted={async () => {
+                    await session.refresh();
+                    setPage("home");
+                  }}
+                  onError={session.reportError}
+                />
+              )}
+              {(librarySection === "overview" || librarySection === "packs") && (
+                <ContentPacks
+                  key={contentPacksRevision}
+                  disabled={!packsAvailable}
+                  onCatalogueChange={() => setCatalogueRevision((revision) => revision + 1)}
+                />
+              )}
+              {(librarySection === "overview" || librarySection === "my_music") && (
+                <StudioLibraryCard onOpen={() => setPage("studio")} />
+              )}
+            </div>
+          </section>
         )}
 
         {page === "history" && <RecentSessions sessions={recentSessions} />}
 
-        {page === "studio" && <StudioPage onReturn={() => setPage("library")} />}
-
-        {page === "settings" && startupHealth && (
-          <StartupRecovery
-            health={startupHealth}
-            busy={retryingStartup}
-            retryError={startupRetryError}
-            onRetry={() => void retryStartupServices()}
-          />
+        {page === "studio" && (
+          <CloudGenerationPanel view="create" onOpenSettings={() => setPage("settings")} />
         )}
+
         {page === "settings" && (
-          <>
-            <section className="settings-menu" aria-labelledby="settings-heading">
-              <div className="screen-heading">
-                <p className="eyebrow">Settings</p>
-                <h2 id="settings-heading">Make it comfortable</h2>
-                <p>These stay on this device.</p>
-              </div>
-              {reviewCandidates.length > 0 && (
-                <button type="button" className="settings-row" onClick={() => setPage("review")}>
-                  <AppIcon name="sliders" />
-                  <span>
-                    <strong>Review local music</strong>
-                    <small>Blind candidate review</small>
-                  </span>
-                  <span aria-hidden="true">›</span>
+          <section className="settings-page" aria-labelledby="settings-heading">
+            <div className="screen-heading">
+              <p className="eyebrow">Settings</p>
+              <h2 id="settings-heading">Make it comfortable</h2>
+              <p>One section at a time keeps this page clear and usable in a small window.</p>
+            </div>
+            {(startupHealth && !startupHealth.core_ready) ||
+            (startupHealth && !startupHealth.packs_ready) ? (
+              <StartupRecovery
+                health={startupHealth}
+                busy={retryingStartup}
+                retryError={startupRetryError}
+                onRetry={() => void retryStartupServices()}
+              />
+            ) : null}
+            <div className="page-section-tabs" role="tablist" aria-label="Settings sections">
+              {(
+                [
+                  ["sound", "Sound & timer"],
+                  ["focus", "Focus controls"],
+                  ["connection", "Music creation"],
+                  ["help", "Help & about"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  id={`settings-tab-${id}`}
+                  role="tab"
+                  aria-selected={settingsSection === id}
+                  aria-controls={`settings-panel-${id}`}
+                  className={settingsSection === id ? "selected" : ""}
+                  onClick={() => setSettingsSection(id)}
+                >
+                  {label}
                 </button>
-              )}
-            </section>
-
-            <IntensitySelector
-              value={session.intensity}
-              disabled={!coreAvailable}
-              onChange={(i) => void session.changeIntensity(i)}
-            />
-            <MasterVolume
-              value={session.masterVolume}
-              pending={session.volumePending}
-              disabled={!coreAvailable}
-              onChange={session.changeMasterVolume}
-            />
-
-            <details className="settings-collapsible">
-              <summary>
-                <strong>Sound and timer</strong>
-                <small>Genre, mood, and session timing</small>
-              </summary>
-              <h2 className="visually-hidden">Sound and timer</h2>
-              <section className="settings-session-options" aria-label="Sound and timer options">
-                <details className="settings-option-collapsible">
-                  <summary>
-                    <strong>Music genre</strong>
-                    <small>Choose the sound style</small>
-                  </summary>
-                  <GenreSelector
-                    state={genres}
-                    disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-                    onChange={(genreId) =>
-                      void setActivityGenre(genreId)
-                        .then(setGenres)
-                        .catch((error: unknown) =>
-                          session.reportError(
-                            `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
-                          ),
-                        )
-                    }
-                  />
-                </details>
-                <details className="settings-option-collapsible">
-                  <summary>
-                    <strong>Mood</strong>
-                    <small>Choose the emotional direction</small>
-                  </summary>
-                  <MoodSelector
-                    state={moods}
-                    disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
-                    onChange={(moodId) =>
-                      void setActivityMood(moodId)
-                        .then(setMoods)
-                        .catch((error: unknown) =>
-                          session.reportError(
-                            `Unable to change music mood: ${error instanceof Error ? error.message : String(error)}`,
-                          ),
-                        )
-                    }
-                  />
-                </details>
-                <details className="settings-option-collapsible">
-                  <summary>
-                    <strong>Session timer</strong>
-                    <small>Infinite, countdown, or interval</small>
-                  </summary>
-                  <SessionTypeSelector
-                    value={session.snapshot?.kind ?? { kind: "infinite" }}
-                    disabled={!coreAvailable || session.starting || reviewActive}
-                    onChange={(kind) => void session.changeSessionType(kind)}
-                  />
-                </details>
-              </section>
-            </details>
-
-            {provenance && source?.fallback && (
-              <details className="provenance">
-                <summary>Test tone provenance &amp; licence</summary>
-                <dl>
-                  <dt>Asset</dt>
-                  <dd>{provenance.title}</dd>
-                  <dt>Generator</dt>
-                  <dd>
-                    {provenance.generator} v{provenance.generator_version}
-                  </dd>
-                  <dt>Source</dt>
-                  <dd>{provenance.source}</dd>
-                  <dt>Licence</dt>
-                  <dd>{provenance.licence}</dd>
-                  <dt>Voice / lyrics</dt>
-                  <dd>
-                    {provenance.contains_voice_or_speech ? "yes" : "no"} /{" "}
-                    {provenance.contains_lyrics ? "yes" : "no"}
-                  </dd>
-                  <dt>Looping</dt>
-                  <dd>
-                    {provenance.loops_seamlessly ? "seamless" : "crossfaded"},{" "}
-                    {provenance.duration_seconds}s @ {provenance.sample_rate_hz}Hz
-                  </dd>
-                </dl>
-                <p className="provenance-notes">{provenance.notes}</p>
-              </details>
+              ))}
+            </div>
+            {reviewCandidates.length > 0 && (
+              <button type="button" className="settings-row" onClick={() => setPage("review")}>
+                <AppIcon name="sliders" />
+                <span>
+                  <strong>Review local music</strong>
+                  <small>Blind candidate review</small>
+                </span>
+                <span aria-hidden="true">›</span>
+              </button>
             )}
-
-            <details className="settings-collapsible settings-about-collapsible">
-              <summary>
-                <strong>About &amp; help</strong>
-                <small>Version, feedback links, and safety note</small>
-              </summary>
-              <div className="settings-collapsible-content">
+            {settingsSection === "connection" && (
+              <div
+                id="settings-panel-connection"
+                role="tabpanel"
+                aria-labelledby="settings-tab-connection"
+              >
+                <CloudGenerationPanel view="settings" onOpenCreate={() => setPage("studio")} />
+              </div>
+            )}
+            {!coreAvailable && settingsSection === "sound" && (
+              <div
+                id="settings-panel-sound-availability"
+                role="tabpanel"
+                aria-labelledby="settings-tab-sound"
+                className="settings-section-content"
+              >
+                <IntensitySelector
+                  value={session.intensity}
+                  disabled
+                  onChange={(i) => void session.changeIntensity(i)}
+                />
+                <MasterVolume
+                  value={session.masterVolume}
+                  pending={session.volumePending}
+                  disabled
+                  onChange={session.changeMasterVolume}
+                />
+              </div>
+            )}
+            {settingsSection === "focus" && (
+              <div
+                id="settings-panel-focus"
+                role="tabpanel"
+                aria-labelledby="settings-tab-focus"
+                className="settings-section-content"
+              >
+                <IntensitySelector
+                  value={session.intensity}
+                  disabled={!coreAvailable}
+                  onChange={(i) => void session.changeIntensity(i)}
+                />
+                <MasterVolume
+                  value={session.masterVolume}
+                  pending={session.volumePending}
+                  disabled={!coreAvailable}
+                  onChange={session.changeMasterVolume}
+                />
+              </div>
+            )}
+            {settingsSection === "sound" && (
+              <section
+                id="settings-panel-sound"
+                role="tabpanel"
+                aria-labelledby="settings-tab-sound"
+                className="settings-section-content settings-session-options"
+                aria-label="Sound and timer options"
+              >
+                <h2>Sound and timer</h2>
+                <GenreSelector
+                  state={genres}
+                  disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+                  onChange={(genreId) =>
+                    void setActivityGenre(genreId)
+                      .then(setGenres)
+                      .catch((error: unknown) =>
+                        session.reportError(
+                          `Unable to change music genre: ${error instanceof Error ? error.message : String(error)}`,
+                        ),
+                      )
+                  }
+                />
+                <MoodSelector
+                  state={moods}
+                  disabled={!canUseGenreAndFeedback || session.starting || reviewActive}
+                  onChange={(moodId) =>
+                    void setActivityMood(moodId)
+                      .then(setMoods)
+                      .catch((error: unknown) =>
+                        session.reportError(
+                          `Unable to change music mood: ${error instanceof Error ? error.message : String(error)}`,
+                        ),
+                      )
+                  }
+                />
+                <SessionTypeSelector
+                  value={session.snapshot?.kind ?? { kind: "infinite" }}
+                  disabled={!coreAvailable || session.starting || reviewActive}
+                  onChange={(kind) => void session.changeSessionType(kind)}
+                />
+              </section>
+            )}
+            {settingsSection === "help" && (
+              <div
+                id="settings-panel-help"
+                role="tabpanel"
+                aria-labelledby="settings-tab-help"
+                className="settings-section-content"
+              >
                 <AboutAriaFocus />
                 <Disclaimer />
+                {provenance && source?.fallback && (
+                  <details className="provenance">
+                    <summary>Test tone details</summary>
+                    <p>{provenance.notes}</p>
+                  </details>
+                )}
               </div>
-            </details>
-          </>
+            )}
+          </section>
         )}
 
         {page === "review" && (
@@ -984,8 +1011,7 @@ export default function App() {
             aria-current={page === id ? "page" : undefined}
             onClick={() => {
               setPage(id);
-              setHomeScreen("choose");
-              setExpandedPlayer(false);
+              setExpandedPlayer(id === "home" && transportActive);
               resetContentScroll();
             }}
           >

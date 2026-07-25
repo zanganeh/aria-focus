@@ -16,6 +16,10 @@ const MAX_CREATIVE_PROMPT_CHARS: usize = 2_000;
 const MAX_FAILURE_DETAILS_CHARS: usize = 500;
 const MIN_TEMPO_BPM: u16 = 40;
 const MAX_TEMPO_BPM: u16 = 200;
+const GLOBAL_TONE_GUIDANCE: &str = "tone: make the production premium, warm, deep, grounded, and full-bodied; keep the musical focus in the low-mid and mid range with smooth controlled air; avoid piercing high-register leads, shrill strings, piccolo, bright plucks, brittle keys, top-heavy sparkle, sub-bass drones, and muddy low-frequency washes";
+const GLOBAL_STYLE_GUIDANCE: &str = "style: contemporary non-jazz instrumental; use a straight even 4/4 pulse, downbeat-driven rhythm, simple triadic functional harmony, and composed melodic phrasing; no swing, shuffle, blues, funk, soul, lounge, walking bass, jazz syncopation, bebop phrasing, improvisational solos, ii-V-I progressions, extended jazz chords, or chromatic substitutions";
+const ARRANGEMENT_GUIDANCE: &str = "arrangement: make the production premium, mature, sophisticated, and emotionally elevating; use a real, naturally expressive low-mid or mid-register lead performance in the role of a vocal topline (prefer warm electric guitar, acoustic piano, viola, cello, French horn, or another naturally rounded instrument appropriate to the genre); develop a memorable motif through call-and-response, register changes within a comfortable range, countermelodies, fills, and fresh variations; build a complete journey with intro, A theme, contrasting B section, lift, final variation, and clean outro; change the arrangement across 16 to 32 bar sections; avoid short copied loops, static layers, identical phrases repeating every few seconds, childish or cute melodies, nursery sounds, toy instruments, cartoon timbres, and chiptune textures";
+const CINEMATIC_THEME_GUIDANCE: &str = "theme: cinematic; emotional profile: energizing, epic, hopeful, inspiring, optimistic, upbeat, and uplifting; tonal language: stay clearly centered in D minor with natural-minor color, simple functional harmony, and coherent 4- and 8-bar phrases; use Dm-Bb-F-C for the main theme and Gm-Bb-A7-Dm for the lift, with clear dominant-to-tonic cadences and the bass anchored to D; avoid atonal or ambiguous modal harmony, chromatic chord planing, unresolved clusters, constant key changes, and overly dark dissonance; palette: real acoustic piano, orchestral strings, orchestral brass, orchestral percussion, and orchestral winds; use an expressive real French horn or cello as the primary instrumental topline in place of a vocalist, with piano and strings carrying the harmonic arc; omit choral voices to preserve the instrumental-only contract; build restrained tension, a clear heroic lift, and a premium resolved film-score ending";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
@@ -280,9 +284,22 @@ pub fn build_studio_prompt(
     let mut parts = vec![
         "instrumental music only".to_owned(),
         format!("activity: {}", input.activity.storage_key()),
+        format!("use case: {}", activity_prompt(input.activity)),
         format!("genre: {}", input.genre_id.as_str()),
         format!("energy: {}", energy_name(input.energy)),
+        GLOBAL_TONE_GUIDANCE.to_owned(),
+        GLOBAL_STYLE_GUIDANCE.to_owned(),
+        "performance: recognizable musical roles, natural attack and decay, humanized dynamics, and a clean polished mix; avoid toy-like timbres, plastic transients, mechanical MIDI timing, and fake acoustic emulation".to_owned(),
+        ARRANGEMENT_GUIDANCE.to_owned(),
     ];
+    if input.genre_id.as_str() == "cinematic"
+        || input
+            .mood_id
+            .as_ref()
+            .is_some_and(|mood| mood.as_str() == "cinematic")
+    {
+        parts.push(CINEMATIC_THEME_GUIDANCE.to_owned());
+    }
     if let Some(tempo) = input.tempo_bpm {
         parts.push(format!("tempo: {tempo} BPM"));
     }
@@ -295,7 +312,7 @@ pub fn build_studio_prompt(
             input
                 .instrument_ids
                 .iter()
-                .map(StudioId::as_str)
+                .map(|instrument| instrument_prompt(instrument.as_str()))
                 .collect::<Vec<_>>()
                 .join(", ")
         ));
@@ -724,6 +741,50 @@ fn energy_name(energy: StudioEnergy) -> &'static str {
         StudioEnergy::Low => "low",
         StudioEnergy::Medium => "medium",
         StudioEnergy::High => "high",
+    }
+}
+
+fn activity_prompt(activity: Activity) -> &'static str {
+    match activity {
+        Activity::DeepWork => {
+            "steady, restrained forward motion for sustained concentration; low-distraction dynamics"
+        }
+        Activity::Motivation => {
+            "fast, clean forward-driving music for cruising on a bright coastal highway beside the beach; crisp controlled rhythm, smooth continuous motion, optimistic daylight energy, no engine or environmental sound effects"
+        }
+        Activity::Creativity => {
+            "curious, flowing movement for open-ended ideation; playful but controlled variation"
+        }
+        Activity::Learning => {
+            "clear, balanced momentum for reading and retention; supportive dynamics and uncluttered space"
+        }
+        Activity::LightWork => {
+            "light, tidy forward motion for repetitive tasks; upbeat but unobtrusive energy"
+        }
+    }
+}
+
+fn instrument_prompt(instrument: &str) -> &str {
+    match instrument {
+        "piano" => {
+            "real warm concert acoustic piano performance, close-miked, rounded low-mid voicing, natural hammer attack, pedal resonance, humanized dynamics, no brittle top end"
+        }
+        "handpan" => {
+            "real warm rounded handpan performance, low-mid notes, gentle hand strikes, natural resonance, humanized timing, no sharp high notes"
+        }
+        "synth" => {
+            "restrained deep warm analog pad and controlled mid-bass support only; keep the primary topline on a naturally expressive rounded instrument, never a high generic synth lead"
+        }
+        "strings" => {
+            "small real bowed viola and cello ensemble, natural bow movement, warm low-mid sustained voicings, no piercing high violins"
+        }
+        "guitar" => {
+            "premium real warm clean electric guitar topline, close-miked through a boutique tube amp and cabinet, rounded low-mid body, natural string attack, restrained slides and bends, controlled vibrato, pick dynamics, tasteful sustain, human timing, no shredding or bright thin tone"
+        }
+        "percussion" => {
+            "live acoustic drum kit with deep tuned kick and floor toms plus restrained hand percussion, natural transients, humanized groove, controlled cymbals"
+        }
+        _ => instrument,
     }
 }
 

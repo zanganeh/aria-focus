@@ -25,7 +25,60 @@ import type {
   StudioJobSummary,
   CreateStudioMusic,
   MyMusicItem,
+  CloudKeyStatus,
+  CloudModel,
+  CloudGenerationRequest,
+  CloudCostEstimate,
+  CloudBatchSummary,
+  CloudBatchItem,
 } from "./types";
+
+export async function getCloudKeyStatus(): Promise<CloudKeyStatus> {
+  return await invoke<CloudKeyStatus>("get_cloud_key_status");
+}
+export async function saveCloudKey(key: string): Promise<CloudKeyStatus> {
+  return await invoke<CloudKeyStatus>("save_cloud_key", { key });
+}
+export async function removeCloudKey(): Promise<CloudKeyStatus> {
+  return await invoke<CloudKeyStatus>("remove_cloud_key");
+}
+export async function listCloudModels(): Promise<CloudModel[]> {
+  return await invoke<CloudModel[]>("list_cloud_models");
+}
+export async function estimateCloudGeneration(
+  request: CloudGenerationRequest,
+): Promise<CloudCostEstimate> {
+  return await invoke<CloudCostEstimate>("estimate_cloud_generation", { request });
+}
+export async function createCloudGeneration(
+  request: CloudGenerationRequest,
+): Promise<CloudBatchSummary> {
+  return await invoke<CloudBatchSummary>("create_cloud_generation", { request });
+}
+export async function cancelCloudGeneration(): Promise<void> {
+  await invoke("cancel_cloud_generation");
+}
+export async function getCloudGeneration(batchId: string): Promise<CloudBatchSummary | null> {
+  return await invoke<CloudBatchSummary | null>("get_cloud_generation", { batchId });
+}
+export async function getActiveCloudGeneration(): Promise<CloudBatchSummary | null> {
+  return await invoke<CloudBatchSummary | null>("get_active_cloud_generation");
+}
+export async function getCloudGenerationItems(batchId: string): Promise<CloudBatchItem[]> {
+  return await invoke<CloudBatchItem[]>("get_cloud_generation_items", { batchId });
+}
+export async function activateCloudGeneration(batchId: string): Promise<CloudBatchSummary> {
+  return await invoke<CloudBatchSummary>("activate_cloud_generation", { batchId });
+}
+export async function startCloudGenerationPreview(batchId: string, itemId: string): Promise<void> {
+  await invoke("start_cloud_generation_preview", { batchId, itemId });
+}
+export async function restoreCloudGeneration(): Promise<void> {
+  await invoke("restore_cloud_generation");
+}
+export async function deactivateCloudGeneration(): Promise<void> {
+  await invoke("deactivate_cloud_generation");
+}
 
 export async function getStudioCapability(): Promise<StudioCapability> {
   return await invoke<StudioCapability>("get_studio_capability");

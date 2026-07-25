@@ -12,6 +12,7 @@ default-run = "aria-focus"
 default = []
 bundled-library = []
 bundled-listening-test = []
+cloud-generation-mock = []
 
 [lib]
 name = "aria_focus_desktop_lib"
@@ -56,6 +57,13 @@ tauri-plugin-updater = "=2.9.0"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_SystemInformation", "Win32_System_Threading"] }
+keyring = { version = "3.6.2", default-features = false, features = ["windows-native"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6.2", default-features = false, features = ["apple-native"] }
+
+[target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
+keyring = { version = "3.6.2", default-features = false, features = ["sync-secret-service"] }
 
 [dev-dependencies]
 zip = { version = "=2.4.2", default-features = false, features = ["deflate"] }

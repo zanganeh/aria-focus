@@ -1,7 +1,9 @@
 use audio_engine::{
-    decode_generated_draft_flac, AudioError, AudioFacade, AudioIntensity, PlaybackSource,
-    PlaybackState, SourceLabel,
+    decode_generated_draft_flac, decode_track_with_limit, AudioError, AudioFacade, AudioIntensity,
+    AuthoredRegion, AuthoredRegionKind, DecodeExpectation, MediaCodec, PlaybackSource,
+    PlaybackState, SourceLabel, MAX_PROGRAM_SAMPLES,
 };
+use std::fs;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
@@ -10,6 +12,18 @@ pub(crate) enum DraftPreviewState {
     Stopped,
     Playing,
     Paused,
+}
+
+pub(crate) struct CloudPreviewSource {
+    pub(crate) path: PathBuf,
+    pub(crate) codec: MediaCodec,
+    pub(crate) sha256: String,
+    pub(crate) sample_rate_hz: u32,
+    pub(crate) channels: u16,
+    pub(crate) bit_depth: Option<u16>,
+    pub(crate) duration_seconds: f32,
+    pub(crate) item_id: String,
+    pub(crate) title: String,
 }
 
 /// Audio-only transport for generated drafts. It intentionally has no domain
@@ -61,6 +75,49 @@ impl<A: AudioFacade> PreviewAudioCoordinator<A> {
         self.audio
             .start_with_source(PlaybackSource::Draft(program), AudioIntensity::Off)?;
         self.job_id = Some(job_id.to_owned());
+        Ok(())
+    }
+
+    pub(crate) fn start_cloud(
+        &mut self,
+        source: CloudPreviewSource,
+        master_volume: u8,
+    ) -> Result<(), AudioError> {
+        let bytes = fs::metadata(&source.path)
+            .map_err(|error| AudioError::Media(error.to_string()))?
+            .len();
+        let track = decode_track_with_limit(
+            &DecodeExpectation {
+                path: source.path,
+                codec: source.codec,
+                bytes,
+                sha256: source.sha256,
+                sample_rate_hz: source.sample_rate_hz,
+                channels: source.channels,
+                bit_depth: source.bit_depth,
+                duration_seconds: source.duration_seconds,
+                regions: vec![AuthoredRegion {
+                    kind: AuthoredRegionKind::Loop,
+                    start_seconds: 0.0,
+                    end_seconds: source.duration_seconds,
+                }],
+                label: SourceLabel {
+                    pack_id: "cloud-generation-preview".to_owned(),
+                    pack_title: "Cloud generation preview — not saved".to_owned(),
+                    item_id: source.item_id.clone(),
+                    item_title: source.title,
+                    variant_id: format!("cloud-{}", source.codec.storage_name()),
+                },
+            },
+            MAX_PROGRAM_SAMPLES,
+        )
+        .map_err(|error| AudioError::Media(error.to_string()))?;
+        let program = audio_engine::DecodedProgram::new(vec![track])
+            .map_err(|error| AudioError::Media(error.to_string()))?;
+        self.audio.set_master_volume(master_volume)?;
+        self.audio
+            .start_with_source(PlaybackSource::Draft(program), AudioIntensity::Off)?;
+        self.job_id = Some(source.item_id);
         Ok(())
     }
     pub(crate) fn pause(&mut self) -> Result<(), AudioError> {

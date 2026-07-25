@@ -52,7 +52,7 @@ try {
     throw 'Staged audio verification failed.'
   }
   Move-Item -LiteralPath $staging -Destination $destination
-  Write-Host 'Staged private-beta resource. Build with: pnpm --dir apps/desktop tauri build --config src-tauri/tauri.private-beta.conf.json'
+  Write-Host 'Staged private-beta resource. Build with: pnpm --dir apps/desktop tauri build --features bundled-listening-test --config src-tauri/tauri.private-beta.conf.json'
 } finally {
   if (Test-Path -LiteralPath $staging) {
     Remove-Item -LiteralPath $staging -Recurse -Force

@@ -18,6 +18,7 @@ interface Props {
 }
 
 const ROUND_ONE_ALIASES = new Set(["I", "J", "N", "O", "Q", "R", "U", "X"]);
+const REVIEW_PAGE_SIZE = 4;
 
 export function QuarantinedReview({ candidates, active, disabled, onStart }: Props) {
   if (candidates.length === 0) return null;
@@ -41,6 +42,7 @@ function QuarantinedReviewContent({ candidates, active, disabled, onStart }: Pro
     [candidates],
   );
   const [showAllCandidates, setShowAllCandidates] = useState(false);
+  const [page, setPage] = useState(0);
   const visibleCandidates = useMemo(
     () =>
       hasRoundOneShortlist && !showAllCandidates
@@ -52,6 +54,11 @@ function QuarantinedReviewContent({ candidates, active, disabled, onStart }: Pro
     () => visibleCandidates.map((candidate) => candidate.alias),
     [visibleCandidates],
   );
+  const pageCount = Math.max(1, Math.ceil(visibleCandidates.length / REVIEW_PAGE_SIZE));
+  const pageCandidates = useMemo(
+    () => visibleCandidates.slice(page * REVIEW_PAGE_SIZE, (page + 1) * REVIEW_PAGE_SIZE),
+    [page, visibleCandidates],
+  );
   const namespace = useMemo(() => reviewNamespaceForAliases(aliases), [aliases]);
   const [ratings, setRatings] = useState<ReviewRatings>(() =>
     loadReviewRatings(namespace, aliases),
@@ -60,6 +67,7 @@ function QuarantinedReviewContent({ candidates, active, disabled, onStart }: Pro
   const [copyMessage, setCopyMessage] = useState("");
 
   useEffect(() => {
+    setPage(0);
     setRatings(loadReviewRatings(namespace, aliases));
     setExportText("");
     setCopyMessage("");
@@ -107,7 +115,7 @@ function QuarantinedReviewContent({ candidates, active, disabled, onStart }: Pro
         </div>
       )}
       <div role="list" aria-label="Available quarantined review candidates">
-        {visibleCandidates.map((candidate) => (
+        {pageCandidates.map((candidate) => (
           <div key={candidate.review_id} role="listitem" className="quarantined-review-candidate">
             <button
               type="button"
@@ -148,6 +156,27 @@ function QuarantinedReviewContent({ candidates, active, disabled, onStart }: Pro
           </div>
         ))}
       </div>
+      {pageCount > 1 && (
+        <nav className="review-pagination" aria-label="Quarantined review pages">
+          <button
+            type="button"
+            disabled={page === 0}
+            onClick={() => setPage((current) => Math.max(0, current - 1))}
+          >
+            Previous
+          </button>
+          <span>
+            Page {page + 1} of {pageCount}
+          </span>
+          <button
+            type="button"
+            disabled={page === pageCount - 1}
+            onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+          >
+            Next
+          </button>
+        </nav>
+      )}
       <button type="button" onClick={() => void exportRatings()}>
         Copy blind-triage JSON summary
       </button>

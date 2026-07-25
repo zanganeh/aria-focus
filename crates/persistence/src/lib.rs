@@ -13,6 +13,8 @@ use music_studio_domain::{
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior};
 use serde::{Deserialize, Serialize};
 
+pub mod music_generation;
+
 const MIGRATIONS: &[(i64, &str, &str)] = &[
     (
         1,
@@ -93,6 +95,16 @@ const MIGRATIONS: &[(i64, &str, &str)] = &[
         16,
         "generated_local_customer_integrity",
         include_str!("../migrations/0016_generated_local_customer_integrity.sql"),
+    ),
+    (
+        17,
+        "music_generation_batches",
+        include_str!("../migrations/0017_music_generation_batches.sql"),
+    ),
+    (
+        18,
+        "cloud_item_feedback",
+        include_str!("../migrations/0018_cloud_item_feedback.sql"),
     ),
 ];
 const ONBOARDING_GENRE_IDS: &[&str] = &[
@@ -436,6 +448,20 @@ pub trait CatalogueRegistry: Send {
         Err(PersistenceError::Storage(
             "owner-waived pack upgrade is unavailable".into(),
         ))
+    }
+    fn replace_owner_waived_pack_preserving_feedback_from(
+        &mut self,
+        previous_pack_id: &str,
+        registration: &PackRegistration,
+    ) -> Result<(), PersistenceError> {
+        if previous_pack_id == registration.pack.pack_id {
+            self.replace_owner_waived_pack_preserving_feedback(registration)
+        } else {
+            let _ = (previous_pack_id, registration);
+            Err(PersistenceError::Storage(
+                "legacy owner-waived pack identity upgrade is unavailable".into(),
+            ))
+        }
     }
     fn register_generated_local_pack(
         &mut self,
@@ -1718,6 +1744,10 @@ fn valid_identifier(value: &str) -> bool {
         })
 }
 
+fn is_cloud_item_id(value: &str) -> bool {
+    value.starts_with("cloud_item_") && valid_identifier(value)
+}
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct StoredGeneratedLocalEvidence {
@@ -1894,6 +1924,17 @@ impl CatalogueRegistry for PreferencesRepository {
         &mut self,
         registration: &PackRegistration,
     ) -> Result<(), PersistenceError> {
+        self.replace_owner_waived_pack_preserving_feedback_from(
+            &registration.pack.pack_id,
+            registration,
+        )
+    }
+
+    fn replace_owner_waived_pack_preserving_feedback_from(
+        &mut self,
+        previous_pack_id: &str,
+        registration: &PackRegistration,
+    ) -> Result<(), PersistenceError> {
         if registration.generated_local_evidence.is_some() {
             return Err(PersistenceError::Storage(
                 "bundled pack upgrade cannot contain generated-local evidence".into(),
@@ -1905,7 +1946,7 @@ impl CatalogueRegistry for PreferencesRepository {
         let status = transaction
             .query_row(
                 "SELECT status FROM installed_packs WHERE pack_id=?1",
-                [&registration.pack.pack_id],
+                [previous_pack_id],
                 |row| row.get::<_, String>(0),
             )
             .optional()?;
@@ -1914,10 +1955,22 @@ impl CatalogueRegistry for PreferencesRepository {
                 "only the matching owner-waived pack may be upgraded".into(),
             ));
         }
+        if previous_pack_id != registration.pack.pack_id {
+            let target_exists: bool = transaction.query_row(
+                "SELECT EXISTS(SELECT 1 FROM installed_packs WHERE pack_id=?1)",
+                [&registration.pack.pack_id],
+                |row| row.get(0),
+            )?;
+            if target_exists {
+                return Err(PersistenceError::Storage(
+                    "owner-waived pack replacement target already exists".into(),
+                ));
+            }
+        }
         let mut statement = transaction
             .prepare("SELECT item_id FROM installed_items WHERE pack_id=?1 ORDER BY item_id")?;
         let installed = statement
-            .query_map([&registration.pack.pack_id], |row| row.get::<_, String>(0))?
+            .query_map([previous_pack_id], |row| row.get::<_, String>(0))?
             .collect::<Result<Vec<_>, _>>()?;
         drop(statement);
         let mut replacement = registration
@@ -1932,29 +1985,42 @@ impl CatalogueRegistry for PreferencesRepository {
             ));
         }
         let pack = &registration.pack;
-        let changed = transaction.execute(
-            "UPDATE installed_packs SET title=?2,version=?3,manifest_sha256=?4,archive_sha256=?5,install_path=?6,item_count=?7,status=?8,canonical_manifest=?9,created_at_unix_seconds=?10 WHERE pack_id=?1 AND status='owner_waived_bundled_private_beta'",
-            rusqlite::params![pack.pack_id, pack.title, pack.version, pack.manifest_sha256, pack.archive_sha256, pack.install_path, pack.item_count, pack.status, pack.canonical_manifest, pack.created_at_unix_seconds],
-        )?;
-        if changed != 1 {
-            return Err(PersistenceError::Storage(
-                "owner-waived pack changed during upgrade".into(),
-            ));
+        if previous_pack_id == pack.pack_id {
+            let changed = transaction.execute(
+                "UPDATE installed_packs SET title=?2,version=?3,manifest_sha256=?4,archive_sha256=?5,install_path=?6,item_count=?7,status=?8,canonical_manifest=?9,created_at_unix_seconds=?10 WHERE pack_id=?1 AND status='owner_waived_bundled_private_beta'",
+                rusqlite::params![pack.pack_id, pack.title, pack.version, pack.manifest_sha256, pack.archive_sha256, pack.install_path, pack.item_count, pack.status, pack.canonical_manifest, pack.created_at_unix_seconds],
+            )?;
+            if changed != 1 {
+                return Err(PersistenceError::Storage(
+                    "owner-waived pack changed during upgrade".into(),
+                ));
+            }
+        } else {
+            transaction.execute(
+                "INSERT INTO installed_packs(pack_id,title,version,manifest_sha256,archive_sha256,install_path,item_count,status,canonical_manifest,created_at_unix_seconds) VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10)",
+                rusqlite::params![pack.pack_id, pack.title, pack.version, pack.manifest_sha256, pack.archive_sha256, pack.install_path, pack.item_count, pack.status, pack.canonical_manifest, pack.created_at_unix_seconds],
+            )?;
         }
         for item in &registration.items {
             transaction.execute(
-                "UPDATE installed_items SET title=?2 WHERE item_id=?1 AND pack_id=?3",
-                rusqlite::params![item.item_id, item.title, pack.pack_id],
+                "UPDATE installed_items SET pack_id=?2,title=?3 WHERE item_id=?1 AND pack_id=?4",
+                rusqlite::params![item.item_id, pack.pack_id, item.title, previous_pack_id],
             )?;
         }
         transaction.execute(
             "DELETE FROM installed_taxonomy WHERE pack_id=?1",
-            [&pack.pack_id],
+            [previous_pack_id],
         )?;
         for term in &registration.taxonomy {
             transaction.execute(
                 "INSERT INTO installed_taxonomy(pack_id,kind,term_id,label) VALUES(?1,?2,?3,?4)",
                 rusqlite::params![pack.pack_id, term.kind, term.term_id, term.label],
+            )?;
+        }
+        if previous_pack_id != pack.pack_id {
+            transaction.execute(
+                "DELETE FROM installed_packs WHERE pack_id=?1 AND status='owner_waived_bundled_private_beta'",
+                [previous_pack_id],
             )?;
         }
         transaction.commit()?;
@@ -2203,6 +2269,33 @@ impl ItemFeedbackStore for PreferencesRepository {
                 }
             }
         }
+        let mut cloud_statement = self.connection.prepare(
+            "SELECT item_id, activity, feedback FROM cloud_item_activity_feedback WHERE item_id = ?1",
+        )?;
+        for item_id in item_ids {
+            if !valid_identifier(item_id) {
+                return Err(PersistenceError::InvalidItemId(item_id.clone()));
+            }
+            for row in cloud_statement.query_map([item_id], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            })? {
+                let (stored_id, stored_activity, stored_feedback) = row?;
+                if !valid_identifier(&stored_id) {
+                    return Err(PersistenceError::InvalidItemId(stored_id));
+                }
+                let stored_activity = Activity::from_storage_key(&stored_activity)
+                    .ok_or(PersistenceError::InvalidActivity(stored_activity))?;
+                let parsed = TrackFeedback::from_storage_key(&stored_feedback)
+                    .ok_or(PersistenceError::InvalidTrackFeedback(stored_feedback))?;
+                if stored_activity == activity {
+                    feedback.insert(stored_id, parsed);
+                }
+            }
+        }
         Ok(feedback)
     }
 
@@ -2224,7 +2317,20 @@ impl ItemFeedbackStore for PreferencesRepository {
             rusqlite::params![item_id, activity.storage_key(), feedback.storage_key()],
         )?;
         if changed == 0 {
-            return Err(PersistenceError::UnknownInstalledItem(item_id.to_owned()));
+            if !is_cloud_item_id(item_id) {
+                return Err(PersistenceError::UnknownInstalledItem(item_id.to_owned()));
+            }
+            let cloud_changed = self.connection.execute(
+                "INSERT INTO cloud_item_activity_feedback(item_id, activity, feedback, updated_at_unix_seconds)
+                 VALUES(?1, ?2, ?3, unixepoch())
+                 ON CONFLICT(item_id, activity) DO UPDATE SET
+                     feedback = excluded.feedback,
+                     updated_at_unix_seconds = excluded.updated_at_unix_seconds",
+                rusqlite::params![item_id, activity.storage_key(), feedback.storage_key()],
+            )?;
+            if cloud_changed == 0 {
+                return Err(PersistenceError::UnknownInstalledItem(item_id.to_owned()));
+            }
         }
         Ok(())
     }
@@ -2239,6 +2345,10 @@ impl ItemFeedbackStore for PreferencesRepository {
         }
         self.connection.execute(
             "DELETE FROM item_activity_feedback WHERE item_id = ?1 AND activity = ?2",
+            rusqlite::params![item_id, activity.storage_key()],
+        )?;
+        self.connection.execute(
+            "DELETE FROM cloud_item_activity_feedback WHERE item_id = ?1 AND activity = ?2",
             rusqlite::params![item_id, activity.storage_key()],
         )?;
         Ok(())
@@ -2277,6 +2387,33 @@ impl ItemFeedbackStore for PreferencesRepository {
                 }
             }
         }
+        let mut cloud_statement = self.connection.prepare(
+            "SELECT item_id, activity, enjoyment FROM cloud_item_activity_enjoyment WHERE item_id = ?1",
+        )?;
+        for item_id in item_ids {
+            if !valid_identifier(item_id) {
+                return Err(PersistenceError::InvalidItemId(item_id.clone()));
+            }
+            for row in cloud_statement.query_map([item_id], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            })? {
+                let (stored_id, stored_activity, stored_enjoyment) = row?;
+                if !valid_identifier(&stored_id) {
+                    return Err(PersistenceError::InvalidItemId(stored_id));
+                }
+                let stored_activity = Activity::from_storage_key(&stored_activity)
+                    .ok_or(PersistenceError::InvalidActivity(stored_activity))?;
+                let parsed = TrackEnjoyment::from_storage_key(&stored_enjoyment)
+                    .ok_or(PersistenceError::InvalidTrackEnjoyment(stored_enjoyment))?;
+                if stored_activity == activity {
+                    enjoyment.insert(stored_id, parsed);
+                }
+            }
+        }
         Ok(enjoyment)
     }
 
@@ -2291,7 +2428,20 @@ impl ItemFeedbackStore for PreferencesRepository {
         }
         let changed = self.connection.execute("INSERT INTO item_activity_enjoyment(item_id, activity, enjoyment, updated_at_unix_seconds) SELECT item_id, ?2, ?3, unixepoch() FROM installed_items WHERE item_id = ?1 ON CONFLICT(item_id, activity) DO UPDATE SET enjoyment = excluded.enjoyment, updated_at_unix_seconds = excluded.updated_at_unix_seconds", rusqlite::params![item_id, activity.storage_key(), enjoyment.storage_key()])?;
         if changed == 0 {
-            return Err(PersistenceError::UnknownInstalledItem(item_id.to_owned()));
+            if !is_cloud_item_id(item_id) {
+                return Err(PersistenceError::UnknownInstalledItem(item_id.to_owned()));
+            }
+            let cloud_changed = self.connection.execute(
+                "INSERT INTO cloud_item_activity_enjoyment(item_id, activity, enjoyment, updated_at_unix_seconds)
+                 VALUES(?1, ?2, ?3, unixepoch())
+                 ON CONFLICT(item_id, activity) DO UPDATE SET
+                     enjoyment = excluded.enjoyment,
+                     updated_at_unix_seconds = excluded.updated_at_unix_seconds",
+                rusqlite::params![item_id, activity.storage_key(), enjoyment.storage_key()],
+            )?;
+            if cloud_changed == 0 {
+                return Err(PersistenceError::UnknownInstalledItem(item_id.to_owned()));
+            }
         }
         Ok(())
     }
@@ -2306,6 +2456,10 @@ impl ItemFeedbackStore for PreferencesRepository {
         }
         self.connection.execute(
             "DELETE FROM item_activity_enjoyment WHERE item_id = ?1 AND activity = ?2",
+            rusqlite::params![item_id, activity.storage_key()],
+        )?;
+        self.connection.execute(
+            "DELETE FROM cloud_item_activity_enjoyment WHERE item_id = ?1 AND activity = ?2",
             rusqlite::params![item_id, activity.storage_key()],
         )?;
         Ok(())
@@ -2534,7 +2688,7 @@ mod tests {
     #[test]
     fn migration_is_versioned_and_idempotent() {
         let repository = PreferencesRepository::in_memory().unwrap();
-        assert_eq!(repository.schema_version().unwrap(), 16);
+        assert_eq!(repository.schema_version().unwrap(), 18);
     }
 
     #[test]
@@ -2767,6 +2921,51 @@ mod tests {
     }
 
     #[test]
+    fn cloud_item_feedback_is_durable_without_an_installed_pack_row() {
+        let file = tempfile::NamedTempFile::new().unwrap();
+        let item_id = "cloud_item_feedback_test";
+        {
+            let mut repository = PreferencesRepository::open(file.path()).unwrap();
+            repository
+                .save_item_feedback(item_id, Activity::Motivation, TrackFeedback::HelpsFocus)
+                .unwrap();
+            repository
+                .save_item_enjoyment(item_id, Activity::Motivation, TrackEnjoyment::Liked)
+                .unwrap();
+        }
+        let mut reopened = PreferencesRepository::open(file.path()).unwrap();
+        let ids = [item_id.to_owned()];
+        assert_eq!(
+            reopened
+                .load_item_feedback(Activity::Motivation, &ids)
+                .unwrap()
+                .get(item_id),
+            Some(&TrackFeedback::HelpsFocus)
+        );
+        assert_eq!(
+            reopened
+                .load_item_enjoyment(Activity::Motivation, &ids)
+                .unwrap()
+                .get(item_id),
+            Some(&TrackEnjoyment::Liked)
+        );
+        reopened
+            .clear_item_feedback(item_id, Activity::Motivation)
+            .unwrap();
+        reopened
+            .clear_item_enjoyment(item_id, Activity::Motivation)
+            .unwrap();
+        assert!(reopened
+            .load_item_feedback(Activity::Motivation, &ids)
+            .unwrap()
+            .is_empty());
+        assert!(reopened
+            .load_item_enjoyment(Activity::Motivation, &ids)
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
     fn enjoyment_is_independent_activity_scoped_corruption_is_visible_and_cascades() {
         let mut repository = PreferencesRepository::in_memory().unwrap();
         insert_feedback_item(&mut repository, "track-enjoyment");
@@ -2947,7 +3146,7 @@ mod tests {
             .unwrap();
 
         let mut repository = PreferencesRepository::from_connection(connection).unwrap();
-        assert_eq!(repository.schema_version().unwrap(), 16);
+        assert_eq!(repository.schema_version().unwrap(), 18);
         assert_eq!(
             repository.load_last_activity().unwrap(),
             Some(Activity::Learning)
@@ -2990,7 +3189,7 @@ mod tests {
         ).unwrap();
 
         let mut repository = PreferencesRepository::from_connection(connection).unwrap();
-        assert_eq!(repository.schema_version().unwrap(), 16);
+        assert_eq!(repository.schema_version().unwrap(), 18);
         assert_eq!(
             repository.load_last_activity().unwrap(),
             Some(Activity::Learning)
@@ -3049,7 +3248,7 @@ mod tests {
         ).unwrap();
 
         let mut repository = PreferencesRepository::from_connection(connection).unwrap();
-        assert_eq!(repository.schema_version().unwrap(), 16);
+        assert_eq!(repository.schema_version().unwrap(), 18);
         assert_eq!(
             repository
                 .find_installed_pack("preserved.v12.pack")
@@ -3120,7 +3319,7 @@ mod tests {
             .unwrap();
 
         let mut repository = PreferencesRepository::from_connection(connection).unwrap();
-        assert_eq!(repository.schema_version().unwrap(), 16);
+        assert_eq!(repository.schema_version().unwrap(), 18);
         assert!(repository
             .find_installed_pack("preserved.pack")
             .unwrap()
@@ -3149,7 +3348,7 @@ mod tests {
         connection.execute("INSERT INTO item_activity_feedback(item_id, activity, feedback, updated_at_unix_seconds) VALUES('helpful-track', 'deep_work', 'helps_focus', 0), ('neutral-track', 'deep_work', 'neutral', 0)", []).unwrap();
         let mut repository = PreferencesRepository::from_connection(connection).unwrap();
         let ids = ["helpful-track".to_owned(), "neutral-track".to_owned()];
-        assert_eq!(repository.schema_version().unwrap(), 16);
+        assert_eq!(repository.schema_version().unwrap(), 18);
         assert_eq!(
             repository
                 .load_item_feedback(Activity::DeepWork, &ids)
@@ -3291,6 +3490,86 @@ mod tests {
                 .unwrap()
                 .get("same-track"),
             Some(&TrackEnjoyment::Liked)
+        );
+    }
+
+    #[test]
+    fn bundled_upgrade_can_rename_a_legacy_pack_id_without_losing_feedback() {
+        let mut repository = PreferencesRepository::in_memory().unwrap();
+        let legacy = PackRegistration {
+            pack: InstalledPackRecord {
+                pack_id: "aria-focus-library-unsigned-v1".into(),
+                title: "Legacy library".into(),
+                version: "1.0.0".into(),
+                manifest_sha256: "a".repeat(64),
+                archive_sha256: "b".repeat(64),
+                install_path: "packs/aria-focus-library-unsigned-v1/1.0.0".into(),
+                item_count: 1,
+                status: "owner_waived_bundled_private_beta".into(),
+                canonical_manifest: "{}".into(),
+                created_at_unix_seconds: 1,
+            },
+            items: vec![RegisteredItem {
+                item_id: "same-track".into(),
+                title: "Legacy title".into(),
+            }],
+            taxonomy: vec![],
+            generated_local_evidence: None,
+        };
+        repository.register_pack(&legacy).unwrap();
+        repository
+            .save_item_feedback(
+                "same-track",
+                Activity::Motivation,
+                TrackFeedback::HelpsFocus,
+            )
+            .unwrap();
+
+        let replacement = PackRegistration {
+            pack: InstalledPackRecord {
+                pack_id: "local-activity-library-v3".into(),
+                title: "Current library".into(),
+                version: "0.3.0".into(),
+                manifest_sha256: "c".repeat(64),
+                archive_sha256: "d".repeat(64),
+                install_path: "packs/local-activity-library-v3/0.3.0".into(),
+                item_count: 1,
+                status: "owner_waived_bundled_private_beta".into(),
+                canonical_manifest: "{}".into(),
+                created_at_unix_seconds: 2,
+            },
+            items: vec![RegisteredItem {
+                item_id: "same-track".into(),
+                title: "Current title".into(),
+            }],
+            taxonomy: vec![],
+            generated_local_evidence: None,
+        };
+        repository
+            .replace_owner_waived_pack_preserving_feedback_from(
+                "aria-focus-library-unsigned-v1",
+                &replacement,
+            )
+            .unwrap();
+
+        assert!(repository
+            .find_installed_pack("aria-focus-library-unsigned-v1")
+            .unwrap()
+            .is_none());
+        assert_eq!(
+            repository
+                .find_installed_pack("local-activity-library-v3")
+                .unwrap()
+                .unwrap()
+                .title,
+            "Current library"
+        );
+        assert_eq!(
+            repository
+                .load_item_feedback(Activity::Motivation, &["same-track".into()])
+                .unwrap()
+                .get("same-track"),
+            Some(&TrackFeedback::HelpsFocus)
         );
     }
 
@@ -3671,7 +3950,7 @@ mod tests {
             rusqlite::params![job.job_id.as_str(), job.attempt_id.as_str(), studio_json(&job.request).unwrap(), studio_json(&job.prompt).unwrap(), job.created_at_ms],
         ).unwrap();
         let mut repository = PreferencesRepository::from_connection(connection).unwrap();
-        assert_eq!(repository.schema_version().unwrap(), 16);
+        assert_eq!(repository.schema_version().unwrap(), 18);
         let artifact = ready_artifact(&job);
         repository.upsert_studio_job_artifact(&artifact).unwrap();
         assert_eq!(

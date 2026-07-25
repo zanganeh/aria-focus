@@ -1,0 +1,38 @@
+{
+  "schema": "aria-focus.music-prompt",
+  "schema_version": 1,
+  "profile_id": "profile-002",
+  "selection": {
+    "activity": "Motivation",
+    "genre": "Cinematic",
+    "subgenres": ["Orchestral"],
+    "moods": ["Brooding", "Dark", "Epic", "Ominous", "Strong"],
+    "instruments": [
+      "Acoustic Piano",
+      "Arp Synth",
+      "Electric Guitar",
+      "Electronic Percussion",
+      "Orchestral Brass",
+      "Orchestral Percussion",
+      "Orchestral Strings",
+      "Orchestral Winds",
+      "Processed Strings",
+      "Synth Bass",
+      "Textural Soundscape"
+    ],
+    "excluded_instruments": [],
+    "bpm": 120,
+    "brightness": 0.36,
+    "complexity": 0.11
+  },
+  "prompt": {
+    "positive": "[Instrumental] Create a 3-minute premium instrumental track for motivation and sustained focus. Genre: Cinematic; subgenres: Orchestral. Mood: Brooding, Dark, Epic, Ominous, Strong. Tempo: 120 BPM in a steady 4/4 meter. Use a warm acoustic piano as the harmonic anchor and motif carrier, a restrained arpeggiated pulse in the background, never a piercing lead, a warm clean electric-guitar texture, no rock lead or solo, controlled electronic percussion with a steady even pulse, rounded orchestral brass in comfortable middle registers, restrained orchestral percussion for gradual forward motion, an expressive string ensemble carrying evolving harmony, warm orchestral winds used for quiet counter-melody and color, wide processed string texture with slow evolving movement, a warm controlled synth-bass foundation focused in the low-mid range, a low-contrast textural soundscape that leaves space for the motif. Keep the tonal character balanced and warm, the arrangement sparse, and the mix clear, deep, and mature. Start with a restrained tonal introduction under 10 seconds, establish the main pulse quickly, then develop contrasting 16-to-32-bar phrases with small changes in harmony, register, countermelody, and texture. Build energy through musical development rather than a drop. End with a resolved, crossfade-friendly outro and never repeat one short loop unchanged.",
+    "negative": "blues, chanting, funk, jazz, singing, speech, spoken word, swing, vocals, whispers, piercing high frequencies, sub-bass rumble, toy instruments, childish melodies, random notes, white noise, jazz swing, 10-second loop repetition, dramatic riser, breakdown, sudden silence"
+  },
+  "policy": {
+    "instrumental_only": true,
+    "intro_max_seconds": 10,
+    "variation_window_bars": [16, 32],
+    "allow_named_artists_or_existing_works": false
+  }
+}

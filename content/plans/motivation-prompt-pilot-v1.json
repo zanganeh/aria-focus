@@ -1,0 +1,928 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "motivation-prompt-pilot-v1",
+    "created_at": "2026-07-22T00:00:00Z",
+    "notes": "Twelve quarantined Motivation candidates for prompt-structure research: three prompt conditions and four fixed seeds. None is approved or published content.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["motivation"],
+    "genres": [
+      {
+        "id": "soft-electronic",
+        "label": "Soft Electronic"
+      }
+    ],
+    "moods": [
+      {
+        "id": "energized",
+        "label": "Energized"
+      },
+      {
+        "id": "optimistic",
+        "label": "Optimistic"
+      },
+      {
+        "id": "steady",
+        "label": "Steady"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "motivation-a-baseline-101",
+      "seed": 101,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic motivation music for starting focused work, driving and energizing but optimistic and uplifting, arp synth, synth bass, electric keys, electronic percussion, organic percussion, processed strings, textural soundscape, bright full production.",
+        "negative": "vocals, voice, speech, chanting, whispers"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-a-baseline-202",
+      "seed": 202,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic motivation music for starting focused work, driving and energizing but optimistic and uplifting, arp synth, synth bass, electric keys, electronic percussion, organic percussion, processed strings, textural soundscape, bright full production.",
+        "negative": "vocals, voice, speech, chanting, whispers"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-a-baseline-303",
+      "seed": 303,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic motivation music for starting focused work, driving and energizing but optimistic and uplifting, arp synth, synth bass, electric keys, electronic percussion, organic percussion, processed strings, textural soundscape, bright full production.",
+        "negative": "vocals, voice, speech, chanting, whispers"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-a-baseline-404",
+      "seed": 404,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic motivation music for starting focused work, driving and energizing but optimistic and uplifting, arp synth, synth bass, electric keys, electronic percussion, organic percussion, processed strings, textural soundscape, bright full production.",
+        "negative": "vocals, voice, speech, chanting, whispers"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-b-structured-101",
+      "seed": 1101,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic melodic focus groove for starting focused work. Mood: energized, optimistic, determined, uplifting. Tempo: 108 BPM, steady 4/4. Roles: restrained background arp synth pulse, warm synth bass, soft electric keys, light electronic percussion with sparse organic accents. Texture: wide processed strings and a soft atmospheric pad, clean modern mix. Arrangement: neutral intro, stable groove, gradual timbral evolution, gentle lift without a drop, neutral outro.",
+        "negative": "vocals, voice, speech, chanting, whispers, lead hook, solo, alarm, notification sound, dramatic build, breakdown, riser, sudden silence"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-b-structured-202",
+      "seed": 1202,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic melodic focus groove for starting focused work. Mood: energized, optimistic, determined, uplifting. Tempo: 108 BPM, steady 4/4. Roles: restrained background arp synth pulse, warm synth bass, soft electric keys, light electronic percussion with sparse organic accents. Texture: wide processed strings and a soft atmospheric pad, clean modern mix. Arrangement: neutral intro, stable groove, gradual timbral evolution, gentle lift without a drop, neutral outro.",
+        "negative": "vocals, voice, speech, chanting, whispers, lead hook, solo, alarm, notification sound, dramatic build, breakdown, riser, sudden silence"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-b-structured-303",
+      "seed": 1303,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic melodic focus groove for starting focused work. Mood: energized, optimistic, determined, uplifting. Tempo: 108 BPM, steady 4/4. Roles: restrained background arp synth pulse, warm synth bass, soft electric keys, light electronic percussion with sparse organic accents. Texture: wide processed strings and a soft atmospheric pad, clean modern mix. Arrangement: neutral intro, stable groove, gradual timbral evolution, gentle lift without a drop, neutral outro.",
+        "negative": "vocals, voice, speech, chanting, whispers, lead hook, solo, alarm, notification sound, dramatic build, breakdown, riser, sudden silence"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-b-structured-404",
+      "seed": 1404,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic melodic focus groove for starting focused work. Mood: energized, optimistic, determined, uplifting. Tempo: 108 BPM, steady 4/4. Roles: restrained background arp synth pulse, warm synth bass, soft electric keys, light electronic percussion with sparse organic accents. Texture: wide processed strings and a soft atmospheric pad, clean modern mix. Arrangement: neutral intro, stable groove, gradual timbral evolution, gentle lift without a drop, neutral outro.",
+        "negative": "vocals, voice, speech, chanting, whispers, lead hook, solo, alarm, notification sound, dramatic build, breakdown, riser, sudden silence"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-c-structured-focus-101",
+      "seed": 2101,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic motivation soundtrack for beginning a focused work session. Steady 108 BPM 4/4 pulse, energized and optimistic with restrained playful uplift. Background arp synth and warm synth bass carry a stable groove; soft electric keys, sparse organic percussion, light electronic percussion, processed strings, and an atmospheric texture remain supportive rather than foregrounded. Use a neutral intro, small timbral changes every 16 to 32 bars, controlled density, gentle continuous lift, no dramatic sections, and a calm crossfade-friendly outro. Clean, spacious, non-fatiguing production.",
+        "negative": "vocals, voice, speech, chanting, whispers, memorable melody, foreground lead, solo, fill-heavy drums, alarm, notification sound, sharp transient, riser, drop, breakdown, dramatic build, sudden silence, harsh high frequencies, abrupt key change"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "D minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-c-structured-focus-202",
+      "seed": 2202,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic motivation soundtrack for beginning a focused work session. Steady 108 BPM 4/4 pulse, energized and optimistic with restrained playful uplift. Background arp synth and warm synth bass carry a stable groove; soft electric keys, sparse organic percussion, light electronic percussion, processed strings, and an atmospheric texture remain supportive rather than foregrounded. Use a neutral intro, small timbral changes every 16 to 32 bars, controlled density, gentle continuous lift, no dramatic sections, and a calm crossfade-friendly outro. Clean, spacious, non-fatiguing production.",
+        "negative": "vocals, voice, speech, chanting, whispers, memorable melody, foreground lead, solo, fill-heavy drums, alarm, notification sound, sharp transient, riser, drop, breakdown, dramatic build, sudden silence, harsh high frequencies, abrupt key change"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "A minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-c-structured-focus-303",
+      "seed": 2303,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic motivation soundtrack for beginning a focused work session. Steady 108 BPM 4/4 pulse, energized and optimistic with restrained playful uplift. Background arp synth and warm synth bass carry a stable groove; soft electric keys, sparse organic percussion, light electronic percussion, processed strings, and an atmospheric texture remain supportive rather than foregrounded. Use a neutral intro, small timbral changes every 16 to 32 bars, controlled density, gentle continuous lift, no dramatic sections, and a calm crossfade-friendly outro. Clean, spacious, non-fatiguing production.",
+        "negative": "vocals, voice, speech, chanting, whispers, memorable melody, foreground lead, solo, fill-heavy drums, alarm, notification sound, sharp transient, riser, drop, breakdown, dramatic build, sudden silence, harsh high frequencies, abrupt key change"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "C major"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    },
+    {
+      "id": "motivation-c-structured-focus-404",
+      "seed": 2404,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 108,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Instrumental electronic motivation soundtrack for beginning a focused work session. Steady 108 BPM 4/4 pulse, energized and optimistic with restrained playful uplift. Background arp synth and warm synth bass carry a stable groove; soft electric keys, sparse organic percussion, light electronic percussion, processed strings, and an atmospheric texture remain supportive rather than foregrounded. Use a neutral intro, small timbral changes every 16 to 32 bars, controlled density, gentle continuous lift, no dramatic sections, and a calm crossfade-friendly outro. Clean, spacious, non-fatiguing production.",
+        "negative": "vocals, voice, speech, chanting, whispers, memorable melody, foreground lead, solo, fill-heavy drums, alarm, notification sound, sharp transient, riser, drop, breakdown, dramatic build, sudden silence, harsh high frequencies, abrupt key change"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          {
+            "name": "batch_size",
+            "value": "1"
+          },
+          {
+            "name": "cfg_interval_end",
+            "value": "1.0"
+          },
+          {
+            "name": "cfg_interval_start",
+            "value": "0.0"
+          },
+          {
+            "name": "guidance_scale",
+            "value": "7.0"
+          },
+          {
+            "name": "keyscale",
+            "value": "E minor"
+          },
+          {
+            "name": "lm_cfg_scale",
+            "value": "2.0"
+          },
+          {
+            "name": "lm_temperature",
+            "value": "0.8"
+          },
+          {
+            "name": "lm_top_k",
+            "value": "0"
+          },
+          {
+            "name": "lm_top_p",
+            "value": "0.9"
+          },
+          {
+            "name": "thinking",
+            "value": "false"
+          },
+          {
+            "name": "timesignature",
+            "value": "4/4"
+          },
+          {
+            "name": "use_adg",
+            "value": "false"
+          }
+        ]
+      }
+    }
+  ]
+}

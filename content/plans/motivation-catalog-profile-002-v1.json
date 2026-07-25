@@ -1,0 +1,77 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "motivation-catalog-profile-002-v1",
+    "created_at": "2026-07-22T00:00:00Z",
+    "notes": "One local R&D candidate generated from the provider-neutral cinematic/orchestral metadata profile. Not approved or published content.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["motivation"],
+    "genres": [{ "id": "cinematic", "label": "Cinematic" }],
+    "moods": [
+      { "id": "brooding", "label": "Brooding" },
+      { "id": "dark", "label": "Dark" },
+      { "id": "epic", "label": "Epic" },
+      { "id": "ominous", "label": "Ominous" },
+      { "id": "strong", "label": "Strong" }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "motivation-catalog-profile-002",
+      "seed": 260722002,
+      "activity": "motivation",
+      "genre_ids": ["cinematic"],
+      "mood_ids": ["brooding", "dark", "epic", "ominous", "strong"],
+      "duration_seconds": 180,
+      "bpm": 120,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Create a 3-minute premium instrumental track for motivation and sustained focus. Genre: Cinematic; subgenres: Orchestral. Mood: Brooding, Dark, Epic, Ominous, Strong. Tempo: 120 BPM in a steady 4/4 meter. Use a warm acoustic piano as the harmonic anchor and motif carrier, a restrained arpeggiated pulse in the background, never a piercing lead, a warm clean electric-guitar texture, no rock lead or solo, controlled electronic percussion with a steady even pulse, rounded orchestral brass in comfortable middle registers, restrained orchestral percussion for gradual forward motion, an expressive string ensemble carrying evolving harmony, warm orchestral winds used for quiet counter-melody and color, wide processed string texture with slow evolving movement, a warm controlled synth-bass foundation focused in the low-mid range, a low-contrast textural soundscape that leaves space for the motif. Keep the tonal character balanced and warm, the arrangement sparse, and the mix clear, deep, and mature. Start with a restrained tonal introduction under 10 seconds, establish the main pulse quickly, then develop contrasting 16-to-32-bar phrases with small changes in harmony, register, countermelody, and texture. Build energy through musical development rather than a drop. End with a resolved, crossfade-friendly outro and never repeat one short loop unchanged.",
+        "negative": "blues, chanting, funk, jazz, singing, speech, spoken word, swing, vocals, whispers, piercing high frequencies, sub-bass rumble, toy instruments, childish melodies, random notes, white noise, dramatic riser, breakdown, sudden silence, 10-second loop repetition"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "D minor" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    }
+  ]
+}

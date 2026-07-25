@@ -23,8 +23,11 @@ describe("GenreSelector", () => {
         }}
       />,
     );
-    expect(screen.getByRole("radio", { name: "Any compatible genre" })).toBeTruthy();
-    await user.click(screen.getByRole("radio", { name: "Classical" }));
+    expect(screen.getByRole("combobox", { name: "Choose a music genre" })).toBeTruthy();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Choose a music genre" }),
+      "classical",
+    );
     expect(onChange).toHaveBeenCalledWith("classical");
   });
 
@@ -41,8 +44,8 @@ describe("GenreSelector", () => {
       />,
     );
     expect(screen.getByRole("status").textContent).toMatch(/removed.*unavailable/i);
-    expect(screen.getByRole("radio", { name: "Any compatible genre" })).toBeTruthy();
-    expect(screen.getByRole("radio", { name: "Ambient" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Choose a music genre" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Ambient" })).toBeTruthy();
   });
 
   it("disables changes while transport is active", () => {
@@ -57,8 +60,10 @@ describe("GenreSelector", () => {
         }}
       />,
     );
-    for (const radio of screen.getAllByRole("radio") as HTMLInputElement[]) {
-      expect(radio.matches(":disabled")).toBe(true);
-    }
+    expect(
+      (screen.getByRole("combobox", { name: "Choose a music genre" }) as HTMLSelectElement).matches(
+        ":disabled",
+      ),
+    ).toBe(true);
   });
 });

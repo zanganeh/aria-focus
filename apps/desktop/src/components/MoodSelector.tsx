@@ -21,29 +21,21 @@ export function MoodSelector({ state, disabled, onChange }: Props) {
           available option.
         </p>
       )}
-      <div className="genre-options">
-        <label className={`genre-option${selected === null ? " selected" : ""}`}>
-          <input
-            type="radio"
-            name="music-mood"
-            checked={selected === null}
-            onChange={() => onChange(null)}
-          />
-          Any compatible mood
-        </label>
-        {state?.available_moods.map((mood) => (
-          <label key={mood.id} className={`genre-option${selected === mood.id ? " selected" : ""}`}>
-            <input
-              type="radio"
-              name="music-mood"
-              value={mood.id}
-              checked={selected === mood.id}
-              onChange={() => onChange(mood.id)}
-            />
-            {mood.label}
-          </label>
-        ))}
-      </div>
+      <label className="genre-select-label">
+        <span className="visually-hidden">Choose a mood</span>
+        <select
+          aria-label="Choose a mood"
+          value={selected ?? ""}
+          onChange={(event) => onChange(event.target.value || null)}
+        >
+          <option value="">Any compatible mood</option>
+          {state?.available_moods.map((mood) => (
+            <option key={mood.id} value={mood.id}>
+              {mood.label}
+            </option>
+          ))}
+        </select>
+      </label>
     </fieldset>
   );
 }

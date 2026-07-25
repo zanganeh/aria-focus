@@ -1,5 +1,7 @@
 # Preserve the research/specification documents and generated artifacts.
 docs/
+.cache/
+.impeccable/
 .codebase-memory/
 .codex/
 target/

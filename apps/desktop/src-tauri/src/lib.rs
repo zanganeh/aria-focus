@@ -4,11 +4,14 @@
 
 mod brand_migration;
 mod coordinator;
+pub mod music_batch;
 mod music_studio;
+mod openrouter;
 mod pack_service;
 mod preview_audio;
 mod private_beta;
 mod review_service;
+mod secret_store;
 mod studio_generation;
 
 use sha2::{Digest, Sha256};
@@ -18,10 +21,10 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
     Arc, Mutex,
 };
-use tauri::{Manager, RunEvent, State};
+use tauri::{Emitter, Manager, RunEvent, Runtime, State};
 
 use audio_engine::{
-    NativeAudioFacade, PlaybackSource, PlaybackSourceKind, Provenance, SourceLabel,
+    MediaCodec, NativeAudioFacade, PlaybackSource, PlaybackSourceKind, Provenance, SourceLabel,
 };
 use catalogue::manifest::{
     ActivitySuitability, AudioAsset, ContentItem, ContentVariant, GeneratorMetadata, HumanQa,
@@ -39,7 +42,9 @@ use persistence::{
     GeneratedLocalCustomerRecord, PreferencesRepository, SessionFocusOutcome, SessionHistoryRecord,
     SessionSoundEnjoyment, StudioJobArtifact, StudioJobStore,
 };
-use preview_audio::{stop_for_focus_start, DraftPreviewState, PreviewAudioCoordinator};
+use preview_audio::{
+    stop_for_focus_start, CloudPreviewSource, DraftPreviewState, PreviewAudioCoordinator,
+};
 use review_service::{ReviewCandidate, ReviewService};
 
 type Core = SessionAudioCoordinator<NativeAudioFacade, PreferencesRepository>;
@@ -57,9 +62,36 @@ struct AppState {
     studio_generation: Arc<Mutex<()>>,
     studio_active: Arc<AtomicBool>,
     studio_generation_service: Arc<studio_generation::GenerationService>,
+    cloud_generation: Arc<music_batch::CloudGenerationService>,
     preview: Mutex<Preview>,
     clock_base: std::time::Instant,
     migration: Mutex<brand_migration::BrandMigrationState>,
+    event_shutdown: Arc<AtomicBool>,
+}
+
+const PLAYBACK_CHANGED_EVENT: &str = "aria-focus://playback-changed";
+const CLOUD_GENERATION_CHANGED_EVENT: &str = "aria-focus://cloud-generation-changed";
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PlaybackEventPayload {
+    transition_id: u64,
+    snapshot: SessionSnapshot,
+    source: CurrentSource,
+    state: &'static str,
+    error: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CloudGenerationEventPayload {
+    batch_id: String,
+    state: String,
+    target_count: u16,
+    completed_count: u16,
+    failed_count: u16,
+    actual_microdollars: u64,
+    error_message: Option<String>,
 }
 
 const RECENT_STUDIO_JOB_LIMIT: usize = 12;
@@ -484,6 +516,130 @@ fn cancel_studio_music(
         .map(StudioJobSummaryDto::from_record)
 }
 
+#[tauri::command]
+fn get_cloud_key_status(state: State<AppState>) -> Result<music_batch::CloudKeyStatus, String> {
+    state.cloud_generation.key_status()
+}
+
+#[tauri::command]
+fn save_cloud_key(
+    key: String,
+    state: State<AppState>,
+) -> Result<music_batch::CloudKeyStatus, String> {
+    state.cloud_generation.validate_key(key)
+}
+
+#[tauri::command]
+fn remove_cloud_key(state: State<AppState>) -> Result<music_batch::CloudKeyStatus, String> {
+    state.cloud_generation.remove_key()
+}
+
+#[tauri::command]
+fn list_cloud_models(state: State<AppState>) -> Result<Vec<music_batch::CloudModelDto>, String> {
+    state.cloud_generation.list_models()
+}
+
+#[tauri::command]
+fn estimate_cloud_generation(
+    request: music_batch::CloudGenerationRequest,
+    state: State<AppState>,
+) -> Result<music_batch::CloudCostEstimate, String> {
+    state.cloud_generation.estimate(&request)
+}
+
+#[tauri::command]
+fn create_cloud_generation(
+    request: music_batch::CloudGenerationRequest,
+    state: State<AppState>,
+) -> Result<music_batch::CloudBatchSummary, String> {
+    state.cloud_generation.create_batch(request)
+}
+
+#[tauri::command]
+fn cancel_cloud_generation(state: State<AppState>) -> Result<(), String> {
+    state.cloud_generation.cancel_batch()
+}
+
+#[tauri::command]
+fn get_cloud_generation(
+    batch_id: String,
+    state: State<AppState>,
+) -> Result<Option<music_batch::CloudBatchSummary>, String> {
+    state.cloud_generation.get_batch(&batch_id)
+}
+
+#[tauri::command]
+fn get_active_cloud_generation(
+    state: State<AppState>,
+) -> Result<Option<music_batch::CloudBatchSummary>, String> {
+    state.cloud_generation.get_active_batch()
+}
+
+#[tauri::command]
+fn get_cloud_generation_items(
+    batch_id: String,
+    state: State<AppState>,
+) -> Result<Vec<music_batch::CloudBatchItemDto>, String> {
+    state.cloud_generation.get_items(&batch_id)
+}
+
+#[tauri::command]
+fn activate_cloud_generation(
+    batch_id: String,
+    state: State<AppState>,
+) -> Result<music_batch::CloudBatchSummary, String> {
+    state.cloud_generation.activate_batch(&batch_id)
+}
+
+#[tauri::command]
+fn start_cloud_generation_preview(
+    batch_id: String,
+    item_id: String,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let item = state.cloud_generation.preview_item(&batch_id, &item_id)?;
+    let codec = MediaCodec::from_storage_name(&item.codec)
+        .ok_or_else(|| "The preview audio uses an unsupported codec.".to_owned())?;
+    let now = state.now_secs();
+    let volume = state
+        .with_core(|core| {
+            ensure_focus_is_idle_for_draft_preview(core.snapshot(now).status).map_err(|_| {
+                coordinator::CoordinatorError::Domain(domain::SessionError::AlreadyActive)
+            })?;
+            Ok(core.master_volume().percent())
+        })
+        .map_err(|_| "Stop focus playback before previewing a generated track.".to_owned())?;
+    state
+        .preview
+        .lock()
+        .map_err(|error| error.to_string())?
+        .start_cloud(
+            CloudPreviewSource {
+                path: item.path,
+                codec,
+                sha256: item.sha256,
+                sample_rate_hz: item.sample_rate_hz,
+                channels: item.channels,
+                bit_depth: item.bit_depth,
+                duration_seconds: item.duration_seconds,
+                item_id: item.item_id,
+                title: item.title,
+            },
+            volume,
+        )
+        .map_err(|error| format!("The generated track could not be previewed: {error}"))
+}
+
+#[tauri::command]
+fn restore_cloud_generation(state: State<AppState>) -> Result<(), String> {
+    state.cloud_generation.restore_previous()
+}
+
+#[tauri::command]
+fn deactivate_cloud_generation(state: State<AppState>) -> Result<(), String> {
+    state.cloud_generation.deactivate()
+}
+
 fn studio_job_status(state: music_studio_domain::StudioJobState) -> &'static str {
     use music_studio_domain::StudioJobState::*;
     match state {
@@ -643,6 +799,78 @@ impl AppState {
     fn stop_preview(&self) -> Result<(), String> {
         let mut preview = self.preview.lock().map_err(|error| error.to_string())?;
         stop_for_focus_start(&mut preview).map_err(|error| error.to_string())
+    }
+
+    fn playback_snapshot(&self) -> Result<SessionSnapshot, String> {
+        let now = self.now_secs();
+        let mut packs_guard = self
+            .recovery
+            .packs
+            .lock()
+            .map_err(|error| error.to_string())?;
+        let mut core_guard = self
+            .recovery
+            .core
+            .lock()
+            .map_err(|error| error.to_string())?;
+        let core = core_guard.as_mut().map_err(|error| error.clone())?;
+        let snapshot = core
+            .tick_at(now, self.wall_clock_secs())
+            .map_err(|error| error.to_string())?;
+        if snapshot.status == domain::SessionStatus::Expired {
+            if let Ok(packs) = packs_guard.as_mut() {
+                commit_current_item(packs, core);
+            }
+        }
+        Ok(snapshot)
+    }
+
+    fn current_source(&self) -> Result<CurrentSource, String> {
+        // Never hold the core and pack locks together. Audio owns the active
+        // source; the pack service only resolves optional cover art.
+        let (label, source_kind, navigation_available) = {
+            let mut guard = self
+                .recovery
+                .core
+                .lock()
+                .map_err(|error| error.to_string())?;
+            let core = guard.as_mut().map_err(|error| error.clone())?;
+            (
+                core.source_label(),
+                core.source_kind(),
+                core.navigation_available(),
+            )
+        };
+        let cover_art = if source_kind == PlaybackSourceKind::Installed {
+            self.with_packs(|packs| packs.cover_art_data_url(&label.pack_id, &label.item_id))
+                .ok()
+                .flatten()
+        } else {
+            None
+        };
+        Ok(CurrentSource::from_audio(
+            label,
+            source_kind,
+            navigation_available,
+            cover_art,
+        ))
+    }
+
+    fn playback_event(&self, transition_id: u64) -> Result<PlaybackEventPayload, String> {
+        let snapshot = self.playback_snapshot()?;
+        let state = match snapshot.status {
+            domain::SessionStatus::Playing => "playing",
+            domain::SessionStatus::Paused => "paused",
+            domain::SessionStatus::Idle | domain::SessionStatus::Stopped => "idle",
+            domain::SessionStatus::Expired => "failed",
+        };
+        Ok(PlaybackEventPayload {
+            transition_id,
+            snapshot,
+            source: self.current_source()?,
+            state,
+            error: None,
+        })
     }
 }
 
@@ -1644,27 +1872,7 @@ fn set_session_type(
 
 #[tauri::command]
 fn get_snapshot(state: State<AppState>) -> Result<SessionSnapshot, String> {
-    let now = state.now_secs();
-    let mut packs_guard = state
-        .recovery
-        .packs
-        .lock()
-        .map_err(|error| error.to_string())?;
-    let mut core_guard = state
-        .recovery
-        .core
-        .lock()
-        .map_err(|error| error.to_string())?;
-    let core = core_guard.as_mut().map_err(|error| error.clone())?;
-    let snapshot = core
-        .tick_at(now, state.wall_clock_secs())
-        .map_err(|error| error.to_string())?;
-    if snapshot.status == domain::SessionStatus::Expired {
-        if let Ok(packs) = packs_guard.as_mut() {
-            commit_current_item(packs, core);
-        }
-    }
-    Ok(snapshot)
+    state.playback_snapshot()
 }
 
 #[tauri::command]
@@ -1802,7 +2010,7 @@ fn get_provenance() -> Result<Provenance, String> {
     ))
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 struct CurrentSource {
     pack_id: String,
     pack_title: String,
@@ -1844,35 +2052,7 @@ impl CurrentSource {
 
 #[tauri::command]
 fn get_current_source(state: State<AppState>) -> Result<CurrentSource, String> {
-    // Read the renderer-owned label/kind from the core first, then resolve the
-    // cover from the pack service. The two locks are never held simultaneously.
-    let (label, source_kind, navigation_available) = {
-        let mut guard = state
-            .recovery
-            .core
-            .lock()
-            .map_err(|error| error.to_string())?;
-        let core = guard.as_mut().map_err(|error| error.clone())?;
-        (
-            core.source_label(),
-            core.source_kind(),
-            core.navigation_available(),
-        )
-    };
-    let cover_art = if source_kind == PlaybackSourceKind::Installed {
-        state
-            .with_packs(|packs| packs.cover_art_data_url(&label.pack_id, &label.item_id))
-            .ok()
-            .flatten()
-    } else {
-        None
-    };
-    Ok(CurrentSource::from_audio(
-        label,
-        source_kind,
-        navigation_available,
-        cover_art,
-    ))
+    state.current_source()
 }
 
 #[tauri::command]
@@ -1938,6 +2118,69 @@ fn set_item_feedback(
         .map_err(|error| error.to_string())
 }
 
+/// Broadcasts durable native state changes to every renderer. Commands remain
+/// the mutation API, while this bridge makes asynchronous audio commits and
+/// background cloud work observable without forcing each page to poll.
+fn spawn_event_bridge<R: Runtime>(app: &tauri::AppHandle<R>, shutdown: Arc<AtomicBool>) {
+    let handle = app.clone();
+    let _ = std::thread::Builder::new()
+        .name("aria-focus-state-events".to_owned())
+        .spawn(move || {
+            let mut transition_id = 0_u64;
+            let mut last_playback: Option<PlaybackEventPayload> = None;
+            let mut last_transition_signal: Option<(CurrentSource, domain::SessionStatus)> = None;
+            let mut last_cloud: Option<music_batch::CloudBatchSummary> = None;
+            let mut cloud_tick = 0_u8;
+
+            while !shutdown.load(Ordering::SeqCst) {
+                if let Some(state) = handle.try_state::<AppState>() {
+                    if let Ok(mut payload) = state.playback_event(transition_id) {
+                        let signal = (payload.source.clone(), payload.snapshot.status);
+                        if last_transition_signal
+                            .as_ref()
+                            .is_some_and(|previous| previous != &signal)
+                        {
+                            transition_id = transition_id.saturating_add(1);
+                            payload.transition_id = transition_id;
+                        }
+                        let changed = last_playback.as_ref().is_none_or(|previous| {
+                            previous.snapshot != payload.snapshot
+                                || previous.source != payload.source
+                                || previous.state != payload.state
+                                || previous.error != payload.error
+                        });
+                        if changed {
+                            let _ = handle.emit(PLAYBACK_CHANGED_EVENT, &payload);
+                            last_playback = Some(payload);
+                            last_transition_signal = Some(signal);
+                        }
+                    }
+
+                    cloud_tick = cloud_tick.wrapping_add(1);
+                    if cloud_tick >= 4 {
+                        cloud_tick = 0;
+                        if let Ok(Some(summary)) = state.cloud_generation.get_latest_batch() {
+                            if last_cloud.as_ref() != Some(&summary) {
+                                let payload = CloudGenerationEventPayload {
+                                    batch_id: summary.batch_id.clone(),
+                                    state: summary.state.clone(),
+                                    target_count: summary.target_count,
+                                    completed_count: summary.completed_count,
+                                    failed_count: summary.failed_count,
+                                    actual_microdollars: summary.actual_microdollars,
+                                    error_message: summary.error_message.clone(),
+                                };
+                                let _ = handle.emit(CLOUD_GENERATION_CHANGED_EVENT, &payload);
+                                last_cloud = Some(summary);
+                            }
+                        }
+                    }
+                }
+                std::thread::sleep(std::time::Duration::from_millis(250));
+            }
+        });
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -1994,6 +2237,18 @@ pub fn run() {
             let studio_generation_service =
                 studio_generation::GenerationService::production(studio_paths.clone());
             let _ = studio_generation_service.recover();
+            let cloud_data_root = data_dir
+                .clone()
+                .unwrap_or_else(|_| PathBuf::from("__missing_cloud_data__"));
+            // Cloud media is part of the installed content tree. PackService
+            // deliberately reads from `<app-data>/content`, so keeping the
+            // generated batch under that same root prevents a successful
+            // activation from being invisible to normal playback.
+            let cloud_root = cloud_data_root.join("content");
+            let cloud_database = cloud_data_root.join("preferences.sqlite3");
+            let cloud_generation =
+                music_batch::CloudGenerationService::new(cloud_database, cloud_root);
+            let event_shutdown = Arc::new(AtomicBool::new(false));
             app.manage(AppState {
                 recovery: RecoverySlots {
                     core: Mutex::new(core),
@@ -2006,10 +2261,13 @@ pub fn run() {
                 studio_generation: Arc::new(Mutex::new(())),
                 studio_active: Arc::new(AtomicBool::new(false)),
                 studio_generation_service,
+                cloud_generation: Arc::new(cloud_generation),
                 preview: Mutex::new(PreviewAudioCoordinator::new(NativeAudioFacade::new())),
                 clock_base: std::time::Instant::now(),
                 migration: Mutex::new(migration),
+                event_shutdown: event_shutdown.clone(),
             });
+            spawn_event_bridge(app.handle(), event_shutdown);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -2060,6 +2318,20 @@ pub fn run() {
             get_studio_job,
             create_studio_music,
             cancel_studio_music,
+            get_cloud_key_status,
+            save_cloud_key,
+            remove_cloud_key,
+            list_cloud_models,
+            estimate_cloud_generation,
+            create_cloud_generation,
+            cancel_cloud_generation,
+            get_cloud_generation,
+            get_active_cloud_generation,
+            get_cloud_generation_items,
+            activate_cloud_generation,
+            start_cloud_generation_preview,
+            restore_cloud_generation,
+            deactivate_cloud_generation,
             start_draft_preview,
             pause_draft_preview,
             resume_draft_preview,
@@ -2073,6 +2345,7 @@ pub fn run() {
         .run(|app, event| {
             if matches!(event, RunEvent::ExitRequested { .. }) {
                 if let Some(state) = app.try_state::<AppState>() {
+                    state.event_shutdown.store(true, Ordering::SeqCst);
                     state.studio_generation_service.shutdown();
                     let _ = state.stop_preview();
                 }

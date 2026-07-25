@@ -1,0 +1,75 @@
+{
+  "schema": "adhd-music.candidate-ledger.planned",
+  "schema_version": 1,
+  "batch": {
+    "id": "motivation-natural-performance-v1",
+    "created_at": "2026-07-22T00:00:00Z",
+    "notes": "One quarantined Motivation validation candidate after prompt tuning for fast, clean motion and recognizable real instrument performance. Not approved or published content.",
+    "generator_pin": {
+      "config": "acestep-v15-turbo",
+      "planner": "acestep-5Hz-lm-0.6B",
+      "python_version": "3.12",
+      "source_url": "https://github.com/ace-step/ACE-Step-1.5.git",
+      "source_commit": "6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0",
+      "turbo_vae_repo": "ACE-Step/Ace-Step1.5",
+      "turbo_vae_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "planner_repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "planner_revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80"
+    },
+    "terms_evidence": {
+      "licence_id": "ace-step-1.5",
+      "licence_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/LICENSE",
+      "model_card_url": "https://github.com/ace-step/ACE-Step-1.5/blob/6d467e4b5081ccb0abf1ec1bf4fdf9051a2d34b0/README.md",
+      "output_licence": "ace-step-1.5-output-terms",
+      "source_archive_sha256": "3cc581f1c62f1f0a816234bb8e41a309cb7cc2ff0c83624c290cf1c1532e67a1"
+    }
+  },
+  "taxonomy": {
+    "activities": ["motivation"],
+    "genres": [{ "id": "soft-electronic", "label": "Soft Electronic" }],
+    "moods": [
+      { "id": "energized", "label": "Energized" },
+      { "id": "optimistic", "label": "Optimistic" },
+      { "id": "steady", "label": "Steady" }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "motivation-natural-cruise-515",
+      "seed": 515,
+      "activity": "motivation",
+      "genre_ids": ["soft-electronic"],
+      "mood_ids": ["energized", "optimistic", "steady"],
+      "duration_seconds": 180,
+      "bpm": 130,
+      "contains_lyrics": false,
+      "contains_speech": false,
+      "prompts": {
+        "positive": "[Instrumental] Fast, clean forward-driving instrumental electronic motivation music for cruising on a bright coastal highway beside the beach; 130 BPM, steady 4/4; crisp controlled electronic drums and a warm bass groove; real felt acoustic piano performance with natural hammer attack, pedal resonance, and humanized dynamics used sparingly; clean analog synthesizer background layer; subtle real handpan performance with gentle hand strikes and natural metallic resonance, no foreground solo; bright, spacious, polished mix, smooth continuous motion, optimistic daylight energy, gentle lift without a dramatic drop, no engine or environmental sound effects.",
+        "negative": "vocals, lyrics, spoken words, narration, speech, voice, chanting, rap, dialogue, toy-like timbres, plastic attack, brittle keyboard tone, mechanical MIDI timing, fake acoustic emulation, foreground solo, dramatic drop, engine sounds, ocean sounds"
+      },
+      "inference": {
+        "codec": "flac",
+        "sample_rate_hz": 48000,
+        "steps": 8,
+        "shift": 3,
+        "solver": "ode",
+        "use_random_seed": false,
+        "parameters": [
+          { "name": "batch_size", "value": "1" },
+          { "name": "cfg_interval_end", "value": "1.0" },
+          { "name": "cfg_interval_start", "value": "0.0" },
+          { "name": "guidance_scale", "value": "7.0" },
+          { "name": "keyscale", "value": "D minor" },
+          { "name": "lm_cfg_scale", "value": "2.0" },
+          { "name": "lm_temperature", "value": "0.8" },
+          { "name": "lm_top_k", "value": "0" },
+          { "name": "lm_top_p", "value": "0.9" },
+          { "name": "thinking", "value": "false" },
+          { "name": "timesignature", "value": "4/4" },
+          { "name": "use_adg", "value": "false" }
+        ]
+      }
+    }
+  ]
+}

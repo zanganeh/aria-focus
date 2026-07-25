@@ -79,11 +79,16 @@ it("shows the eight-track round by default and keeps held-back tracks available"
     />,
   );
 
-  expect(screen.getAllByRole("listitem")).toHaveLength(8);
+  expect(screen.getAllByRole("listitem")).toHaveLength(4);
   expect(screen.queryByRole("button", { name: "Start quarantined review Track E" })).toBeNull();
+  expect(screen.getByText("Page 1 of 2")).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  expect(screen.getAllByRole("listitem")).toHaveLength(4);
 
   fireEvent.click(screen.getByRole("button", { name: "Show held-back tracks" }));
 
-  expect(screen.getAllByRole("listitem")).toHaveLength(allReviewCandidates.length);
+  expect(screen.getAllByRole("listitem")).toHaveLength(4);
   expect(screen.getByRole("button", { name: "Start quarantined review Track E" })).toBeTruthy();
+  expect(screen.getByText("Page 1 of 5")).toBeTruthy();
 });

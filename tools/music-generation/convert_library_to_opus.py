@@ -30,7 +30,10 @@ from typing import Any, Callable
 BITRATE_KBPS = 112
 SAMPLE_RATE_HZ = 48_000
 CHANNELS = 2
-DEFAULT_MAX_TOTAL_BYTES = 300_000_000
+# The complete 100-track distribution is currently about 416 MB at 112 kbps
+# Opus, including covers and the manifest. Keep headroom for normal duration
+# variation while still bounding accidental oversized release candidates.
+DEFAULT_MAX_TOTAL_BYTES = 500_000_000
 SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 PRIVATE_BETA_RELATIVE = Path("apps/desktop/src-tauri/private-beta-pack")
 

@@ -2,6 +2,107 @@ export type Intensity = "off" | "low" | "medium" | "high";
 
 export type Activity = "deep_work" | "motivation" | "creativity" | "learning" | "light_work";
 
+export interface CloudKeyStatus {
+  configured: boolean;
+  masked_suffix: string | null;
+  mock?: boolean;
+}
+
+export interface CloudModel {
+  id: string;
+  name: string | null;
+  description: string | null;
+  input_modalities: string[];
+  output_modalities: string[];
+  supported_parameters: string[];
+  pricing: {
+    prompt: string | null;
+    completion: string | null;
+    request: string | null;
+    image: string | null;
+    image_output?: string | null;
+    audio?: string | null;
+    audio_output?: string | null;
+  };
+  context_length: number | null;
+  curated: boolean;
+}
+
+export interface CloudGenerationRequest {
+  target_count: number;
+  activities: Activity[];
+  audio_model: string;
+  text_model: string | null;
+  image_model: string | null;
+  refine_prompts: boolean;
+  generate_covers: boolean;
+  duration_seconds: number;
+  budget_microdollars: number;
+  note: string | null;
+}
+
+export interface CloudCostEstimate {
+  target_count: number;
+  audio_microdollars: number;
+  text_microdollars: number;
+  image_microdollars: number;
+  total_microdollars: number;
+  currency: string;
+  pricing_source: string;
+}
+
+export interface CloudBatchSummary {
+  batch_id: string;
+  state: string;
+  target_count: number;
+  completed_count: number;
+  failed_count: number;
+  reserved_microdollars: number;
+  actual_microdollars: number;
+  budget_microdollars: number;
+  activation_version: string | null;
+  error_code: string | null;
+  error_message: string | null;
+}
+
+export type PlaybackEventState = "idle" | "playing" | "paused" | "transitioning" | "failed";
+
+export interface PlaybackChangedEvent {
+  transitionId: number;
+  snapshot: SessionSnapshot;
+  source: CurrentSource;
+  state: PlaybackEventState;
+  error: string | null;
+}
+
+export interface CloudGenerationChangedEvent {
+  batchId: string;
+  state: string;
+  targetCount: number;
+  completedCount: number;
+  failedCount: number;
+  actualMicrodollars: number;
+  errorMessage: string | null;
+}
+
+export interface CloudBatchItem {
+  item_id: string;
+  ordinal: number;
+  activity: Activity;
+  state: string;
+  audio_path: string | null;
+  cover_path: string | null;
+  cover_art: string | null;
+  prompt_json: string;
+  refined_prompt: string | null;
+  audio_sha256: string | null;
+  estimated_microdollars: number;
+  actual_microdollars: number;
+  validation_json: string | null;
+  error_code: string | null;
+  error_message: string | null;
+}
+
 export type SessionStatus = "idle" | "playing" | "paused" | "stopped" | "expired";
 
 export type SessionType =

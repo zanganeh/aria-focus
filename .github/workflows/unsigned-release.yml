@@ -95,35 +95,47 @@ jobs:
         run: |
           $config = Get-Content -Raw release/unsigned-library-assets.json | ConvertFrom-Json
           New-Item -ItemType Directory -Force release-input | Out-Null
-          foreach ($part in @($config.library_asset_parts)) {
+          $parts = @($config.library_asset_parts)
+          if ($parts.Count -gt 0) {
+            foreach ($part in $parts) {
+              gh release download $config.library_release_tag `
+                --repo $env:GITHUB_REPOSITORY `
+                --pattern $part `
+                --dir release-input
+              if ($LASTEXITCODE -ne 0) { throw "Unsigned music library part download failed: $part" }
+            }
+            $archive = Join-Path (Resolve-Path release-input) $config.library_asset_name
+            $output = [System.IO.File]::Open($archive, [System.IO.FileMode]::Create)
+            try {
+              foreach ($part in $parts) {
+                $input = [System.IO.File]::OpenRead((Join-Path (Resolve-Path release-input) $part))
+                try { $input.CopyTo($output) } finally { $input.Dispose() }
+              }
+            } finally { $output.Dispose() }
+          } else {
             gh release download $config.library_release_tag `
               --repo $env:GITHUB_REPOSITORY `
-              --pattern $part `
+              --pattern $config.library_asset_name `
               --dir release-input
-            if ($LASTEXITCODE -ne 0) { throw "Unsigned music library part download failed: $part" }
+            if ($LASTEXITCODE -ne 0) { throw 'Unsigned music library archive download failed.' }
+            $archive = Join-Path (Resolve-Path release-input) $config.library_asset_name
           }
-          $archive = Join-Path (Resolve-Path release-input) $config.library_asset_name
-          $output = [System.IO.File]::Open($archive, [System.IO.FileMode]::Create)
-          try {
-            foreach ($part in @($config.library_asset_parts)) {
-              $input = [System.IO.File]::OpenRead((Join-Path (Resolve-Path release-input) $part))
-              try { $input.CopyTo($output) } finally { $input.Dispose() }
-            }
-          } finally { $output.Dispose() }
           $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
           if ($actual -ne $config.library_asset_sha256) { throw 'Unsigned music library SHA-256 mismatch.' }
           python scripts/stage_public_library.py `
             release/unsigned-library-assets.json `
             $archive `
             apps/desktop/src-tauri/private-beta-pack
-      - name: Verify legacy registry upgrade profile
+      - name: Verify bundled library and legacy registry upgrade profile
         shell: pwsh
         env:
           ARIA_FOCUS_BUNDLED_PACK_DIR: apps/desktop/src-tauri/private-beta-pack
-        run: cargo test -p aria-focus-desktop --features bundled-listening-test `
+        run: cargo test -p aria-focus-desktop --features bundled-library `
           legacy_registry_row_does_not_block_current_bundled_library_startup --lib -- --nocapture
+      - name: Verify approved library content
+        run: python scripts/verify_public_library.py
       - name: Build unsigned Windows packages with music library
-        run: pnpm -C apps/desktop tauri build --features bundled-listening-test --config src-tauri/tauri.listening-test.conf.json
+        run: pnpm -C apps/desktop tauri build --features bundled-library --config src-tauri/tauri.release.conf.json
       - name: Prepare release assets
         shell: pwsh
         run: |
@@ -179,19 +191,23 @@ jobs:
           mkdir -p release-input
           library_tag=$(python -c "import json; print(json.load(open('release/unsigned-library-assets.json', encoding='utf-8'))['library_release_tag'])")
           library_name=$(python -c "import json; print(json.load(open('release/unsigned-library-assets.json', encoding='utf-8'))['library_asset_name'])")
-          parts=$(python -c "import json; print(' '.join(json.load(open('release/unsigned-library-assets.json', encoding='utf-8'))['library_asset_parts']))")
-          for part in $parts; do
-            gh release download "$library_tag" --repo "$GITHUB_REPOSITORY" --pattern "$part" --dir release-input
-          done
           export ARIA_LIBRARY_ARCHIVE="$PWD/release-input/$library_name"
-          python - <<'PY'
-          import json, os
-          from pathlib import Path
-          config = json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8'))
-          with Path(os.environ['ARIA_LIBRARY_ARCHIVE']).open('wb') as output:
-              for part in config['library_asset_parts']:
-                  output.write(Path('release-input', part).read_bytes())
-          PY
+          parts=$(python -c "import json; print(' '.join(json.load(open('release/unsigned-library-assets.json', encoding='utf-8')).get('library_asset_parts', [])))")
+          if [ -n "$parts" ]; then
+            for part in $parts; do
+              gh release download "$library_tag" --repo "$GITHUB_REPOSITORY" --pattern "$part" --dir release-input
+            done
+            python - <<'PY'
+            import json, os
+            from pathlib import Path
+            config = json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8'))
+            with Path(os.environ['ARIA_LIBRARY_ARCHIVE']).open('wb') as output:
+                for part in config['library_asset_parts']:
+                    output.write(Path('release-input', part).read_bytes())
+            PY
+          else
+            gh release download "$library_tag" --repo "$GITHUB_REPOSITORY" --pattern "$library_name" --dir release-input
+          fi
           python - <<'PY'
           import hashlib, json, os
           from pathlib import Path
@@ -205,7 +221,7 @@ jobs:
             "$ARIA_LIBRARY_ARCHIVE" \
             apps/desktop/src-tauri/private-beta-pack
       - name: Build unsigned macOS package with music library
-        run: pnpm -C apps/desktop tauri build --features bundled-listening-test --config src-tauri/tauri.macos.listening-test.conf.json
+        run: pnpm -C apps/desktop tauri build --features bundled-library --config src-tauri/tauri.macos.release.conf.json
       - name: Prepare release asset
         shell: bash
         run: |

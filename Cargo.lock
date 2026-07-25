@@ -147,13 +147,13 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "parking_lot",
  "percent-encoding",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
  "x11rb",
 ]
 
 [[package]]
 name = "aria-focus-desktop"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "audio-analyzer",
  "audio-engine",
@@ -163,6 +163,7 @@ dependencies = [
  "ed25519-dalek",
  "fs2",
  "getrandom 0.3.4",
+ "keyring",
  "music-studio-domain",
  "persistence",
  "reqwest 0.12.12",
@@ -386,7 +387,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "audio-analyzer"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "ebur128",
  "rustfft",
@@ -405,7 +406,7 @@ checksum = "f93ebbf82d06013f4c41fe71303feb980cddd78496d904d06be627972de51a24"
 
 [[package]]
 name = "audio-engine"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "cpal",
  "opus2",
@@ -696,7 +697,7 @@ dependencies = [
 
 [[package]]
 name = "candidate-ledger"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "catalogue",
  "domain",
@@ -745,7 +746,7 @@ dependencies = [
 
 [[package]]
 name = "catalogue"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "domain",
  "proptest",
@@ -916,7 +917,7 @@ checksum = "c2459377285ad874054d797f3ccebf984978aa39129f6eafde5cdc8315b612f8"
 
 [[package]]
 name = "content-ingest"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "catalogue",
  "serde_json",
@@ -1244,6 +1245,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "dbus-secret-service"
+version = "4.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "708b509edf7889e53d7efb0ffadd994cc6c2345ccb62f55cfd6b0682165e4fa6"
+dependencies = [
+ "dbus",
+ "zeroize",
+]
+
+[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1413,7 +1424,7 @@ dependencies = [
 
 [[package]]
 name = "domain"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "serde",
  "thiserror 2.0.11",
@@ -2999,6 +3010,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyring"
+version = "3.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eebcc3aff044e5944a8fbaf69eb277d11986064cba30c468730e8b9909fb551c"
+dependencies = [
+ "byteorder",
+ "dbus-secret-service",
+ "log",
+ "security-framework 2.11.1",
+ "security-framework 3.6.0",
+ "windows-sys 0.60.2",
+ "zeroize",
+]
+
+[[package]]
 name = "khronos-egl"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3299,7 +3325,7 @@ dependencies = [
 
 [[package]]
 name = "music-admin"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "audio-engine",
  "eframe",
@@ -3310,7 +3336,7 @@ dependencies = [
 
 [[package]]
 name = "music-studio-domain"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "domain",
  "serde",
@@ -4071,7 +4097,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "persistence"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "domain",
  "music-studio-domain",
@@ -5000,6 +5026,42 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "security-framework"
+version = "2.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "897b2245f0b511c87893af39b033e5ca9cce68824c4d7e7630b5a1d339658d02"
+dependencies = [
+ "bitflags 2.9.4",
+ "core-foundation 0.9.4",
+ "core-foundation-sys",
+ "libc",
+ "security-framework-sys",
+]
+
+[[package]]
+name = "security-framework"
+version = "3.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d17b898a6d6948c3a8ee4372c17cb384f90d2e6e912ef00895b14fd7ab54ec38"
+dependencies = [
+ "bitflags 2.9.4",
+ "core-foundation 0.10.1",
+ "core-foundation-sys",
+ "libc",
+ "security-framework-sys",
+]
+
+[[package]]
+name = "security-framework-sys"
+version = "2.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ce2691df843ecc5d231c0b14ece2acc3efb62c0a398c7e1d875f3983ce020e3"
+dependencies = [
+ "core-foundation-sys",
+ "libc",
+]
 
 [[package]]
 name = "selectors"
@@ -8021,6 +8083,20 @@ name = "zeroize"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e13c156562582aa81c60cb29407084cdb54c4164760106ab78e6c5b0858cf64e"
+dependencies = [
+ "zeroize_derive",
+]
+
+[[package]]
+name = "zeroize_derive"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c50655cbb0fe3fc43170059e702f1ce5e19b84cec58dc87b037a09935c2f328"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.118",
+]
 
 [[package]]
 name = "zerotrie"

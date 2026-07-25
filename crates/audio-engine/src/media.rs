@@ -40,6 +40,25 @@ pub enum MediaCodec {
 }
 
 impl MediaCodec {
+    pub fn from_storage_name(name: &str) -> Option<Self> {
+        match name {
+            "wav" => Some(Self::Wav),
+            "flac" => Some(Self::Flac),
+            "mp3" => Some(Self::Mp3),
+            "opus" | "ogg_opus" => Some(Self::OggOpus),
+            _ => None,
+        }
+    }
+
+    pub fn storage_name(self) -> &'static str {
+        match self {
+            Self::Wav => "wav",
+            Self::Flac => "flac",
+            Self::Mp3 => "mp3",
+            Self::OggOpus => "ogg_opus",
+        }
+    }
+
     fn extension(self) -> &'static str {
         match self {
             Self::Wav => "wav",

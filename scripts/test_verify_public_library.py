@@ -37,8 +37,20 @@ class PublicLibraryGateTests(unittest.TestCase):
                             },
                             "human_qa": {
                                 "status": "approved",
-                                "reviews": [{"reviewer": "one"}, {"reviewer": "two"}],
+                                "reviews": [
+                                    {
+                                        "reviewer_id": "one",
+                                        "status": "approved",
+                                        "representative_work_session": True,
+                                    },
+                                    {
+                                        "reviewer_id": "two",
+                                        "status": "approved",
+                                        "representative_work_session": False,
+                                    },
+                                ],
                             },
+                            "analysis": {"hard_rejections": []},
                             "variants": [
                                 {
                                     "asset": {
@@ -57,6 +69,8 @@ class PublicLibraryGateTests(unittest.TestCase):
                                 "height": 1024,
                                 "provenance": {
                                     "source": "Generated test cover fixture",
+                                    "licence_id": "approved-output",
+                                    "licence_url": "https://example.invalid/licence",
                                     "generator": {
                                         "provider": "Test Cover Generator",
                                         "model": "test-cover-model",

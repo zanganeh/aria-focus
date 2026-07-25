@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { listenPlaybackChanged } from "../lib/events";
 import {
   getSnapshot,
   pauseSession,
@@ -60,6 +61,7 @@ export function useSession(): SessionController {
   const [masterVolume, setMasterVolume] = useState(70);
   const [volumePending, setVolumePending] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const eventsConnectedRef = useRef(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -75,7 +77,7 @@ export function useSession(): SessionController {
   }, []);
 
   const startPolling = useCallback(() => {
-    if (pollRef.current) return;
+    if (eventsConnectedRef.current || pollRef.current) return;
     pollRef.current = setInterval(() => {
       void refresh();
     }, POLL_MS);
@@ -98,7 +100,29 @@ export function useSession(): SessionController {
       .catch((e) =>
         setError({ message: `Unable to load master volume: ${errorDetail(e)}`, sessionLoad: true }),
       );
-    return () => stopPolling();
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void listenPlaybackChanged((event) => {
+      if (disposed) return;
+      eventsConnectedRef.current = true;
+      stopPolling();
+      setSnapshot(event.snapshot);
+      intensityRef.current = event.snapshot.intensity;
+    })
+      .then((cleanup) => {
+        if (disposed) cleanup();
+        else unlisten = cleanup;
+      })
+      .catch(() => {
+        // Browser previews and older native shells do not expose Tauri events;
+        // the existing command snapshot polling remains the safe fallback.
+      });
+    return () => {
+      disposed = true;
+      unlisten?.();
+      eventsConnectedRef.current = false;
+      stopPolling();
+    };
   }, [refresh, stopPolling]);
 
   const start = useCallback(async () => {
