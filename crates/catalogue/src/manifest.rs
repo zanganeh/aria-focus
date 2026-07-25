@@ -309,6 +309,10 @@ pub enum StimulationAvailability {
 pub struct HumanQa {
     pub status: HumanQaStatus,
     pub reviews: Vec<HumanReview>,
+    /// Optional audit metadata retained by the production review tool. Older
+    /// manifests omit these fields, so they remain backward-compatible.
+    pub protocol_version: Option<String>,
+    pub last_reviewed_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -326,6 +330,8 @@ pub struct HumanReview {
     pub reviewed_at: String,
     pub notes: String,
     pub representative_work_session: bool,
+    /// Optional audit detail retained by the production review tool.
+    pub session_minutes: Option<u32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]

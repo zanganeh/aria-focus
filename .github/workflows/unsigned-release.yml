@@ -197,25 +197,11 @@ jobs:
             for part in $parts; do
               gh release download "$library_tag" --repo "$GITHUB_REPOSITORY" --pattern "$part" --dir release-input
             done
-            python - <<'PY'
-            import json, os
-            from pathlib import Path
-            config = json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8'))
-            with Path(os.environ['ARIA_LIBRARY_ARCHIVE']).open('wb') as output:
-                for part in config['library_asset_parts']:
-                    output.write(Path('release-input', part).read_bytes())
-            PY
+            python -c "import json, os; from pathlib import Path; config=json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8')); Path(os.environ['ARIA_LIBRARY_ARCHIVE']).write_bytes(b''.join(Path('release-input', part).read_bytes() for part in config['library_asset_parts']))"
           else
             gh release download "$library_tag" --repo "$GITHUB_REPOSITORY" --pattern "$library_name" --dir release-input
           fi
-          python - <<'PY'
-          import hashlib, json, os
-          from pathlib import Path
-          config = json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8'))
-          actual = hashlib.sha256(Path(os.environ['ARIA_LIBRARY_ARCHIVE']).read_bytes()).hexdigest()
-          if actual != config['library_asset_sha256']:
-              raise SystemExit('Unsigned music library SHA-256 mismatch.')
-          PY
+          python -c "import hashlib, json, os; from pathlib import Path; config=json.loads(Path('release/unsigned-library-assets.json').read_text(encoding='utf-8')); actual=hashlib.sha256(Path(os.environ['ARIA_LIBRARY_ARCHIVE']).read_bytes()).hexdigest(); raise SystemExit('Unsigned music library SHA-256 mismatch.') if actual != config['library_asset_sha256'] else None"
           python scripts/stage_public_library.py \
             release/unsigned-library-assets.json \
             "$ARIA_LIBRARY_ARCHIVE" \

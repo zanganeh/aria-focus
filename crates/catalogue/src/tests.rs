@@ -118,14 +118,18 @@ fn fixture_manifest(bytes: &[u8]) -> ContentPackManifest {
                         reviewed_at: "2026-07-10T00:00:00Z".to_owned(),
                         notes: "Generated fixture metadata review.".to_owned(),
                         representative_work_session: true,
+                        session_minutes: None,
                     },
                     HumanReview {
                         reviewer_id: "reviewer-two".to_owned(),
                         reviewed_at: "2026-07-10T00:00:00Z".to_owned(),
                         notes: "Second generated fixture metadata review.".to_owned(),
                         representative_work_session: false,
+                        session_minutes: None,
                     },
                 ],
+                protocol_version: None,
+                last_reviewed_at: None,
             },
             cover: None,
         }],
@@ -178,6 +182,8 @@ fn generated_local_verification_uses_its_own_trust_contract() {
     manifest.items[0].human_qa = HumanQa {
         status: HumanQaStatus::Draft,
         reviews: vec![],
+        protocol_version: None,
+        last_reviewed_at: None,
     };
     manifest.items[0].variants[0].asset = AudioAsset {
         path: format!("assets/generated/{job_id}.flac"),
@@ -1465,6 +1471,8 @@ fn generated_local_manifest_rejects_declared_cover_art() {
     manifest.items[0].human_qa = HumanQa {
         status: HumanQaStatus::Draft,
         reviews: vec![],
+        protocol_version: None,
+        last_reviewed_at: None,
     };
     manifest.items[0].variants[0].asset = AudioAsset {
         path: format!("assets/generated/{job_id}.flac"),

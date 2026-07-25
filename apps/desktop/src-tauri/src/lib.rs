@@ -1716,6 +1716,8 @@ fn ready_generated_record(
             human_qa: HumanQa {
                 status: HumanQaStatus::Draft,
                 reviews: vec![],
+                protocol_version: None,
+                last_reviewed_at: None,
             },
             cover: None,
         }],
