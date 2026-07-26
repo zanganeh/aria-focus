@@ -9,9 +9,11 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, Sample, SampleFormat, SizedSample, Stream, StreamConfig};
 
 use super::OutputBackend;
-use crate::media::adapt_program_for_device;
+use crate::media::{
+    adapt_program_for_device, adapt_track_for_device_with_limit, MAX_DEVICE_PROGRAM_SAMPLES,
+};
 use crate::playback::{AudioError, RealtimeControl, RealtimeRenderer};
-use crate::source::{PlaybackSource, RealtimeSource};
+use crate::source::{LazyDeviceProgram, PlaybackSource, RealtimeSource};
 
 pub(crate) struct CpalOutput {
     stream: Option<Stream>,
@@ -161,6 +163,70 @@ where
             let device_program = adapt_program_for_device(&program, sample_rate, channels)
                 .map_err(|error| AudioError::Media(error.to_string()))?;
             RealtimeSource::program(device_program)
+                .map_err(|error| AudioError::Media(error.to_string()))?
+        }
+        PlaybackSource::InstalledLazy(queue) => {
+            let first = queue
+                .track(0)
+                .ok_or_else(|| AudioError::Media("first playback track is not ready".to_owned()))?;
+            let first = adapt_track_for_device_with_limit(
+                first,
+                sample_rate,
+                channels,
+                MAX_DEVICE_PROGRAM_SAMPLES,
+            )
+            .map_err(|error| AudioError::Media(error.to_string()))?;
+            let remaining_samples = MAX_DEVICE_PROGRAM_SAMPLES
+                .checked_sub(first.samples.len())
+                .ok_or_else(|| AudioError::Media("playback sample limit exhausted".to_owned()))?;
+            let device_queue = Arc::new(
+                LazyDeviceProgram::new(first, queue.track_count(), sample_rate, channels)
+                    .map_err(|error| AudioError::Media(error.to_string()))?,
+            );
+            let source_queue = Arc::clone(&queue);
+            let target_queue = Arc::clone(&device_queue);
+            std::thread::Builder::new()
+                .name("aria-focus-playback-preparer".to_owned())
+                .spawn(move || {
+                    let mut remaining_samples = remaining_samples;
+                    for index in 1..source_queue.track_count() {
+                        let track = loop {
+                            if let Some(track) = source_queue.track(index) {
+                                break Some(track.clone());
+                            }
+                            if source_queue.is_closed() {
+                                break None;
+                            }
+                            std::thread::sleep(std::time::Duration::from_millis(2));
+                        };
+                        let Some(track) = track else { break };
+                        let Ok(adapted) = adapt_track_for_device_with_limit(
+                            &track,
+                            sample_rate,
+                            channels,
+                            remaining_samples,
+                        ) else {
+                            source_queue.close();
+                            break;
+                        };
+                        remaining_samples =
+                            match remaining_samples.checked_sub(adapted.samples.len()) {
+                                Some(remaining) => remaining,
+                                None => {
+                                    source_queue.close();
+                                    break;
+                                }
+                            };
+                        if target_queue.publish(index, adapted).is_err() {
+                            source_queue.close();
+                            break;
+                        }
+                    }
+                })
+                .map_err(|error| {
+                    AudioError::Media(format!("cannot prepare playback queue: {error}"))
+                })?;
+            RealtimeSource::lazy_program(device_queue)
                 .map_err(|error| AudioError::Media(error.to_string()))?
         }
         PlaybackSource::Review(program) => {

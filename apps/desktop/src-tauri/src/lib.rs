@@ -34,9 +34,11 @@ use catalogue::manifest::{
 use catalogue::{ContentPackManifest, GeneratedLocalRecord, LocalGenerationEvidence};
 use coordinator::SessionAudioCoordinator;
 use domain::{Activity, Intensity, MasterVolume, SessionSnapshot, TrackEnjoyment, TrackFeedback};
+#[cfg(test)]
+use pack_service::PlaybackPreparationPlan;
 use pack_service::{
     ActivityGenreState, ActivityMoodState, FavoriteLibraryItem, ItemFeedbackState, PackService,
-    PackSummary, PlaybackPreparationPlan,
+    PackSummary, PreparedLazyPackPlayback,
 };
 use persistence::{
     GeneratedLocalCustomerRecord, PreferencesRepository, SessionFocusOutcome, SessionHistoryRecord,
@@ -1182,6 +1184,20 @@ fn spawn_playback_request(app: AppHandle, generation: u64, request: PlaybackPrep
     }
 }
 
+fn spawn_background_pack_preparation(prepared: PreparedLazyPackPlayback) {
+    std::thread::Builder::new()
+        .name("aria-focus-pack-preparer".to_owned())
+        .spawn(move || {
+            let queue = std::sync::Arc::clone(&prepared.queue);
+            if let Err(_error) = prepared.finish() {
+                queue.close();
+                #[cfg(debug_assertions)]
+                eprintln!("[playback] background track preparation failed: {_error}");
+            }
+        })
+        .expect("failed to create playback preparation thread");
+}
+
 fn commit_prepared_preview(
     app: &AppHandle,
     generation: u64,
@@ -1528,15 +1544,17 @@ fn start_session_worker(app: AppHandle, generation: u64) {
     if !state.preparation_is_current(generation) {
         return;
     }
-    let prepared = match plan.decode() {
+    let prepared = match plan.decode_primary() {
         Ok(prepared) => prepared,
         Err(error) => {
             state.finish_playback_preparation(&app, generation, "error", Some(error.to_string()));
             return;
         }
     };
+    let source = prepared.source();
 
     if !state.preparation_is_current(generation) {
+        prepared.cancel();
         return;
     }
     let recent_item_id = prepared.primary_item_id.clone();
@@ -1566,12 +1584,8 @@ fn start_session_worker(app: AppHandle, generation: u64) {
         }
         #[cfg(debug_assertions)]
         let device_started = std::time::Instant::now();
-        core.start_recorded(
-            now,
-            state.wall_clock_secs(),
-            PlaybackSource::Installed(prepared.program),
-        )
-        .map_err(|error| error.to_string())?;
+        core.start_recorded(now, state.wall_clock_secs(), source)
+            .map_err(|error| error.to_string())?;
         drop(core_guard);
         if let Ok(mut packs_guard) = state.recovery.packs.lock() {
             if let Ok(packs) = packs_guard.as_mut() {
@@ -1588,10 +1602,14 @@ fn start_session_worker(app: AppHandle, generation: u64) {
     })();
     match commit_result {
         Ok(true) => {
+            spawn_background_pack_preparation(prepared);
             state.finish_playback_preparation(&app, generation, "ready", None);
         }
-        Ok(false) => {}
-        Err(error) => state.finish_playback_preparation(&app, generation, "error", Some(error)),
+        Ok(false) => prepared.cancel(),
+        Err(error) => {
+            prepared.cancel();
+            state.finish_playback_preparation(&app, generation, "error", Some(error));
+        }
     }
 }
 
@@ -1721,13 +1739,14 @@ fn start_explicit_playback_worker(
             }
         }
     };
-    let prepared = match plan.decode() {
+    let prepared = match plan.decode_primary() {
         Ok(prepared) => prepared,
         Err(error) => {
             state.finish_playback_preparation(&app, generation, "error", Some(error.to_string()));
             return;
         }
     };
+    let source = prepared.source();
     let recent_item_id = prepared.primary_item_id.clone();
     let commit_result: Result<bool, String> = (|| {
         let _gate = state.playback_boundary.lock_commit()?;
@@ -1744,13 +1763,8 @@ fn start_explicit_playback_worker(
         if core.snapshot(now).status != domain::SessionStatus::Idle {
             return Err("Stop the current session before playing this music.".to_owned());
         }
-        core.start_favorite_with_source(
-            now,
-            state.wall_clock_secs(),
-            activity,
-            PlaybackSource::Installed(prepared.program),
-        )
-        .map_err(|error| error.to_string())?;
+        core.start_favorite_with_source(now, state.wall_clock_secs(), activity, source)
+            .map_err(|error| error.to_string())?;
         drop(core_guard);
         if let Ok(mut packs_guard) = state.recovery.packs.lock() {
             if let Ok(packs) = packs_guard.as_mut() {
@@ -1761,10 +1775,14 @@ fn start_explicit_playback_worker(
     })();
     match commit_result {
         Ok(true) => {
+            spawn_background_pack_preparation(prepared);
             state.finish_playback_preparation(&app, generation, "ready", None);
         }
-        Ok(false) => {}
-        Err(error) => state.finish_playback_preparation(&app, generation, "error", Some(error)),
+        Ok(false) => prepared.cancel(),
+        Err(error) => {
+            prepared.cancel();
+            state.finish_playback_preparation(&app, generation, "error", Some(error));
+        }
     }
 }
 
@@ -1903,12 +1921,20 @@ fn complete_onboarding(
                 "No authored Deep Work music is installed yet. Install or generate a music pack, then try onboarding again.".to_owned()
             })?
     };
-    let (source, recent) = onboarding_playback_source(Some(plan))?;
+    let prepared = plan.decode_primary().map_err(|error| error.to_string())?;
+    let recent = prepared.primary_item_id.clone();
     let mut core_guard = state.recovery.core.lock().map_err(|e| e.to_string())?;
     let core = core_guard.as_mut().map_err(|e| e.clone())?;
-    core.complete_onboarding(now, state.wall_clock_secs(), intensity, &genres, source)
-        .map_err(|e| e.to_string())?;
+    core.complete_onboarding(
+        now,
+        state.wall_clock_secs(),
+        intensity,
+        &genres,
+        prepared.source(),
+    )
+    .map_err(|e| e.to_string())?;
     drop(core_guard);
+    spawn_background_pack_preparation(prepared);
     if let Ok(mut packs_guard) = state.recovery.packs.lock() {
         if let Ok(packs) = packs_guard.as_mut() {
             packs.commit_playback(recent);
@@ -1917,6 +1943,7 @@ fn complete_onboarding(
     Ok(())
 }
 
+#[cfg(test)]
 fn onboarding_playback_source(
     plan: Option<PlaybackPreparationPlan>,
 ) -> Result<(PlaybackSource, String), String> {

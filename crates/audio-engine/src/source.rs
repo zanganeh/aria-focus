@@ -1,10 +1,14 @@
 //! Prebuilt playback sources consumed by the realtime renderer.
 
 use std::f32::consts::FRAC_PI_2;
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, OnceLock,
+};
 
 use crate::media::{
-    AuthoredRegionKind, DecodedProgram, DeviceProgram, DeviceTrack, MediaError, SourceLabel,
-    MAX_PROGRAM_TRACKS,
+    AuthoredRegionKind, DecodedProgram, DecodedTrack, DeviceProgram, DeviceTrack, MediaError,
+    SourceLabel, MAX_PROGRAM_TRACKS,
 };
 use crate::playback::RealtimeControl;
 use crate::tone::ToneSource;
@@ -13,12 +17,79 @@ use crate::tone::ToneSource;
 // equal-power handoff between authored tracks.
 pub const MAX_TRANSITION_SECONDS: f32 = 2.0;
 
+/// Raw decoded queue shared by the pack worker and the native audio backend.
+///
+/// The first slot is populated before the stream opens. Later slots are
+/// published exactly once by the preparation worker. Audio callbacks only read
+/// already-published slots; they never wait for a lock or touch the filesystem.
+#[derive(Debug)]
+pub struct LazyDecodedProgram {
+    tracks: Arc<[OnceLock<DecodedTrack>]>,
+    labels: Arc<[SourceLabel]>,
+    closed: Arc<AtomicBool>,
+}
+
+impl LazyDecodedProgram {
+    pub fn new(first: DecodedTrack, labels: Vec<SourceLabel>) -> Result<Self, MediaError> {
+        if labels.is_empty() || labels.len() > MAX_PROGRAM_TRACKS {
+            return Err(MediaError::InvalidProgramSize(labels.len()));
+        }
+        DecodedProgram::new(vec![first.clone()])?;
+        let slots = (0..labels.len())
+            .map(|_| OnceLock::new())
+            .collect::<Vec<_>>();
+        slots[0]
+            .set(first)
+            .map_err(|_| MediaError::LazyTrackAlreadyPublished)?;
+        Ok(Self {
+            tracks: slots.into(),
+            labels: labels.into(),
+            closed: Arc::new(AtomicBool::new(false)),
+        })
+    }
+
+    pub fn publish(&self, index: usize, track: DecodedTrack) -> Result<(), MediaError> {
+        if index >= self.tracks.len() {
+            return Err(MediaError::InvalidProgramSize(index + 1));
+        }
+        DecodedProgram::new(vec![track.clone()])?;
+        self.tracks[index]
+            .set(track)
+            .map_err(|_| MediaError::LazyTrackAlreadyPublished)
+    }
+
+    pub fn track_count(&self) -> usize {
+        self.tracks.len()
+    }
+
+    pub fn published_sample_count(&self, index: usize) -> Option<usize> {
+        self.track(index).map(|track| track.samples.len())
+    }
+
+    pub fn labels(&self) -> Vec<SourceLabel> {
+        self.labels.iter().cloned().collect()
+    }
+
+    pub fn close(&self) {
+        self.closed.store(true, Ordering::Release);
+    }
+
+    pub(crate) fn track(&self, index: usize) -> Option<&DecodedTrack> {
+        self.tracks.get(index).and_then(OnceLock::get)
+    }
+
+    pub(crate) fn is_closed(&self) -> bool {
+        self.closed.load(Ordering::Acquire)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum PlaybackSource {
     /// Explicit deterministic fallback used when no installed eligible content
     /// exists and by device-independent audio tests.
     TestTone,
     Installed(DecodedProgram),
+    InstalledLazy(Arc<LazyDecodedProgram>),
     /// A hash-pinned, local-only candidate. It intentionally has different
     /// provenance and a review-only provisional transition policy.
     Review(DecodedProgram),
@@ -48,13 +119,14 @@ impl PlaybackSource {
                 .iter()
                 .map(|track| track.label.clone())
                 .collect(),
+            Self::InstalledLazy(program) => program.labels(),
         }
     }
 
     pub fn kind(&self) -> PlaybackSourceKind {
         match self {
             Self::TestTone => PlaybackSourceKind::TestTone,
-            Self::Installed(_) => PlaybackSourceKind::Installed,
+            Self::Installed(_) | Self::InstalledLazy(_) => PlaybackSourceKind::Installed,
             Self::Review(_) => PlaybackSourceKind::Review,
             Self::Draft(_) => PlaybackSourceKind::Draft,
         }
@@ -64,6 +136,7 @@ impl PlaybackSource {
 pub(crate) enum RealtimeSource {
     Tone { tone: ToneSource, current: f32 },
     Program(ProgramRenderer),
+    LazyProgram(LazyProgramRenderer),
 }
 
 impl RealtimeSource {
@@ -76,6 +149,10 @@ impl RealtimeSource {
 
     pub(crate) fn program(program: DeviceProgram) -> Result<Self, MediaError> {
         Ok(Self::Program(ProgramRenderer::new(program)?))
+    }
+
+    pub(crate) fn lazy_program(program: Arc<LazyDeviceProgram>) -> Result<Self, MediaError> {
+        Ok(Self::LazyProgram(LazyProgramRenderer::new(program)?))
     }
 
     /// Review candidates have no asserted authored loop evidence.  This is an
@@ -106,6 +183,7 @@ impl RealtimeSource {
         match self {
             Self::Tone { current, .. } => *current,
             Self::Program(program) => program.sample(channel),
+            Self::LazyProgram(program) => program.sample(channel),
         }
     }
 
@@ -116,17 +194,24 @@ impl RealtimeSource {
                 program.advance();
                 program.current_track()
             }
+            Self::LazyProgram(program) => {
+                program.advance();
+                program.current_track()
+            }
         }
     }
 
     pub(crate) fn request_navigation(&mut self, target: usize, control: &RealtimeControl) {
         if let Self::Program(program) = self {
             program.request_navigation(target, control);
+        } else if let Self::LazyProgram(program) = self {
+            program.request_navigation(target, control);
         }
     }
 
     pub(crate) fn navigation_active(&self) -> bool {
         matches!(self, Self::Program(program) if program.navigation_active())
+            || matches!(self, Self::LazyProgram(program) if program.navigation_active())
     }
 
     #[cfg(test)]
@@ -134,6 +219,7 @@ impl RealtimeSource {
         match self {
             Self::Tone { .. } => (0, 0),
             Self::Program(program) => program.position(),
+            Self::LazyProgram(program) => program.position(),
         }
     }
 }
@@ -435,6 +521,233 @@ impl ProgramRenderer {
     }
 }
 
+/// Device-ready queue slots used by first-track-first playback. The control
+/// thread publishes tracks while the callback consumes the current slot.
+pub(crate) struct LazyDeviceProgram {
+    tracks: Vec<OnceLock<DeviceTrack>>,
+    transitions: Vec<OnceLock<Transition>>,
+    sample_rate_hz: u32,
+}
+
+impl LazyDeviceProgram {
+    pub(crate) fn new(
+        first: DeviceTrack,
+        track_count: usize,
+        sample_rate_hz: u32,
+        channels: usize,
+    ) -> Result<Self, MediaError> {
+        if track_count == 0 || track_count > MAX_PROGRAM_TRACKS {
+            return Err(MediaError::InvalidProgramSize(track_count));
+        }
+        if sample_rate_hz == 0 || channels == 0 {
+            return Err(MediaError::InvalidDeviceFormat);
+        }
+        let program = Self {
+            tracks: (0..track_count).map(|_| OnceLock::new()).collect(),
+            transitions: (0..track_count).map(|_| OnceLock::new()).collect(),
+            sample_rate_hz,
+        };
+        program.publish(0, first)?;
+        Ok(program)
+    }
+
+    pub(crate) fn publish(&self, index: usize, track: DeviceTrack) -> Result<(), MediaError> {
+        let Some(slot) = self.tracks.get(index) else {
+            return Err(MediaError::InvalidProgramSize(index + 1));
+        };
+        let transition = loop_transition(&track, self.sample_rate_hz)?;
+        slot.set(track)
+            .map_err(|_| MediaError::LazyTrackAlreadyPublished)?;
+        self.transitions[index]
+            .set(transition)
+            .map_err(|_| MediaError::LazyTrackAlreadyPublished)
+    }
+
+    fn track(&self, index: usize) -> Option<&DeviceTrack> {
+        self.tracks.get(index).and_then(OnceLock::get)
+    }
+
+    fn transition(&self, index: usize) -> Option<Transition> {
+        self.transitions.get(index).and_then(OnceLock::get).copied()
+    }
+}
+
+/// Callback-local renderer for a queue whose later tracks may still be
+/// arriving. Until a target is published, the current track continues its
+/// authored loop and navigation requests are rejected without blocking audio.
+pub(crate) struct LazyProgramRenderer {
+    program: Arc<LazyDeviceProgram>,
+    track: usize,
+    frame: usize,
+    program_gain: f32,
+    manual: Option<ManualTransition>,
+}
+
+impl LazyProgramRenderer {
+    fn new(program: Arc<LazyDeviceProgram>) -> Result<Self, MediaError> {
+        let first = program.track(0).ok_or(MediaError::InvalidProgramSize(0))?;
+        let peak = first
+            .samples
+            .iter()
+            .copied()
+            .map(f32::abs)
+            .fold(0.0f32, f32::max);
+        let program_gain = if program.tracks.len() > 1 {
+            std::f32::consts::SQRT_2
+                .recip()
+                .min(if peak > 1.0 { peak.recip() } else { 1.0 })
+        } else if peak > 1.0 {
+            peak.recip()
+        } else {
+            1.0
+        };
+        Ok(Self {
+            program,
+            track: 0,
+            frame: 0,
+            program_gain,
+            manual: None,
+        })
+    }
+
+    #[inline]
+    fn sample(&self, channel: usize) -> f32 {
+        if let Some(manual) = self.manual {
+            return blend(
+                track_sample(
+                    self.program
+                        .track(manual.outgoing_track)
+                        .expect("published outgoing track"),
+                    manual.outgoing_frame + manual.offset,
+                    channel,
+                ),
+                track_sample(
+                    self.program
+                        .track(manual.incoming_track)
+                        .expect("published incoming track"),
+                    manual.incoming_start + manual.offset,
+                    channel,
+                ),
+                manual.offset,
+                manual.length,
+            ) * self.program_gain;
+        }
+        let current = self
+            .program
+            .track(self.track)
+            .expect("published current track");
+        let raw = match self.program.transition(self.track) {
+            Some(Transition::Loop {
+                incoming_start,
+                outgoing_start,
+                length,
+                ..
+            }) if self.frame >= outgoing_start && self.frame < outgoing_start + length => {
+                let offset = self.frame - outgoing_start;
+                blend(
+                    track_sample(current, self.frame, channel),
+                    track_sample(current, incoming_start + offset, channel),
+                    offset,
+                    length,
+                )
+            }
+            _ => track_sample(current, self.frame, channel),
+        };
+        raw * self.program_gain
+    }
+
+    #[inline]
+    fn advance(&mut self) {
+        if let Some(mut manual) = self.manual {
+            manual.offset += 1;
+            if manual.offset >= manual.length {
+                self.track = manual.incoming_track;
+                self.frame = manual.incoming_start + manual.length;
+                self.manual = None;
+            } else {
+                self.manual = Some(manual);
+            }
+            return;
+        }
+        if let Some(Transition::Loop {
+            incoming_start,
+            end,
+            length,
+            ..
+        }) = self.program.transition(self.track)
+        {
+            if self.frame + 1 >= end {
+                self.frame = incoming_start + length;
+                return;
+            }
+        }
+        self.frame += 1;
+    }
+
+    fn current_track(&self) -> usize {
+        self.track
+    }
+
+    fn navigation_active(&self) -> bool {
+        self.manual.is_some()
+    }
+
+    fn request_navigation(&mut self, target: usize, control: &RealtimeControl) {
+        if self.navigation_active()
+            || target >= self.program.tracks.len()
+            || target == self.track
+            || self.program.track(target).is_none()
+            || self.program.transition(target).is_none()
+        {
+            control.set_navigation_active(false);
+            return;
+        }
+        let Some(Transition::Loop { length, .. }) = self.program.transition(self.track) else {
+            control.set_navigation_active(false);
+            return;
+        };
+        let Some(Transition::Loop {
+            incoming_start: target_incoming,
+            length: target_length,
+            ..
+        }) = self.program.transition(target)
+        else {
+            control.set_navigation_active(false);
+            return;
+        };
+        let outgoing = self
+            .program
+            .track(self.track)
+            .expect("published outgoing track");
+        let incoming = self
+            .program
+            .track(target)
+            .expect("published incoming track");
+        let length = length
+            .min(target_length)
+            .min(outgoing.frames.saturating_sub(self.frame))
+            .min(incoming.frames.saturating_sub(target_incoming));
+        if length < 2 {
+            control.set_navigation_active(false);
+            return;
+        }
+        self.manual = Some(ManualTransition {
+            outgoing_track: self.track,
+            outgoing_frame: self.frame,
+            incoming_track: target,
+            incoming_start: target_incoming,
+            offset: 0,
+            length,
+        });
+        control.set_navigation_active(true);
+    }
+
+    #[cfg(test)]
+    fn position(&self) -> (usize, usize) {
+        (self.track, self.frame)
+    }
+}
+
 fn provisional_review_loop_transition(
     track: &DeviceTrack,
     sample_rate: u32,
@@ -674,7 +987,7 @@ fn seconds_to_frame(seconds: f32, sample_rate: u32) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::media::{AuthoredRegion, SourceLabel};
+    use crate::media::{AuthoredRegion, DecodedTrack, SourceLabel};
 
     fn label(item: &str) -> SourceLabel {
         SourceLabel {
@@ -953,6 +1266,61 @@ mod tests {
             ProgramRenderer::new(program),
             Err(MediaError::MissingContinuousTransition)
         ));
+    }
+
+    #[test]
+    fn lazy_queue_starts_with_primary_and_accepts_navigation_after_publish() {
+        let first = DecodedTrack {
+            sample_rate_hz: 1_000,
+            channels: 1,
+            samples: vec![0.10; 200].into(),
+            regions: vec![AuthoredRegion {
+                kind: AuthoredRegionKind::Loop,
+                start_seconds: 0.02,
+                end_seconds: 0.18,
+            }],
+            label: label("first"),
+        };
+        let queue = Arc::new(
+            LazyDecodedProgram::new(first, vec![label("first"), label("second")]).unwrap(),
+        );
+        assert_eq!(queue.track_count(), 2);
+        assert!(queue.track(0).is_some());
+        assert!(queue.track(1).is_none());
+
+        let device =
+            Arc::new(LazyDeviceProgram::new(loop_queue_track("first", 0.10), 2, 1_000, 1).unwrap());
+        let control = RealtimeControl::new();
+        let mut renderer = LazyProgramRenderer::new(Arc::clone(&device)).unwrap();
+        renderer.request_navigation(1, &control);
+        assert!(!renderer.navigation_active());
+
+        device.publish(1, loop_queue_track("second", 0.20)).unwrap();
+        renderer.request_navigation(1, &control);
+        assert!(renderer.navigation_active());
+        while renderer.navigation_active() {
+            assert!(renderer.sample(0).is_finite());
+            renderer.advance();
+        }
+        assert_eq!(renderer.current_track(), 1);
+        assert!(queue.published_sample_count(1).is_none());
+        queue
+            .publish(
+                1,
+                DecodedTrack {
+                    sample_rate_hz: 1_000,
+                    channels: 1,
+                    samples: vec![0.20; 200].into(),
+                    regions: vec![AuthoredRegion {
+                        kind: AuthoredRegionKind::Loop,
+                        start_seconds: 0.02,
+                        end_seconds: 0.18,
+                    }],
+                    label: label("second"),
+                },
+            )
+            .unwrap();
+        assert_eq!(queue.published_sample_count(1), Some(200));
     }
 
     fn loop_queue_track(item: &str, value: f32) -> DeviceTrack {

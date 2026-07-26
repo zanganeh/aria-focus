@@ -257,6 +257,8 @@ pub enum MediaError {
     Resample(String),
     #[error("device-rate playback PCM exceeds the aggregate device-program sample limit")]
     DevicePcmLimit,
+    #[error("lazy playback track was published more than once")]
+    LazyTrackAlreadyPublished,
     #[error("media SHA-256 differs from the fully revalidated manifest")]
     HashMismatch,
     #[error("decoded or resampled PCM is not channel-aligned")]
@@ -728,6 +730,33 @@ pub fn adapt_program_for_device(
         output_channels,
         MAX_DEVICE_PROGRAM_SAMPLES,
     )
+}
+
+/// Adapt one already-validated track to the device format.
+///
+/// Playback uses this entry point for first-track-first startup. Keeping the
+/// operation track-scoped lets the native stream open without waiting for the
+/// rest of a listening queue to be resampled.
+pub fn adapt_track_for_device(
+    track: &DecodedTrack,
+    output_rate_hz: u32,
+    output_channels: usize,
+) -> Result<DeviceTrack, MediaError> {
+    adapt_track_for_device_with_limit(
+        track,
+        output_rate_hz,
+        output_channels,
+        MAX_DEVICE_PROGRAM_SAMPLES,
+    )
+}
+
+pub fn adapt_track_for_device_with_limit(
+    track: &DecodedTrack,
+    output_rate_hz: u32,
+    output_channels: usize,
+    sample_limit: usize,
+) -> Result<DeviceTrack, MediaError> {
+    adapt_track(track, output_rate_hz, output_channels, sample_limit)
 }
 
 fn adapt_program_for_device_with_limit(

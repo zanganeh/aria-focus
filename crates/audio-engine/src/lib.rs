@@ -21,14 +21,15 @@ pub mod tone;
 
 pub use dsp::{IntensityProfile, Processor, Waveform};
 pub use media::{
-    adapt_program_for_device, decode_generated_draft_flac, decode_track, decode_track_with_limit,
-    AuthoredRegion, AuthoredRegionKind, DecodeExpectation, DecodedProgram, DecodedTrack,
-    DeviceProgram, DeviceTrack, MediaCodec, MediaError, SourceLabel, MAX_DEVICE_PROGRAM_SAMPLES,
+    adapt_program_for_device, adapt_track_for_device, adapt_track_for_device_with_limit,
+    decode_generated_draft_flac, decode_track, decode_track_with_limit, AuthoredRegion,
+    AuthoredRegionKind, DecodeExpectation, DecodedProgram, DecodedTrack, DeviceProgram,
+    DeviceTrack, MediaCodec, MediaError, SourceLabel, MAX_DEVICE_PROGRAM_SAMPLES,
     MAX_PROGRAM_SAMPLES,
 };
 pub use playback::{AudioError, AudioFacade, AudioIntensity, NativeAudioFacade, PlaybackState};
 pub use provenance::Provenance;
-pub use source::{PlaybackSource, PlaybackSourceKind, ProgramRenderer};
+pub use source::{LazyDecodedProgram, PlaybackSource, PlaybackSourceKind, ProgramRenderer};
 pub use tone::generate_test_tone;
 
 /// Stereo interleaved PCM at 32-bit float, the internal render format.

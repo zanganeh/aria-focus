@@ -2,14 +2,15 @@ use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 #[cfg(debug_assertions)]
 use std::time::Instant;
 
 use crate::music_batch::{cloud_cover_data_url, load_active_library};
 use crate::private_beta::{PrivateBetaTrust, TRUST};
 use audio_engine::{
-    decode_track_with_limit, AuthoredRegion, AuthoredRegionKind, DecodeExpectation, DecodedProgram,
-    MediaCodec, SourceLabel, MAX_PROGRAM_SAMPLES,
+    decode_track_with_limit, AuthoredRegion, AuthoredRegionKind, DecodeExpectation,
+    LazyDecodedProgram, MediaCodec, PlaybackSource, SourceLabel, MAX_PROGRAM_SAMPLES,
 };
 use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
 use catalogue::{
@@ -27,6 +28,9 @@ use persistence::{
     PackRegistration, PersistenceError, RegisteredItem, RegisteredTaxonomyTerm,
 };
 use serde::{Deserialize, Serialize};
+
+#[cfg(test)]
+use audio_engine::DecodedProgram;
 
 const VALIDATED_STATUS: &str = "validated_metadata";
 const OWNER_WAIVED_BUNDLED_STATUS: &str = "owner_waived_bundled_private_beta";
@@ -95,9 +99,49 @@ pub(crate) enum PackServiceError {
     CoverArt(String),
 }
 
+#[cfg(test)]
 pub(crate) struct PreparedPackPlayback {
     pub(crate) program: DecodedProgram,
     pub(crate) primary_item_id: String,
+}
+
+/// First-track-first playback result. The first track is fully verified before
+/// native audio starts; remaining validated tracks are published by the pack
+/// worker while the audio backend prepares them for navigation.
+pub(crate) struct PreparedLazyPackPlayback {
+    pub(crate) queue: Arc<LazyDecodedProgram>,
+    remaining: Vec<DecodeExpectation>,
+    pub(crate) primary_item_id: String,
+}
+
+impl PreparedLazyPackPlayback {
+    pub(crate) fn source(&self) -> PlaybackSource {
+        PlaybackSource::InstalledLazy(Arc::clone(&self.queue))
+    }
+
+    pub(crate) fn finish(self) -> Result<(), PackServiceError> {
+        let mut remaining_samples = MAX_PROGRAM_SAMPLES
+            .checked_sub(self.queue.published_sample_count(0).unwrap_or_default())
+            .ok_or_else(|| PackServiceError::Audio("playback sample limit exhausted".to_owned()))?;
+        for (index, expectation) in self.remaining.iter().enumerate() {
+            let track = decode_track_with_limit(expectation, remaining_samples)
+                .map_err(|error| PackServiceError::Audio(error.to_string()))?;
+            remaining_samples = remaining_samples
+                .checked_sub(track.samples.len())
+                .ok_or_else(|| {
+                    PackServiceError::Audio("playback sample limit exhausted".to_owned())
+                })?;
+            self.queue
+                .publish(index + 1, track)
+                .map_err(|error| PackServiceError::Audio(error.to_string()))?;
+        }
+        self.queue.close();
+        Ok(())
+    }
+
+    pub(crate) fn cancel(&self) {
+        self.queue.close();
+    }
 }
 
 /// An owned playback selection. Constructing this plan only reads registry and
@@ -110,6 +154,31 @@ pub(crate) struct PlaybackPreparationPlan {
 }
 
 impl PlaybackPreparationPlan {
+    pub(crate) fn decode_primary(self) -> Result<PreparedLazyPackPlayback, PackServiceError> {
+        let mut expectations = self.expectations;
+        let first = expectations
+            .first()
+            .ok_or_else(|| PackServiceError::Audio("playback queue is empty".to_owned()))?;
+        let labels = expectations
+            .iter()
+            .map(|expectation| expectation.label.clone())
+            .collect::<Vec<_>>();
+        let primary_item_id = self.primary_item_id;
+        let track = decode_track_with_limit(first, MAX_PROGRAM_SAMPLES)
+            .map_err(|error| PackServiceError::Audio(error.to_string()))?;
+        expectations.remove(0);
+        let queue = Arc::new(
+            LazyDecodedProgram::new(track, labels)
+                .map_err(|error| PackServiceError::Audio(error.to_string()))?,
+        );
+        Ok(PreparedLazyPackPlayback {
+            queue,
+            remaining: expectations,
+            primary_item_id,
+        })
+    }
+
+    #[cfg(test)]
     pub(crate) fn decode(self) -> Result<PreparedPackPlayback, PackServiceError> {
         let mut decoded = Vec::with_capacity(self.expectations.len());
         let mut remaining_samples = MAX_PROGRAM_SAMPLES;
