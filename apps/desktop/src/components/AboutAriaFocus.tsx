@@ -33,7 +33,7 @@ export function AboutAriaFocus() {
       <dl>
         <div>
           <dt>Version</dt>
-          <dd>1.0.2</dd>
+          <dd>1.0.3</dd>
         </div>
         <div>
           <dt>Created by</dt>
