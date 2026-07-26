@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+#[cfg(debug_assertions)]
+use std::time::Instant;
 
 use crate::music_batch::{cloud_cover_data_url, load_active_library};
 use crate::private_beta::{PrivateBetaTrust, TRUST};
@@ -98,6 +100,51 @@ pub(crate) struct PreparedPackPlayback {
     pub(crate) primary_item_id: String,
 }
 
+/// An owned playback selection. Constructing this plan only reads registry and
+/// manifest metadata; media verification and decoding happen after the pack
+/// service lock has been released by the caller.
+#[derive(Clone)]
+pub(crate) struct PlaybackPreparationPlan {
+    pub(crate) primary_item_id: String,
+    expectations: Vec<DecodeExpectation>,
+}
+
+impl PlaybackPreparationPlan {
+    pub(crate) fn decode(self) -> Result<PreparedPackPlayback, PackServiceError> {
+        let mut decoded = Vec::with_capacity(self.expectations.len());
+        let mut remaining_samples = MAX_PROGRAM_SAMPLES;
+        for expectation in &self.expectations {
+            #[cfg(debug_assertions)]
+            let decode_started = Instant::now();
+            let track = decode_track_with_limit(expectation, remaining_samples)
+                .map_err(|error| PackServiceError::Audio(error.to_string()))?;
+            #[cfg(debug_assertions)]
+            eprintln!(
+                "[playback-timing] selected_verify_decode_ms={}",
+                decode_started.elapsed().as_millis()
+            );
+            remaining_samples = remaining_samples
+                .checked_sub(track.samples.len())
+                .ok_or_else(|| {
+                    PackServiceError::Audio("playback sample limit exhausted".to_owned())
+                })?;
+            decoded.push(track);
+        }
+        let program = DecodedProgram::new(decoded)
+            .map_err(|error| PackServiceError::Audio(error.to_string()))?;
+        Ok(PreparedPackPlayback {
+            program,
+            primary_item_id: self.primary_item_id,
+        })
+    }
+}
+
+#[derive(Clone)]
+struct CatalogueSnapshot {
+    key: Vec<String>,
+    records: Vec<(InstalledPackRecord, ContentPackManifest)>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub(crate) struct ItemFeedbackState {
     pub(crate) item_id: String,
@@ -159,6 +206,7 @@ pub(crate) struct PackService<R: CatalogueRegistry> {
     resource_dir: Option<PathBuf>,
     private_beta_enabled: bool,
     verified_media_records: HashSet<String>,
+    catalogue_snapshot: Option<CatalogueSnapshot>,
 }
 
 impl<R: CatalogueRegistry> PackService<R> {
@@ -171,6 +219,7 @@ impl<R: CatalogueRegistry> PackService<R> {
             resource_dir: None,
             private_beta_enabled: false,
             verified_media_records: HashSet::new(),
+            catalogue_snapshot: None,
         }
     }
 
@@ -190,6 +239,7 @@ impl<R: CatalogueRegistry> PackService<R> {
             resource_dir: None,
             private_beta_enabled: false,
             verified_media_records: HashSet::new(),
+            catalogue_snapshot: None,
         }
     }
 
@@ -203,8 +253,20 @@ impl<R: CatalogueRegistry> PackService<R> {
         })
     }
 
-    /// Revalidate every registry row and installed tree before deterministic
-    /// selection, then decode the selected bounded program off the callback.
+    pub(crate) fn catalogue_list(&mut self) -> Result<Vec<PackSummary>, PackServiceError> {
+        self.install_bundled_private_beta()?;
+        self.catalogue_records().map(|records| {
+            records
+                .iter()
+                .map(|(record, _)| summary_for(record))
+                .collect()
+        })
+    }
+
+    /// Full authored-program preparation retained for onboarding and pack
+    /// integrity tests. Selection remains metadata-only until this method is
+    /// called outside the pack mutex by a playback worker.
+    #[cfg(test)]
     pub(crate) fn prepare_playback(
         &mut self,
         activity: Activity,
@@ -214,16 +276,36 @@ impl<R: CatalogueRegistry> PackService<R> {
     where
         R: ItemFeedbackStore,
     {
-        // A validated cloud activation is the preferred library. If the
-        // activation is unavailable or a media integrity check fails, fall
-        // through to the durable offline catalogue instead of breaking
-        // listening for the user.
-        if let Ok(Some(prepared)) = self.prepare_active_cloud_playback(activity, genre_id, mood_id)
-        {
-            return Ok(Some(prepared));
+        let Some(plan) = self.select_playback(activity, genre_id, mood_id)? else {
+            return Ok(None);
+        };
+        plan.decode().map(Some)
+    }
+
+    /// Selects playback using only registry/manifest metadata. The returned
+    /// plan owns every value needed by the decoder, so the caller can release
+    /// the pack mutex before doing filesystem work or hashing media.
+    pub(crate) fn select_playback(
+        &mut self,
+        activity: Activity,
+        genre_id: Option<&str>,
+        mood_id: Option<&str>,
+    ) -> Result<Option<PlaybackPreparationPlan>, PackServiceError>
+    where
+        R: ItemFeedbackStore,
+    {
+        if let Ok(Some(plan)) = self.select_active_cloud_playback(activity, genre_id, mood_id) {
+            return Ok(Some(plan));
         }
         self.install_bundled_private_beta()?;
-        let records = self.validated_records()?;
+        #[cfg(debug_assertions)]
+        let catalogue_started = Instant::now();
+        let records = self.catalogue_records()?;
+        #[cfg(debug_assertions)]
+        eprintln!(
+            "[playback-timing] catalogue_lookup_ms={}",
+            catalogue_started.elapsed().as_millis()
+        );
         let manifests = records
             .iter()
             .map(|(_, manifest)| manifest.clone())
@@ -248,16 +330,16 @@ impl<R: CatalogueRegistry> PackService<R> {
             return Ok(None);
         };
         let primary_item_id = selection.primary().item_id.clone();
-        self.decode_selection(&manifests, selection.tracks, primary_item_id)
+        self.playback_plan_from_selection(&manifests, selection.tracks, primary_item_id)
             .map(Some)
     }
 
-    fn prepare_active_cloud_playback(
+    fn select_active_cloud_playback(
         &self,
         activity: Activity,
         genre_id: Option<&str>,
         mood_id: Option<&str>,
-    ) -> Result<Option<PreparedPackPlayback>, PackServiceError> {
+    ) -> Result<Option<PlaybackPreparationPlan>, PackServiceError> {
         let Some(library) =
             load_active_library(&self.content_root).map_err(PackServiceError::Audio)?
         else {
@@ -292,8 +374,7 @@ impl<R: CatalogueRegistry> PackService<R> {
         candidates.rotate_left(start);
         candidates.truncate(audio_engine::media::MAX_PROGRAM_TRACKS);
 
-        let mut decoded = Vec::with_capacity(candidates.len());
-        let mut remaining_samples = MAX_PROGRAM_SAMPLES;
+        let mut expectations = Vec::with_capacity(candidates.len());
         for item in candidates {
             let bytes = fs::metadata(&item.audio_path)
                 .map_err(|error| PackServiceError::Audio(error.to_string()))?
@@ -325,39 +406,30 @@ impl<R: CatalogueRegistry> PackService<R> {
                     variant_id: format!("cloud-{}", codec.storage_name()),
                 },
             };
-            let track = decode_track_with_limit(&expectation, remaining_samples)
-                .map_err(|error| PackServiceError::Audio(error.to_string()))?;
-            remaining_samples = remaining_samples
-                .checked_sub(track.samples.len())
-                .ok_or_else(|| PackServiceError::Audio("playback sample limit exhausted".into()))?;
-            decoded.push(track);
+            expectations.push(expectation);
         }
-        let primary_item_id = decoded
+        let primary_item_id = expectations
             .first()
-            .map(|track| track.label.item_id.clone())
+            .map(|expectation| expectation.label.item_id.clone())
             .ok_or_else(|| {
                 PackServiceError::Audio("cloud library has no playable tracks".into())
             })?;
-        let program = DecodedProgram::new(decoded)
-            .map_err(|error| PackServiceError::Audio(error.to_string()))?;
-        Ok(Some(PreparedPackPlayback {
-            program,
+        Ok(Some(PlaybackPreparationPlan {
             primary_item_id,
+            expectations,
         }))
     }
 
-    /// Revalidates the installed catalogue and decodes the exact requested
-    /// favourite. This path deliberately does not call profile selection.
-    pub(crate) fn prepare_favorite_playback(
+    pub(crate) fn select_favorite_playback(
         &mut self,
         activity: Activity,
         item_id: &str,
-    ) -> Result<PreparedPackPlayback, PackServiceError>
+    ) -> Result<PlaybackPreparationPlan, PackServiceError>
     where
         R: ItemFeedbackStore,
     {
         self.install_bundled_private_beta()?;
-        let records = self.validated_records()?;
+        let records = self.catalogue_records()?;
         let requested = [item_id.to_owned()];
         let enjoyment = self.registry.load_item_enjoyment(activity, &requested)?;
         if enjoyment.get(item_id) != Some(&TrackEnjoyment::Liked) {
@@ -381,15 +453,15 @@ impl<R: CatalogueRegistry> PackService<R> {
         ))
         })?;
         let primary_item_id = selection.primary().item_id.clone();
-        self.decode_selection(&manifests, selection.tracks, primary_item_id)
+        self.playback_plan_from_selection(&manifests, selection.tracks, primary_item_id)
     }
 
-    pub(crate) fn prepare_my_music_playback(
+    pub(crate) fn select_my_music_playback(
         &mut self,
         activity: Activity,
         item_id: &str,
-    ) -> Result<PreparedPackPlayback, PackServiceError> {
-        let records = self.validated_records()?;
+    ) -> Result<PlaybackPreparationPlan, PackServiceError> {
+        let records = self.catalogue_records()?;
         if !self
             .registry
             .list_generated_local_customers()?
@@ -412,17 +484,16 @@ impl<R: CatalogueRegistry> PackService<R> {
         )
         .ok_or_else(|| PackServiceError::Audio("That music is no longer playable.".into()))?;
         let primary_item_id = selection.primary().item_id.clone();
-        self.decode_selection(&manifests, selection.tracks, primary_item_id)
+        self.playback_plan_from_selection(&manifests, selection.tracks, primary_item_id)
     }
 
-    fn decode_selection(
+    fn playback_plan_from_selection(
         &self,
         manifests: &[ContentPackManifest],
         tracks: Vec<catalogue::PlaybackCandidate>,
         primary_item_id: String,
-    ) -> Result<PreparedPackPlayback, PackServiceError> {
-        let mut decoded = Vec::with_capacity(tracks.len());
-        let mut remaining_samples = MAX_PROGRAM_SAMPLES;
+    ) -> Result<PlaybackPreparationPlan, PackServiceError> {
+        let mut expectations = Vec::with_capacity(tracks.len());
         for candidate in &tracks {
             let manifest = manifests
                 .iter()
@@ -465,20 +536,11 @@ impl<R: CatalogueRegistry> PackService<R> {
                     variant_id: candidate.variant_id.clone(),
                 },
             };
-            let track = decode_track_with_limit(&expectation, remaining_samples)
-                .map_err(|error| PackServiceError::Audio(error.to_string()))?;
-            remaining_samples = remaining_samples
-                .checked_sub(track.samples.len())
-                .ok_or_else(|| {
-                    PackServiceError::Audio("playback sample limit exhausted".to_owned())
-                })?;
-            decoded.push(track);
+            expectations.push(expectation);
         }
-        let program = DecodedProgram::new(decoded)
-            .map_err(|error| PackServiceError::Audio(error.to_string()))?;
-        Ok(PreparedPackPlayback {
-            program,
+        Ok(PlaybackPreparationPlan {
             primary_item_id,
+            expectations,
         })
     }
 
@@ -487,7 +549,7 @@ impl<R: CatalogueRegistry> PackService<R> {
         R: ItemFeedbackStore,
     {
         self.install_bundled_private_beta()?;
-        let records = self.validated_records()?;
+        let records = self.catalogue_records()?;
         let manifests = records
             .iter()
             .map(|(_, manifest)| manifest.clone())
@@ -585,7 +647,7 @@ impl<R: CatalogueRegistry> PackService<R> {
             return cloud_cover_data_url(&self.content_root, item_id)
                 .map_err(PackServiceError::CoverArt);
         }
-        let records = self.validated_records()?;
+        let records = self.catalogue_records()?;
         let Some((record, manifest)) = records.iter().find(|(record, manifest)| {
             record.pack_id == pack_id && manifest.items.iter().any(|item| item.id == item_id)
         }) else {
@@ -746,6 +808,53 @@ impl<R: CatalogueRegistry> PackService<R> {
             .collect::<Result<Vec<_>, _>>()?;
         self.audit_pack_directories(&records)?;
         Ok(validated)
+    }
+
+    /// Returns manifest-derived playback metadata without hashing installed
+    /// media or walking the complete pack tree. The snapshot key changes when
+    /// a pack is installed, imported, deleted, or reconciled.
+    fn catalogue_records(
+        &mut self,
+    ) -> Result<Vec<(InstalledPackRecord, ContentPackManifest)>, PackServiceError> {
+        self.reconcile_receipts()?;
+        let records = self.registry.list_installed_packs()?;
+        let key = records
+            .iter()
+            .filter(|record| !is_retired_private_beta(record))
+            .map(|record| {
+                format!(
+                    "{}\u{1f}{}\u{1f}{}\u{1f}{}\u{1f}{}\u{1f}{}\u{1f}{}\u{1f}{}\u{1f}{}\u{1f}{}",
+                    record.pack_id,
+                    record.title,
+                    record.version,
+                    record.manifest_sha256,
+                    record.archive_sha256,
+                    record.install_path,
+                    record.status,
+                    record.item_count,
+                    record.canonical_manifest,
+                    record.created_at_unix_seconds
+                )
+            })
+            .collect::<Vec<_>>();
+        if let Some(snapshot) = &self.catalogue_snapshot {
+            if snapshot.key == key {
+                return Ok(snapshot.records.clone());
+            }
+        }
+        let catalogue = records
+            .iter()
+            .filter(|record| !is_retired_private_beta(record))
+            .map(|record| {
+                self.validate_record_manifest_metadata(record)
+                    .map(|manifest| (record.clone(), manifest))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        self.catalogue_snapshot = Some(CatalogueSnapshot {
+            key,
+            records: catalogue.clone(),
+        });
+        Ok(catalogue)
     }
 
     fn private_beta_eligibility(
@@ -1411,16 +1520,20 @@ impl<R: CatalogueRegistry> PackService<R> {
     pub(crate) fn list_my_music(&mut self) -> Result<Vec<MyMusicItem>, PackServiceError> {
         self.reconcile_receipts()?;
         let records = self.registry.list_generated_local_customers()?;
+        // Listing is a metadata operation. Resolve manifests through the
+        // cached catalogue snapshot so a damaged audio file does not make the
+        // library page hash or read the whole installed pack. Playback still
+        // verifies the selected asset immediately before decoding.
+        let catalogue = self.catalogue_records()?;
         let mut result = Vec::with_capacity(records.len());
         for record in records {
-            let pack = self
-                .registry
-                .find_installed_pack(&record.pack_id)?
+            let (pack, manifest) = catalogue
+                .iter()
+                .find(|(pack, _)| pack.pack_id == record.pack_id)
                 .ok_or_else(|| PackServiceError::CorruptRegistry {
                     pack_id: record.pack_id.clone(),
                     reason: "customer metadata has no installed pack".into(),
                 })?;
-            let manifest = self.validate_record_manifest(&pack)?;
             let item = manifest
                 .items
                 .first()
@@ -2268,7 +2381,7 @@ impl<R: CatalogueRegistry + GenrePreferenceStore + MoodPreferenceStore + ItemFee
         &mut self,
         activity: Activity,
     ) -> Result<ActivityGenreState, PackServiceError> {
-        let records = self.validated_records()?;
+        let records = self.catalogue_records()?;
         let eligibility = self.private_beta_eligibility(&records);
         let manifests = records
             .into_iter()
@@ -2322,7 +2435,7 @@ impl<R: CatalogueRegistry + GenrePreferenceStore + MoodPreferenceStore + ItemFee
         genre_id: Option<&str>,
     ) -> Result<ActivityMoodState, PackServiceError> {
         self.install_bundled_private_beta()?;
-        let records = self.validated_records()?;
+        let records = self.catalogue_records()?;
         let manifests = records
             .iter()
             .map(|(_, manifest)| manifest.clone())
@@ -3228,7 +3341,7 @@ mod tests {
     #[test]
     fn generated_local_install_rejects_sources_outside_controlled_staging() {
         let temp = TempDir::new().unwrap();
-        let (registry, _) = MockRegistry::new(false);
+        let (registry, _state) = MockRegistry::new(false);
         let mut service = PackService::new(registry, temp.path().join("content"));
         let asset = b"local generated flac fixture";
         let record = generated_local_record("job-local-002", asset);
@@ -3352,6 +3465,43 @@ mod tests {
                 .count(),
             0
         );
+    }
+
+    #[test]
+    fn my_music_listing_uses_metadata_but_playback_rejects_tampered_audio() {
+        let temp = TempDir::new().unwrap();
+        let (registry, state) = MockRegistry::new(false);
+        let mut service = PackService::new(registry, temp.path().join("content"));
+        let asset = b"local generated flac fixture";
+        let record = generated_local_record("job-listing-tamper", asset);
+        let customer = generated_customer(&record);
+        let staging = service
+            .content_root
+            .join("studio-staging")
+            .join(&record.generation_job_id);
+        write_generated_staging(&staging, &record, asset);
+        service
+            .install_generated_local(record, customer.clone(), &staging)
+            .unwrap();
+
+        let installed = PathBuf::from(&state.lock().unwrap().registrations[0].pack.install_path);
+        fs::write(
+            installed.join(format!(
+                "assets/generated/{}.flac",
+                customer.pack_id.strip_prefix("generated.local.").unwrap()
+            )),
+            b"tampered audio",
+        )
+        .unwrap();
+
+        let listed = service.list_my_music().unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].item_id, customer.item_id);
+        assert_eq!(listed[0].title, customer.title);
+        assert!(matches!(
+            service.prepare_playback(Activity::DeepWork, None, None),
+            Err(PackServiceError::Audio(_))
+        ));
     }
 
     #[test]
@@ -3494,6 +3644,26 @@ mod tests {
             Err(PackServiceError::Audio(_))
         ));
         assert!(service.recent_item_id.is_none());
+    }
+
+    #[test]
+    fn catalogue_snapshot_is_invalidated_by_registry_metadata_changes() {
+        let temp = TempDir::new().unwrap();
+        let archive = write_playable_pack(temp.path());
+        let (registry, state) = MockRegistry::new(false);
+        let mut service = PackService::new(registry, temp.path().join("content"));
+        service.import(&archive).unwrap();
+        service.catalogue_list().unwrap();
+
+        let mut registrations = state.lock().unwrap();
+        registrations.registrations[0].pack.title = "Changed title".to_owned();
+        registrations.registrations[0].pack.archive_sha256 = "f".repeat(64);
+        drop(registrations);
+
+        assert!(matches!(
+            service.catalogue_list(),
+            Err(PackServiceError::CorruptRegistry { .. })
+        ));
     }
 
     #[test]
@@ -3950,6 +4120,31 @@ mod tests {
         assert!(matches!(
             service.list(),
             Err(PackServiceError::CorruptRegistry { .. })
+        ));
+    }
+
+    #[test]
+    fn catalogue_listing_stays_fast_but_playback_rejects_tampered_audio() {
+        let temp = TempDir::new().unwrap();
+        let archive = write_playable_pack(temp.path());
+        let (registry, _) = MockRegistry::new(false);
+        let content = temp.path().join("content");
+        let mut service = PackService::new(registry, content.clone());
+        service.import(&archive).unwrap();
+        assert_eq!(service.catalogue_list().unwrap().len(), 1);
+        fs::write(
+            content
+                .join("packs/test.pack")
+                .join(version_storage_key("1.0.0"))
+                .join("assets/test-item.wav"),
+            b"tampered",
+        )
+        .unwrap();
+
+        assert_eq!(service.catalogue_list().unwrap().len(), 1);
+        assert!(matches!(
+            service.prepare_playback(Activity::DeepWork, None, None),
+            Err(PackServiceError::Audio(_))
         ));
     }
 

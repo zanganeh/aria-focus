@@ -1,8 +1,9 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorBanner } from "../components/ErrorBanner";
 import {
+  getPlaybackPreparationState,
   getSnapshot,
   getMasterVolume,
   pauseSession,
@@ -25,6 +26,7 @@ vi.mock("@tauri-apps/api/event", () => ({
 
 vi.mock("../lib/api", () => ({
   getSnapshot: vi.fn(),
+  getPlaybackPreparationState: vi.fn(),
   getMasterVolume: vi.fn(),
   pauseSession: vi.fn(),
   resumeSession: vi.fn(),
@@ -54,8 +56,12 @@ function Harness() {
   return (
     <>
       <output data-testid="activity">{session.snapshot?.activity ?? "none"}</output>
+      <output data-testid="starting">{String(session.starting)}</output>
       <button type="button" onClick={() => void session.start()}>
         Start
+      </button>
+      <button type="button" onClick={() => void session.stop()}>
+        Stop
       </button>
       <button type="button" onClick={() => void session.adoptStartedSession()}>
         Adopt playback
@@ -78,6 +84,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   eventMocks.listen.mockRejectedValue(new Error("Tauri events unavailable in this test"));
   vi.mocked(getSnapshot).mockResolvedValue(IDLE_SNAPSHOT);
+  vi.mocked(getPlaybackPreparationState).mockResolvedValue({
+    state: "preparing",
+    error: null,
+  });
   vi.mocked(getMasterVolume).mockResolvedValue(70);
   vi.mocked(pauseSession).mockResolvedValue();
   vi.mocked(resumeSession).mockResolvedValue();
@@ -135,6 +145,90 @@ describe("useSession command errors", () => {
         "Unable to start the session: no default audio output device is available",
       );
     });
+  });
+
+  it("stops preparation polling and state updates after the hook unmounts", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<Harness />);
+    await waitFor(() => expect(getSnapshot).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => expect(getPlaybackPreparationState).toHaveBeenCalled());
+    const callsBeforeUnmount = vi.mocked(getPlaybackPreparationState).mock.calls.length;
+
+    cleanup();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(getPlaybackPreparationState).toHaveBeenCalledTimes(callsBeforeUnmount);
+  });
+
+  it("cancels preparation when Stop is pressed", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<Harness />);
+    await waitFor(() => expect(getSnapshot).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => expect(getPlaybackPreparationState).toHaveBeenCalled());
+    const callsBeforeStop = vi.mocked(getPlaybackPreparationState).mock.calls.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    await waitFor(() => expect(stopSession).toHaveBeenCalledOnce());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(getPlaybackPreparationState).toHaveBeenCalledTimes(callsBeforeStop);
+  });
+
+  it("clears starting immediately and ignores a stale preparation result after Stop", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let resolvePreparation:
+      | ((value: { state: "preparing" | "error" | "idle"; error: string | null }) => void)
+      | undefined;
+    vi.mocked(getPlaybackPreparationState).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePreparation = resolve;
+        }),
+    );
+    render(<Harness />);
+    await waitFor(() => expect(getSnapshot).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => expect(getPlaybackPreparationState).toHaveBeenCalled());
+    expect(screen.getByTestId("starting").textContent).toBe("true");
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    expect(screen.getByTestId("starting").textContent).toBe("false");
+    await act(async () => {
+      resolvePreparation?.({ state: "error", error: "stale preparation failure" });
+    });
+    await waitFor(() => expect(stopSession).toHaveBeenCalledOnce());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+
+    expect(screen.getByTestId("starting").textContent).toBe("false");
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("supersedes an earlier start request", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<Harness />);
+    await waitFor(() => expect(getSnapshot).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => expect(getPlaybackPreparationState).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => expect(startSession).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("handles a rejected activity command without an unhandled promise", async () => {

@@ -31,6 +31,7 @@ import type {
   CloudCostEstimate,
   CloudBatchSummary,
   CloudBatchItem,
+  PlaybackPreparationStatus,
 } from "./types";
 
 export async function getCloudKeyStatus(): Promise<CloudKeyStatus> {
@@ -174,6 +175,9 @@ export async function retryStartup(): Promise<StartupHealth> {
 
 export async function startSession(): Promise<void> {
   await invoke("start_session");
+}
+export async function getPlaybackPreparationState(): Promise<PlaybackPreparationStatus> {
+  return await invoke<PlaybackPreparationStatus>("get_playback_preparation_state");
 }
 export async function listFavorites(): Promise<FavoriteLibraryItem[]> {
   return await invoke<FavoriteLibraryItem[]>("list_favorites");

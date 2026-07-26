@@ -75,6 +75,13 @@ export interface PlaybackChangedEvent {
   error: string | null;
 }
 
+export type PlaybackPreparationState = "idle" | "preparing" | "error";
+
+export interface PlaybackPreparationStatus {
+  state: PlaybackPreparationState;
+  error: string | null;
+}
+
 export interface CloudGenerationChangedEvent {
   batchId: string;
   state: string;

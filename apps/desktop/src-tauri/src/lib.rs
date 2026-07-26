@@ -19,9 +19,9 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{
     atomic::{AtomicBool, AtomicU64, Ordering},
-    Arc, Mutex,
+    Arc, Mutex, MutexGuard,
 };
-use tauri::{Emitter, Manager, RunEvent, Runtime, State};
+use tauri::{AppHandle, Emitter, Manager, RunEvent, Runtime, State};
 
 use audio_engine::{
     MediaCodec, NativeAudioFacade, PlaybackSource, PlaybackSourceKind, Provenance, SourceLabel,
@@ -36,20 +36,169 @@ use coordinator::SessionAudioCoordinator;
 use domain::{Activity, Intensity, MasterVolume, SessionSnapshot, TrackEnjoyment, TrackFeedback};
 use pack_service::{
     ActivityGenreState, ActivityMoodState, FavoriteLibraryItem, ItemFeedbackState, PackService,
-    PackSummary,
+    PackSummary, PlaybackPreparationPlan,
 };
 use persistence::{
     GeneratedLocalCustomerRecord, PreferencesRepository, SessionFocusOutcome, SessionHistoryRecord,
     SessionSoundEnjoyment, StudioJobArtifact, StudioJobStore,
 };
 use preview_audio::{
-    stop_for_focus_start, CloudPreviewSource, DraftPreviewState, PreviewAudioCoordinator,
+    prepare_cloud_preview, prepare_draft_preview, stop_for_focus_start, CloudPreviewSource,
+    DraftPreviewState, PreviewAudioCoordinator,
 };
 use review_service::{ReviewCandidate, ReviewService};
 
 type Core = SessionAudioCoordinator<NativeAudioFacade, PreferencesRepository>;
 type Packs = PackService<PreferencesRepository>;
 type Preview = PreviewAudioCoordinator<NativeAudioFacade>;
+
+/// Serializes generation invalidation with the small native-start commit
+/// section. Preparation itself never takes this lock; it is only held while
+/// checking a generation and committing or stopping playback.
+#[derive(Default)]
+struct GenerationBoundary {
+    generation: AtomicU64,
+    commit_gate: Mutex<()>,
+}
+
+impl GenerationBoundary {
+    #[cfg(test)]
+    fn begin(&self) -> Result<u64, String> {
+        let _gate = self.lock_commit()?;
+        Ok(self.generation.fetch_add(1, Ordering::SeqCst) + 1)
+    }
+
+    #[cfg(test)]
+    fn invalidate(&self) -> Result<(), String> {
+        let _gate = self.lock_commit()?;
+        self.generation.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+
+    fn is_current(&self, generation: u64) -> bool {
+        self.generation.load(Ordering::SeqCst) == generation
+    }
+
+    /// Caller must hold `commit_gate`. Keeping the counter mutation beside the
+    /// preparation state mutation gives playback one linearization boundary.
+    fn next_locked(&self) -> u64 {
+        self.generation.fetch_add(1, Ordering::SeqCst) + 1
+    }
+
+    fn lock_commit(&self) -> Result<MutexGuard<'_, ()>, String> {
+        self.commit_gate.lock().map_err(|error| error.to_string())
+    }
+}
+
+/// A bounded single-flight request slot. One request may be active and one
+/// latest request is retained; every older pending request is replaced.
+struct LatestPreparationState<T> {
+    active: bool,
+    pending: Option<T>,
+}
+
+struct LatestPreparation<T> {
+    state: Mutex<LatestPreparationState<T>>,
+}
+
+impl<T> Default for LatestPreparation<T> {
+    fn default() -> Self {
+        Self {
+            state: Mutex::new(LatestPreparationState {
+                active: false,
+                pending: None,
+            }),
+        }
+    }
+}
+
+impl<T> LatestPreparation<T> {
+    /// Returns the request when the caller owns the one active worker slot.
+    /// Returns `None` when the request was coalesced into the latest slot.
+    fn submit(&self, request: T) -> Option<T> {
+        let mut state = self.state.lock().ok()?;
+        if state.active {
+            state.pending = Some(request);
+            None
+        } else {
+            state.active = true;
+            Some(request)
+        }
+    }
+
+    fn complete(&self) -> Option<T> {
+        let mut state = self.state.lock().ok()?;
+        match state.pending.take() {
+            Some(next) => {
+                state.active = true;
+                Some(next)
+            }
+            None => {
+                state.active = false;
+                None
+            }
+        }
+    }
+
+    fn clear(&self) {
+        if let Ok(mut state) = self.state.lock() {
+            state.pending = None;
+        }
+    }
+
+    #[cfg(test)]
+    fn is_active(&self) -> bool {
+        self.state.lock().map(|state| state.active).unwrap_or(false)
+    }
+}
+
+enum PlaybackPreparationRequest {
+    Session,
+    Explicit {
+        activity: Activity,
+        selection: ExplicitPlaybackSelection,
+    },
+}
+
+enum PreviewPreparationRequest {
+    Cloud {
+        source: CloudPreviewSource,
+        volume: u8,
+    },
+    Draft {
+        path: PathBuf,
+        job_id: String,
+        volume: u8,
+    },
+}
+
+struct PlaybackWorkerGuard {
+    app: AppHandle,
+}
+
+impl Drop for PlaybackWorkerGuard {
+    fn drop(&mut self) {
+        let state = self.app.state::<AppState>();
+        let Some((generation, request)) = state.complete_playback_worker() else {
+            return;
+        };
+        spawn_playback_request(self.app.clone(), generation, request);
+    }
+}
+
+struct PreviewWorkerGuard {
+    app: AppHandle,
+}
+
+impl Drop for PreviewWorkerGuard {
+    fn drop(&mut self) {
+        let state = self.app.state::<AppState>();
+        let Some((generation, request)) = state.complete_preview_worker() else {
+            return;
+        };
+        spawn_preview_request(self.app.clone(), generation, request);
+    }
+}
 
 /// Application state. The session is the single source of truth for transport
 /// and elapsed time; the clock base makes `now` a monotonic seconds counter.
@@ -67,10 +216,34 @@ struct AppState {
     clock_base: std::time::Instant,
     migration: Mutex<brand_migration::BrandMigrationState>,
     event_shutdown: Arc<AtomicBool>,
+    playback_boundary: Arc<GenerationBoundary>,
+    playback_preparing: Arc<AtomicBool>,
+    playback_preparation: LatestPreparation<PlaybackPreparationRequest>,
+    playback_error: Arc<Mutex<Option<String>>>,
+    preview_boundary: Arc<GenerationBoundary>,
+    preview_preparing: Arc<AtomicBool>,
+    preview_preparation: LatestPreparation<PreviewPreparationRequest>,
+    preview_error: Arc<Mutex<Option<String>>>,
 }
 
 const PLAYBACK_CHANGED_EVENT: &str = "aria-focus://playback-changed";
+const PLAYBACK_PREPARATION_CHANGED_EVENT: &str = "aria-focus://playback-preparation-changed";
 const CLOUD_GENERATION_CHANGED_EVENT: &str = "aria-focus://cloud-generation-changed";
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PlaybackPreparationStateDto {
+    state: &'static str,
+    error: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PlaybackPreparationEventPayload {
+    generation: u64,
+    state: &'static str,
+    error: Option<String>,
+}
 
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -595,6 +768,7 @@ fn activate_cloud_generation(
 fn start_cloud_generation_preview(
     batch_id: String,
     item_id: String,
+    app: AppHandle,
     state: State<AppState>,
 ) -> Result<(), String> {
     let item = state.cloud_generation.preview_item(&batch_id, &item_id)?;
@@ -609,25 +783,22 @@ fn start_cloud_generation_preview(
             Ok(core.master_volume().percent())
         })
         .map_err(|_| "Stop focus playback before previewing a generated track.".to_owned())?;
-    state
-        .preview
-        .lock()
-        .map_err(|error| error.to_string())?
-        .start_cloud(
-            CloudPreviewSource {
-                path: item.path,
-                codec,
-                sha256: item.sha256,
-                sample_rate_hz: item.sample_rate_hz,
-                channels: item.channels,
-                bit_depth: item.bit_depth,
-                duration_seconds: item.duration_seconds,
-                item_id: item.item_id,
-                title: item.title,
-            },
-            volume,
-        )
-        .map_err(|error| format!("The generated track could not be previewed: {error}"))
+    let source = CloudPreviewSource {
+        path: item.path,
+        codec,
+        sha256: item.sha256,
+        sample_rate_hz: item.sample_rate_hz,
+        channels: item.channels,
+        bit_depth: item.bit_depth,
+        duration_seconds: item.duration_seconds,
+        item_id: item.item_id,
+        title: item.title,
+    };
+    let request = PreviewPreparationRequest::Cloud { source, volume };
+    if let Some((generation, request)) = state.begin_preview_preparation(request)? {
+        spawn_preview_request(app, generation, request);
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -770,6 +941,120 @@ impl AppState {
             .as_secs()
     }
 
+    fn begin_playback_preparation(
+        &self,
+        request: PlaybackPreparationRequest,
+    ) -> Result<Option<(u64, PlaybackPreparationRequest)>, String> {
+        // Lock order: generation boundary -> preparation error/state. Native
+        // commit may extend this to boundary -> core, but never takes packs
+        // while core is held. Pack selection/decoding is always outside this
+        // boundary and outside the pack mutex.
+        let _gate = self.playback_boundary.lock_commit()?;
+        let generation = self.playback_boundary.next_locked();
+        self.playback_preparing.store(true, Ordering::SeqCst);
+        if let Ok(mut error) = self.playback_error.lock() {
+            *error = None;
+        }
+        Ok(self
+            .playback_preparation
+            .submit(request)
+            .map(|request| (generation, request)))
+    }
+
+    fn preparation_is_current(&self, generation: u64) -> bool {
+        self.playback_boundary.is_current(generation)
+    }
+
+    fn finish_playback_preparation(
+        &self,
+        app: &AppHandle,
+        generation: u64,
+        state: &'static str,
+        error: Option<String>,
+    ) {
+        let Ok(_gate) = self.playback_boundary.lock_commit() else {
+            return;
+        };
+        if !self.playback_boundary.is_current(generation) {
+            return;
+        }
+        if let Ok(mut current) = self.playback_error.lock() {
+            *current = error.clone();
+        }
+        self.playback_preparing.store(false, Ordering::SeqCst);
+        let _ = app.emit(
+            PLAYBACK_PREPARATION_CHANGED_EVENT,
+            PlaybackPreparationEventPayload {
+                generation,
+                state,
+                error,
+            },
+        );
+    }
+
+    fn complete_playback_worker(&self) -> Option<(u64, PlaybackPreparationRequest)> {
+        let _gate = self.playback_boundary.lock_commit().ok()?;
+        let request = self.playback_preparation.complete()?;
+        let generation = self.playback_boundary.next_locked();
+        self.playback_preparing.store(true, Ordering::SeqCst);
+        if let Ok(mut error) = self.playback_error.lock() {
+            *error = None;
+        }
+        Some((generation, request))
+    }
+
+    fn invalidate_playback_preparation(&self) {
+        let Ok(_gate) = self.playback_boundary.lock_commit() else {
+            return;
+        };
+        self.playback_boundary.next_locked();
+        self.playback_preparation.clear();
+        self.playback_preparing.store(false, Ordering::SeqCst);
+        if let Ok(mut error) = self.playback_error.lock() {
+            *error = None;
+        }
+    }
+
+    fn begin_preview_preparation(
+        &self,
+        request: PreviewPreparationRequest,
+    ) -> Result<Option<(u64, PreviewPreparationRequest)>, String> {
+        let _gate = self.preview_boundary.lock_commit()?;
+        let generation = self.preview_boundary.next_locked();
+        self.preview_preparing.store(true, Ordering::SeqCst);
+        if let Ok(mut error) = self.preview_error.lock() {
+            *error = None;
+        }
+        Ok(self
+            .preview_preparation
+            .submit(request)
+            .map(|request| (generation, request)))
+    }
+
+    fn finish_preview_preparation(&self, generation: u64, error: Option<String>) {
+        let Ok(_gate) = self.preview_boundary.lock_commit() else {
+            return;
+        };
+        if !self.preview_boundary.is_current(generation) {
+            return;
+        }
+        if let Ok(mut current) = self.preview_error.lock() {
+            *current = error;
+        }
+        self.preview_preparing.store(false, Ordering::SeqCst);
+    }
+
+    fn complete_preview_worker(&self) -> Option<(u64, PreviewPreparationRequest)> {
+        let _gate = self.preview_boundary.lock_commit().ok()?;
+        let request = self.preview_preparation.complete()?;
+        let generation = self.preview_boundary.next_locked();
+        self.preview_preparing.store(true, Ordering::SeqCst);
+        if let Ok(mut error) = self.preview_error.lock() {
+            *error = None;
+        }
+        Some((generation, request))
+    }
+
     fn with_core<T>(
         &self,
         operation: impl FnOnce(&mut Core) -> Result<T, coordinator::CoordinatorError>,
@@ -797,6 +1082,13 @@ impl AppState {
     }
 
     fn stop_preview(&self) -> Result<(), String> {
+        let _gate = self.preview_boundary.lock_commit()?;
+        self.preview_boundary.next_locked();
+        self.preview_preparation.clear();
+        self.preview_preparing.store(false, Ordering::SeqCst);
+        if let Ok(mut error) = self.preview_error.lock() {
+            *error = None;
+        }
         let mut preview = self.preview.lock().map_err(|error| error.to_string())?;
         stop_for_focus_start(&mut preview).map_err(|error| error.to_string())
     }
@@ -871,6 +1163,88 @@ impl AppState {
             state,
             error: None,
         })
+    }
+}
+
+fn spawn_playback_request(app: AppHandle, generation: u64, request: PlaybackPreparationRequest) {
+    match request {
+        PlaybackPreparationRequest::Session => {
+            std::thread::spawn(move || start_session_worker(app, generation));
+        }
+        PlaybackPreparationRequest::Explicit {
+            activity,
+            selection,
+        } => {
+            std::thread::spawn(move || {
+                start_explicit_playback_worker(app, generation, activity, selection)
+            });
+        }
+    }
+}
+
+fn commit_prepared_preview(
+    app: &AppHandle,
+    generation: u64,
+    program: audio_engine::DecodedProgram,
+    label: &str,
+    volume: u8,
+) -> Option<String> {
+    let state = app.state::<AppState>();
+    let result = state
+        .preview_boundary
+        .lock_commit()
+        .and_then(|_commit_gate| {
+            if !state.preview_boundary.is_current(generation) {
+                return Ok(());
+            }
+            let mut preview = state.preview.lock().map_err(|error| error.to_string())?;
+            if !state.preview_boundary.is_current(generation) {
+                return Ok(());
+            }
+            preview
+                .start_prepared(program, label, volume)
+                .map_err(|error| error.to_string())
+        });
+    result.err()
+}
+
+fn spawn_preview_request(app: AppHandle, generation: u64, request: PreviewPreparationRequest) {
+    match request {
+        PreviewPreparationRequest::Cloud { source, volume } => {
+            std::thread::spawn(move || {
+                let _worker_guard = PreviewWorkerGuard { app: app.clone() };
+                let error = match prepare_cloud_preview(source) {
+                    Ok(program) => {
+                        commit_prepared_preview(&app, generation, program, "cloud-preview", volume)
+                    }
+                    Err(error) => Some(format!(
+                        "The generated track could not be previewed: {error}"
+                    )),
+                };
+                app.state::<AppState>()
+                    .finish_preview_preparation(generation, error);
+            });
+        }
+        PreviewPreparationRequest::Draft {
+            path,
+            job_id,
+            volume,
+        } => {
+            std::thread::spawn(move || {
+                let _worker_guard = PreviewWorkerGuard { app: app.clone() };
+                let error = match prepare_draft_preview(path, &job_id) {
+                    Ok(program) => {
+                        commit_prepared_preview(&app, generation, program, &job_id, volume)
+                    }
+                    Err(_) => Some(
+                        "This Music Studio draft is missing, corrupt, or not a playable FLAC file."
+                            .to_owned(),
+                    ),
+                };
+                app.state::<AppState>()
+                    .finish_preview_preparation(generation, error);
+            });
+        }
     }
 }
 
@@ -991,60 +1365,255 @@ fn get_studio_job(
 }
 
 #[tauri::command]
-fn start_session(state: State<AppState>) -> Result<(), String> {
+fn start_session(app: AppHandle, state: State<AppState>) -> Result<(), String> {
     state.stop_preview()?;
-    let now = state.now_secs();
-    // Keep activity, fully revalidated selection, decode, native preparation,
-    // and recent-history commit within one lock order and command outcome.
-    let mut packs_guard = state
-        .recovery
-        .packs
-        .lock()
-        .map_err(|error| error.to_string())?;
-    let packs = packs_guard.as_mut().map_err(|error| error.clone())?;
-    let mut core_guard = state
-        .recovery
-        .core
-        .lock()
-        .map_err(|error| error.to_string())?;
-    let core = core_guard.as_mut().map_err(|error| error.clone())?;
-    let activity = core.snapshot(now).activity;
-    let genre_state = packs
-        .genre_state(activity)
-        .map_err(|error| error.to_string())?;
-    if genre_state.selected_genre_id.is_some() && !genre_state.selected_genre_available {
-        return Err("The saved genre is no longer available for this activity. Choose Any compatible genre or another available genre before starting.".to_owned());
-    }
-    let mood_state = packs
-        .mood_state(activity, genre_state.selected_genre_id.as_deref())
-        .map_err(|error| error.to_string())?;
-    if mood_state.selected_mood_id.is_some() && !mood_state.selected_mood_available {
-        return Err("The saved mood is no longer available for this activity and genre. Choose Any compatible mood or another available mood before starting.".to_owned());
-    }
-    let prepared = packs
-        .prepare_playback(
-            activity,
-            genre_state.selected_genre_id.as_deref(),
-            mood_state.selected_mood_id.as_deref(),
-        )
-        .map_err(|error| error.to_string())?;
-    let (source, recent) = match prepared {
-        Some(prepared) => (
-            PlaybackSource::Installed(prepared.program),
-            Some(prepared.primary_item_id),
-        ),
-        // The minimal home screen shows every activity as immediately startable. Until an
-        // activity has an installed authored track, its default Any/Any choice uses the
-        // explicit local procedural fallback rather than presenting a start failure.
-        None if genre_state.selected_genre_id.is_none() && mood_state.selected_mood_id.is_none() => (PlaybackSource::TestTone, None),
-        None => return Err("No eligible installed track is available for this activity, genre, and mood. Choose another preference or update track feedback.".to_owned()),
-    };
-    core.start_recorded(now, state.wall_clock_secs(), source)
-        .map_err(|error| error.to_string())?;
-    if let Some(item_id) = recent {
-        packs.commit_playback(item_id);
+    let request = PlaybackPreparationRequest::Session;
+    if let Some((generation, request)) = state.begin_playback_preparation(request)? {
+        spawn_playback_request(app, generation, request);
     }
     Ok(())
+}
+
+fn start_session_worker(app: AppHandle, generation: u64) {
+    let state = app.state::<AppState>();
+    let _worker_guard = PlaybackWorkerGuard { app: app.clone() };
+    #[cfg(debug_assertions)]
+    let preparation_started = std::time::Instant::now();
+    let activity = {
+        let now = state.now_secs();
+        let mut core_guard = match state.recovery.core.lock() {
+            Ok(guard) => guard,
+            Err(error) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some(error.to_string()),
+                );
+                return;
+            }
+        };
+        match core_guard.as_mut() {
+            Ok(core) if core.snapshot(now).status == domain::SessionStatus::Idle => {
+                core.snapshot(now).activity
+            }
+            Ok(_) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some("Stop the current session before starting another one.".to_owned()),
+                );
+                return;
+            }
+            Err(error) => {
+                state.finish_playback_preparation(&app, generation, "error", Some(error.clone()));
+                return;
+            }
+        }
+    };
+
+    let (genre_id, mood_id) = {
+        let mut packs_guard = match state.recovery.packs.lock() {
+            Ok(guard) => guard,
+            Err(error) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some(error.to_string()),
+                );
+                return;
+            }
+        };
+        let packs = match packs_guard.as_mut() {
+            Ok(packs) => packs,
+            Err(error) => {
+                state.finish_playback_preparation(&app, generation, "error", Some(error.clone()));
+                return;
+            }
+        };
+        let genre_state = match packs.genre_state(activity) {
+            Ok(state) => state,
+            Err(error) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some(error.to_string()),
+                );
+                return;
+            }
+        };
+        if genre_state.selected_genre_id.is_some() && !genre_state.selected_genre_available {
+            state.finish_playback_preparation(
+                &app,
+                generation,
+                "error",
+                Some("The saved genre is no longer available for this activity. Choose another available genre before starting.".to_owned()),
+            );
+            return;
+        }
+        let mood_state = match packs.mood_state(activity, genre_state.selected_genre_id.as_deref())
+        {
+            Ok(state) => state,
+            Err(error) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some(error.to_string()),
+                );
+                return;
+            }
+        };
+        if mood_state.selected_mood_id.is_some() && !mood_state.selected_mood_available {
+            state.finish_playback_preparation(
+                &app,
+                generation,
+                "error",
+                Some("The saved mood is no longer available for this activity and genre. Choose another available mood before starting.".to_owned()),
+            );
+            return;
+        }
+        (genre_state.selected_genre_id, mood_state.selected_mood_id)
+    };
+
+    // Only metadata selection runs under the pack mutex. The owned plan is
+    // decoded after the guard is dropped, so hashing/decoding cannot block
+    // pack mutations, stop, or other catalogue reads.
+    let plan = {
+        let mut packs_guard = match state.recovery.packs.lock() {
+            Ok(guard) => guard,
+            Err(error) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some(error.to_string()),
+                );
+                return;
+            }
+        };
+        let packs = match packs_guard.as_mut() {
+            Ok(packs) => packs,
+            Err(error) => {
+                state.finish_playback_preparation(&app, generation, "error", Some(error.clone()));
+                return;
+            }
+        };
+        match packs.select_playback(activity, genre_id.as_deref(), mood_id.as_deref()) {
+            Ok(Some(plan)) => plan,
+            Ok(None) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some("No verified authored music is available for this selection.".to_owned()),
+                );
+                return;
+            }
+            Err(error) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some(error.to_string()),
+                );
+                return;
+            }
+        }
+    };
+
+    if !state.preparation_is_current(generation) {
+        return;
+    }
+    let prepared = match plan.decode() {
+        Ok(prepared) => prepared,
+        Err(error) => {
+            state.finish_playback_preparation(&app, generation, "error", Some(error.to_string()));
+            return;
+        }
+    };
+
+    if !state.preparation_is_current(generation) {
+        return;
+    }
+    let recent_item_id = prepared.primary_item_id.clone();
+    // Generation invalidation and native start are serialized by the same
+    // gate. Stop/Back therefore either linearizes before this commit (and
+    // makes the worker stale) or after it (and then stops the committed
+    // session), never in the middle of the check/start boundary.
+    let commit_result: Result<bool, String> = (|| {
+        let _commit_gate = state.playback_boundary.lock_commit()?;
+        if !state.preparation_is_current(generation) {
+            return Ok(false);
+        }
+        let mut core_guard = state
+            .recovery
+            .core
+            .lock()
+            .map_err(|error| error.to_string())?;
+        let core = core_guard.as_mut().map_err(|error| error.clone())?;
+        let now = state.now_secs();
+        if !state.preparation_is_current(generation) {
+            return Ok(false);
+        }
+        if core.snapshot(now).status != domain::SessionStatus::Idle {
+            return Err(
+                "The session changed while music was preparing. Please try again.".to_owned(),
+            );
+        }
+        #[cfg(debug_assertions)]
+        let device_started = std::time::Instant::now();
+        core.start_recorded(
+            now,
+            state.wall_clock_secs(),
+            PlaybackSource::Installed(prepared.program),
+        )
+        .map_err(|error| error.to_string())?;
+        drop(core_guard);
+        if let Ok(mut packs_guard) = state.recovery.packs.lock() {
+            if let Ok(packs) = packs_guard.as_mut() {
+                packs.commit_playback(recent_item_id.clone());
+            }
+        }
+        #[cfg(debug_assertions)]
+        eprintln!(
+            "[playback-timing] native_start_return_ms={} start_recorded_boundary_ms={}",
+            device_started.elapsed().as_millis(),
+            preparation_started.elapsed().as_millis()
+        );
+        Ok(true)
+    })();
+    match commit_result {
+        Ok(true) => {
+            state.finish_playback_preparation(&app, generation, "ready", None);
+        }
+        Ok(false) => {}
+        Err(error) => state.finish_playback_preparation(&app, generation, "error", Some(error)),
+    }
+}
+
+#[tauri::command]
+fn get_playback_preparation_state(state: State<AppState>) -> PlaybackPreparationStateDto {
+    let (state_name, error) = if state.playback_preparing.load(Ordering::SeqCst) {
+        ("preparing", None)
+    } else if let Ok(error) = state.playback_error.lock() {
+        match error.clone() {
+            Some(error) => ("error", Some(error)),
+            None => ("idle", None),
+        }
+    } else {
+        (
+            "error",
+            Some("Playback status is temporarily unavailable.".to_owned()),
+        )
+    };
+    PlaybackPreparationStateDto {
+        state: state_name,
+        error,
+    }
 }
 
 #[tauri::command]
@@ -1097,40 +1666,123 @@ fn delete_my_music(item_id: String, state: State<AppState>) -> Result<(), String
         .map_err(|error| error.to_string())
 }
 
+#[derive(Clone)]
+enum ExplicitPlaybackSelection {
+    Favorite(String),
+    MyMusic(String),
+}
+
+fn start_explicit_playback_worker(
+    app: AppHandle,
+    generation: u64,
+    activity: Activity,
+    selection: ExplicitPlaybackSelection,
+) {
+    let state = app.state::<AppState>();
+    let _worker_guard = PlaybackWorkerGuard { app: app.clone() };
+    let plan = {
+        let mut packs_guard = match state.recovery.packs.lock() {
+            Ok(guard) => guard,
+            Err(error) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some(error.to_string()),
+                );
+                return;
+            }
+        };
+        let packs = match packs_guard.as_mut() {
+            Ok(packs) => packs,
+            Err(error) => {
+                state.finish_playback_preparation(&app, generation, "error", Some(error.clone()));
+                return;
+            }
+        };
+        let result = match &selection {
+            ExplicitPlaybackSelection::Favorite(item_id) => {
+                packs.select_favorite_playback(activity, item_id)
+            }
+            ExplicitPlaybackSelection::MyMusic(item_id) => {
+                packs.select_my_music_playback(activity, item_id)
+            }
+        };
+        match result {
+            Ok(plan) => plan,
+            Err(error) => {
+                state.finish_playback_preparation(
+                    &app,
+                    generation,
+                    "error",
+                    Some(error.to_string()),
+                );
+                return;
+            }
+        }
+    };
+    let prepared = match plan.decode() {
+        Ok(prepared) => prepared,
+        Err(error) => {
+            state.finish_playback_preparation(&app, generation, "error", Some(error.to_string()));
+            return;
+        }
+    };
+    let recent_item_id = prepared.primary_item_id.clone();
+    let commit_result: Result<bool, String> = (|| {
+        let _gate = state.playback_boundary.lock_commit()?;
+        if !state.preparation_is_current(generation) {
+            return Ok(false);
+        }
+        let mut core_guard = state
+            .recovery
+            .core
+            .lock()
+            .map_err(|error| error.to_string())?;
+        let core = core_guard.as_mut().map_err(|error| error.clone())?;
+        let now = state.now_secs();
+        if core.snapshot(now).status != domain::SessionStatus::Idle {
+            return Err("Stop the current session before playing this music.".to_owned());
+        }
+        core.start_favorite_with_source(
+            now,
+            state.wall_clock_secs(),
+            activity,
+            PlaybackSource::Installed(prepared.program),
+        )
+        .map_err(|error| error.to_string())?;
+        drop(core_guard);
+        if let Ok(mut packs_guard) = state.recovery.packs.lock() {
+            if let Ok(packs) = packs_guard.as_mut() {
+                packs.commit_playback(recent_item_id);
+            }
+        }
+        Ok(true)
+    })();
+    match commit_result {
+        Ok(true) => {
+            state.finish_playback_preparation(&app, generation, "ready", None);
+        }
+        Ok(false) => {}
+        Err(error) => state.finish_playback_preparation(&app, generation, "error", Some(error)),
+    }
+}
+
 #[tauri::command]
 fn start_my_music(
+    app: AppHandle,
     item_id: String,
     activity: Activity,
     state: State<AppState>,
 ) -> Result<(), String> {
     state.stop_preview()?;
-    let now = state.now_secs();
-    let mut packs_guard = state
-        .recovery
-        .packs
-        .lock()
-        .map_err(|error| error.to_string())?;
-    let packs = packs_guard.as_mut().map_err(|error| error.clone())?;
-    let mut core_guard = state
-        .recovery
-        .core
-        .lock()
-        .map_err(|error| error.to_string())?;
-    let core = core_guard.as_mut().map_err(|error| error.clone())?;
-    if core.snapshot(now).status != domain::SessionStatus::Idle {
-        return Err("Stop the current session before playing this music.".into());
-    }
-    let prepared = packs
-        .prepare_my_music_playback(activity, &item_id)
-        .map_err(|error| error.to_string())?;
-    core.start_favorite_with_source(
-        now,
-        state.wall_clock_secs(),
+    let request = PlaybackPreparationRequest::Explicit {
         activity,
-        PlaybackSource::Installed(prepared.program),
-    )
-    .map_err(|error| error.to_string())?;
-    packs.commit_playback(prepared.primary_item_id);
+        selection: ExplicitPlaybackSelection::MyMusic(item_id),
+    };
+    if let Some((generation, request)) = state.begin_playback_preparation(request)? {
+        spawn_playback_request(app, generation, request);
+    }
     Ok(())
 }
 
@@ -1199,39 +1851,21 @@ fn remove_favorite(
 }
 
 #[tauri::command]
-fn start_favorite(item_id: String, activity: String, state: State<AppState>) -> Result<(), String> {
+fn start_favorite(
+    app: AppHandle,
+    item_id: String,
+    activity: String,
+    state: State<AppState>,
+) -> Result<(), String> {
     state.stop_preview()?;
     let activity = parse_activity(&activity)?;
-    let now = state.now_secs();
-    let mut packs_guard = state
-        .recovery
-        .packs
-        .lock()
-        .map_err(|error| error.to_string())?;
-    let packs = packs_guard.as_mut().map_err(|error| error.clone())?;
-    let mut core_guard = state
-        .recovery
-        .core
-        .lock()
-        .map_err(|error| error.to_string())?;
-    let core = core_guard.as_mut().map_err(|error| error.clone())?;
-    if matches!(
-        core.snapshot(now).status,
-        domain::SessionStatus::Playing | domain::SessionStatus::Paused
-    ) {
-        return Err("Stop the current session before starting a favourite.".to_owned());
-    }
-    let prepared = packs
-        .prepare_favorite_playback(activity, &item_id)
-        .map_err(|error| error.to_string())?;
-    core.start_favorite_with_source(
-        now,
-        state.wall_clock_secs(),
+    let request = PlaybackPreparationRequest::Explicit {
         activity,
-        PlaybackSource::Installed(prepared.program),
-    )
-    .map_err(|error| error.to_string())?;
-    packs.commit_playback(prepared.primary_item_id);
+        selection: ExplicitPlaybackSelection::Favorite(item_id),
+    };
+    if let Some((generation, request)) = state.begin_playback_preparation(request)? {
+        spawn_playback_request(app, generation, request);
+    }
     Ok(())
 }
 
@@ -1259,24 +1893,40 @@ fn complete_onboarding(
         return Err("Choose at most three genres.".into());
     }
     let now = state.now_secs();
-    let mut packs_guard = state.recovery.packs.lock().map_err(|e| e.to_string())?;
-    let packs = packs_guard.as_mut().map_err(|e| e.clone())?;
-    let (source, recent) = match packs.prepare_playback(Activity::DeepWork, None, None).map_err(|e| e.to_string())? {
-        Some(prepared) => (
-            PlaybackSource::Installed(prepared.program),
-            Some(prepared.primary_item_id),
-        ),
-        None if packs.list().map_err(|e| e.to_string())?.is_empty() => (PlaybackSource::TestTone, None),
-        None => return Err("No eligible Deep Work audio is available. Try again after choosing another installed profile.".into()),
+    let plan = {
+        let mut packs_guard = state.recovery.packs.lock().map_err(|e| e.to_string())?;
+        let packs = packs_guard.as_mut().map_err(|e| e.clone())?;
+        packs
+            .select_playback(Activity::DeepWork, None, None)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| {
+                "No authored Deep Work music is installed yet. Install or generate a music pack, then try onboarding again.".to_owned()
+            })?
     };
+    let (source, recent) = onboarding_playback_source(Some(plan))?;
     let mut core_guard = state.recovery.core.lock().map_err(|e| e.to_string())?;
     let core = core_guard.as_mut().map_err(|e| e.clone())?;
     core.complete_onboarding(now, state.wall_clock_secs(), intensity, &genres, source)
         .map_err(|e| e.to_string())?;
-    if let Some(item_id) = recent {
-        packs.commit_playback(item_id);
+    drop(core_guard);
+    if let Ok(mut packs_guard) = state.recovery.packs.lock() {
+        if let Ok(packs) = packs_guard.as_mut() {
+            packs.commit_playback(recent);
+        }
     }
     Ok(())
+}
+
+fn onboarding_playback_source(
+    plan: Option<PlaybackPreparationPlan>,
+) -> Result<(PlaybackSource, String), String> {
+    let plan = plan.ok_or_else(|| {
+        "No authored Deep Work music is installed yet. Install or generate a music pack, then try onboarding again."
+            .to_owned()
+    })?;
+    let prepared = plan.decode().map_err(|error| error.to_string())?;
+    let recent = prepared.primary_item_id.clone();
+    Ok((PlaybackSource::Installed(prepared.program), recent))
 }
 
 #[tauri::command]
@@ -1321,6 +1971,7 @@ fn resume_session(state: State<AppState>) -> Result<(), String> {
 
 #[tauri::command]
 fn stop_session(state: State<AppState>) -> Result<(), String> {
+    state.invalidate_playback_preparation();
     let now = state.now_secs();
     let mut packs_guard = state
         .recovery
@@ -1496,8 +2147,12 @@ fn set_master_volume(volume: u8, state: State<AppState>) -> Result<u8, String> {
 }
 
 #[tauri::command]
-fn start_draft_preview(job_id: String, state: State<AppState>) -> Result<(), String> {
-    let id = music_studio_domain::StudioJobId::new(job_id)
+fn start_draft_preview(
+    job_id: String,
+    app: AppHandle,
+    state: State<AppState>,
+) -> Result<(), String> {
+    let id = music_studio_domain::StudioJobId::new(&job_id)
         .map_err(|_| "That Music Studio draft could not be previewed.".to_owned())?;
     let now = state.now_secs();
     let volume = state
@@ -1509,14 +2164,15 @@ fn start_draft_preview(job_id: String, state: State<AppState>) -> Result<(), Str
         })
         .map_err(|_| "Stop focus playback before previewing a Music Studio draft.".to_owned())?;
     let path = state.studio_paths.draft_output_path(&id);
-    state
-        .preview
-        .lock()
-        .map_err(|error| error.to_string())?
-        .start(path, id.as_str(), volume)
-        .map_err(|_| {
-            "This Music Studio draft is missing, corrupt, or not a playable FLAC file.".to_owned()
-        })
+    let request = PreviewPreparationRequest::Draft {
+        path,
+        job_id,
+        volume,
+    };
+    if let Some((generation, request)) = state.begin_preview_preparation(request)? {
+        spawn_preview_request(app, generation, request);
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -1546,6 +2202,11 @@ fn stop_draft_preview(state: State<AppState>) -> Result<(), String> {
 
 #[tauri::command]
 fn get_draft_preview_state(state: State<AppState>) -> Result<DraftPreviewState, String> {
+    if let Ok(error) = state.preview_error.lock() {
+        if let Some(error) = error.clone() {
+            return Err(error);
+        }
+    }
     Ok(state
         .preview
         .lock()
@@ -1992,7 +2653,7 @@ fn initialize_packs(app_data_dir: &Path, resource_dir: Option<PathBuf>) -> Resul
     })?;
     let mut service =
         PackService::new(registry, app_data_dir.join("content")).with_resource_dir(resource_dir);
-    service.list().map_err(|error| {
+    service.catalogue_list().map_err(|error| {
         format!("Installed content failed its startup integrity check: {error}. Reinstall the affected content pack or restore the local content directory and registry together.")
     })?;
     Ok(service)
@@ -2268,12 +2929,21 @@ pub fn run() {
                 clock_base: std::time::Instant::now(),
                 migration: Mutex::new(migration),
                 event_shutdown: event_shutdown.clone(),
+                playback_boundary: Arc::new(GenerationBoundary::default()),
+                playback_preparing: Arc::new(AtomicBool::new(false)),
+                playback_preparation: LatestPreparation::default(),
+                playback_error: Arc::new(Mutex::new(None)),
+                preview_boundary: Arc::new(GenerationBoundary::default()),
+                preview_preparing: Arc::new(AtomicBool::new(false)),
+                preview_preparation: LatestPreparation::default(),
+                preview_error: Arc::new(Mutex::new(None)),
             });
             spawn_event_bridge(app.handle(), event_shutdown);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             start_session,
+            get_playback_preparation_state,
             list_favorites,
             remove_favorite,
             start_favorite,
@@ -2506,6 +3176,176 @@ mod recovery_tests {
             Err("Stop focus playback before previewing a Music Studio draft.".to_owned())
         );
         assert!(ensure_focus_is_idle_for_draft_preview(domain::SessionStatus::Paused).is_err());
+    }
+
+    #[test]
+    fn onboarding_without_authored_music_returns_recovery_error() {
+        let error = onboarding_playback_source(None).unwrap_err();
+        assert!(error.contains("No authored Deep Work music is installed yet"));
+    }
+
+    #[test]
+    fn superseded_playback_and_preview_generations_cannot_commit() {
+        for boundary in [GenerationBoundary::default(), GenerationBoundary::default()] {
+            let old = boundary.begin().unwrap();
+            boundary.invalidate().unwrap();
+            let _commit = boundary.lock_commit().unwrap();
+            assert!(!boundary.is_current(old));
+        }
+    }
+
+    #[test]
+    fn rapid_preparation_requests_keep_one_worker_and_commit_only_latest() {
+        let preparation = LatestPreparation::default();
+        assert_eq!(preparation.submit("A"), Some("A"));
+        assert!(preparation.is_active());
+        assert_eq!(preparation.submit("B"), None);
+        assert_eq!(preparation.submit("C"), None);
+
+        assert_eq!(preparation.complete(), Some("C"));
+        assert!(preparation.is_active());
+        assert_eq!(preparation.complete(), None);
+        assert!(!preparation.is_active());
+    }
+
+    #[test]
+    fn stopping_preparation_clears_the_pending_latest_request() {
+        let preparation = LatestPreparation::default();
+        assert_eq!(preparation.submit("A"), Some("A"));
+        assert_eq!(preparation.submit("B"), None);
+        preparation.clear();
+
+        assert_eq!(preparation.complete(), None);
+        assert!(!preparation.is_active());
+    }
+
+    #[test]
+    fn concurrent_submits_are_single_flight_and_latest_wins_without_sleeping() {
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        let preparation = Arc::new(LatestPreparation::default());
+        assert_eq!(preparation.submit("active"), Some("active"));
+        let ready = Arc::new(Barrier::new(3));
+        let first_submitted = Arc::new(Barrier::new(3));
+        let first = {
+            let preparation = Arc::clone(&preparation);
+            let ready = Arc::clone(&ready);
+            let first_submitted = Arc::clone(&first_submitted);
+            thread::spawn(move || {
+                ready.wait();
+                let result = preparation.submit("first");
+                first_submitted.wait();
+                result
+            })
+        };
+        let second = {
+            let preparation = Arc::clone(&preparation);
+            let ready = Arc::clone(&ready);
+            let first_submitted = Arc::clone(&first_submitted);
+            thread::spawn(move || {
+                ready.wait();
+                first_submitted.wait();
+                preparation.submit("second")
+            })
+        };
+        ready.wait();
+        first_submitted.wait();
+        assert_eq!(first.join().unwrap(), None);
+        assert_eq!(second.join().unwrap(), None);
+
+        assert_eq!(preparation.complete(), Some("second"));
+        assert_eq!(preparation.complete(), None);
+        assert!(!preparation.is_active());
+    }
+
+    #[test]
+    fn clear_racing_with_completion_never_leaks_or_duplicates_a_pending_request() {
+        use std::sync::{mpsc, Arc, Barrier};
+        use std::thread;
+
+        let preparation = Arc::new(LatestPreparation::default());
+        assert_eq!(preparation.submit("active"), Some("active"));
+        assert_eq!(preparation.submit("pending"), None);
+        let barrier = Arc::new(Barrier::new(3));
+        let (cleared_tx, cleared_rx) = mpsc::channel();
+        let (clear_ack_tx, clear_ack_rx) = mpsc::channel();
+        let (completed_tx, completed_rx) = mpsc::channel();
+        let clear_worker = {
+            let preparation = Arc::clone(&preparation);
+            let barrier = Arc::clone(&barrier);
+            thread::spawn(move || {
+                barrier.wait();
+                preparation.clear();
+                cleared_tx.send(()).unwrap();
+            })
+        };
+        let completion = {
+            let preparation = Arc::clone(&preparation);
+            let barrier = Arc::clone(&barrier);
+            thread::spawn(move || {
+                barrier.wait();
+                clear_ack_rx.recv().unwrap();
+                completed_tx.send(preparation.complete()).unwrap();
+            })
+        };
+        barrier.wait();
+        cleared_rx.recv().unwrap();
+        clear_ack_tx.send(()).unwrap();
+        assert_eq!(completed_rx.recv().unwrap(), None);
+        clear_worker.join().unwrap();
+        completion.join().unwrap();
+        assert!(!preparation.is_active());
+    }
+
+    #[test]
+    fn stale_error_cannot_overwrite_current_generation_after_stop_interleaving() {
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        let boundary = Arc::new(GenerationBoundary::default());
+        let errors = Arc::new(Mutex::new(None::<String>));
+        let stale = boundary.begin().unwrap();
+        let gate = boundary.lock_commit().unwrap();
+        let barrier = Arc::new(Barrier::new(2));
+        let worker = {
+            let boundary = Arc::clone(&boundary);
+            let errors = Arc::clone(&errors);
+            let barrier = Arc::clone(&barrier);
+            thread::spawn(move || {
+                barrier.wait();
+                let _gate = boundary.lock_commit().unwrap();
+                if boundary.is_current(stale) {
+                    *errors.lock().unwrap() = Some("stale".to_owned());
+                }
+            })
+        };
+        barrier.wait();
+        boundary.next_locked();
+        *errors.lock().unwrap() = Some("current".to_owned());
+        drop(gate);
+        worker.join().unwrap();
+        assert_eq!(errors.lock().unwrap().as_deref(), Some("current"));
+    }
+
+    #[test]
+    fn preview_uses_the_same_deterministic_single_flight_primitive() {
+        let preparation: LatestPreparation<PreviewPreparationRequest> = Default::default();
+        let request = PreviewPreparationRequest::Draft {
+            path: PathBuf::from("preview.flac"),
+            job_id: "preview-job".to_owned(),
+            volume: 70,
+        };
+        assert!(preparation.submit(request).is_some());
+        assert!(preparation
+            .submit(PreviewPreparationRequest::Draft {
+                path: PathBuf::from("latest.flac"),
+                job_id: "latest-job".to_owned(),
+                volume: 70,
+            })
+            .is_none());
+        assert!(preparation.complete().is_some());
+        assert!(preparation.complete().is_none());
     }
 
     #[test]

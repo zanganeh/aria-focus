@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { listenPlaybackChanged } from "../lib/events";
 import {
   getSnapshot,
+  getPlaybackPreparationState,
   pauseSession,
   resumeSession,
   setActivity as apiSetActivity,
@@ -62,13 +63,17 @@ export function useSession(): SessionController {
   const [volumePending, setVolumePending] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const eventsConnectedRef = useRef(false);
+  const mountedRef = useRef(false);
+  const startRequestRef = useRef(0);
 
   const refresh = useCallback(async () => {
     try {
       const snap = await getSnapshot();
+      if (!mountedRef.current) return;
       setSnapshot(snap);
       intensityRef.current = snap.intensity;
     } catch (e) {
+      if (!mountedRef.current) return;
       setError({
         message: `Unable to load the local session: ${errorDetail(e)}`,
         sessionLoad: true,
@@ -91,6 +96,7 @@ export function useSession(): SessionController {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
     void refresh();
     void getMasterVolume()
       .then((volume) => {
@@ -118,6 +124,7 @@ export function useSession(): SessionController {
         // the existing command snapshot polling remains the safe fallback.
       });
     return () => {
+      mountedRef.current = false;
       disposed = true;
       unlisten?.();
       eventsConnectedRef.current = false;
@@ -126,15 +133,34 @@ export function useSession(): SessionController {
   }, [refresh, stopPolling]);
 
   const start = useCallback(async () => {
+    const requestId = startRequestRef.current + 1;
+    startRequestRef.current = requestId;
+    const isCurrentRequest = () => mountedRef.current && startRequestRef.current === requestId;
     setStarting(true);
     try {
       await startSession();
-      await refresh();
+      if (!isCurrentRequest()) return;
       startPolling();
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        if (!isCurrentRequest()) return;
+        const preparation = await getPlaybackPreparationState();
+        if (!isCurrentRequest()) return;
+        if (preparation.state === "error") {
+          throw new Error(preparation.error ?? "Music could not be prepared.");
+        }
+        const next = await getSnapshot();
+        if (!isCurrentRequest()) return;
+        setSnapshot(next);
+        intensityRef.current = next.intensity;
+        if (next.status === "playing" || next.status === "paused") return;
+        await new Promise<void>((resolve) => setTimeout(resolve, 100));
+      }
+      throw new Error("Music is taking too long to prepare. Please try again.");
     } catch (e) {
+      if (!isCurrentRequest()) return;
       setError({ message: `Unable to start the session: ${errorDetail(e)}`, sessionLoad: false });
     } finally {
-      setStarting(false);
+      if (isCurrentRequest()) setStarting(false);
     }
   }, [refresh, startPolling]);
 
@@ -164,9 +190,14 @@ export function useSession(): SessionController {
   }, [refresh, startPolling]);
 
   const stop = useCallback(async () => {
+    // Invalidate any in-flight native start before awaiting Stop. This prevents
+    // a late preparation result from repopulating the page after the user has
+    // explicitly stopped playback.
+    startRequestRef.current += 1;
+    stopPolling();
+    setStarting(false);
     try {
       await stopSession();
-      stopPolling();
       await refresh();
     } catch (e) {
       setError({ message: `Unable to stop the session: ${errorDetail(e)}`, sessionLoad: false });
