@@ -25,6 +25,6 @@
     "verify": "pnpm fmt:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
-    "prettier": "^3.4.2"
+    "prettier": "^3.9.6"
   }
 }
